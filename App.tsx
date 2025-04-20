@@ -8,6 +8,7 @@
 import React from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { StatusBar, View, StyleSheet, LogBox } from 'react-native';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
 import { Colors } from './src/constants/colors';
 
@@ -16,8 +17,24 @@ LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
 ]);
 
-// Özelleştirilmiş tema
-const MyTheme = {
+// Material UI için tema
+const materialTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: Colors.primary,
+    secondary: Colors.secondary,
+    background: Colors.background,
+    surface: Colors.cardBackground,
+    surfaceVariant: Colors.cardBackground,
+    onSurface: Colors.lightText,
+    onSurfaceVariant: Colors.lightText,
+    outline: Colors.border,
+  },
+};
+
+// Navigation için tema
+const navigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -32,15 +49,17 @@ const MyTheme = {
 
 function App(): React.JSX.Element {
   return (
-    <View style={styles.container}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={Colors.statusBarBackground}
-      />
-      <NavigationContainer theme={MyTheme}>
-        <TabNavigator />
-      </NavigationContainer>
-    </View>
+    <PaperProvider theme={materialTheme}>
+      <View style={styles.container}>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={Colors.statusBarBackground}
+        />
+        <NavigationContainer theme={navigationTheme}>
+          <TabNavigator />
+        </NavigationContainer>
+      </View>
+    </PaperProvider>
   );
 }
 

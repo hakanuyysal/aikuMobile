@@ -32,7 +32,8 @@ const TabNavigator = () => {
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.inactive,
       }}
-      tabBar={props => <TabBar {...props} />}>
+      tabBar={props => <TabBar {...props} />}
+    >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Map" component={PlaceholderScreen} />
       <Tab.Screen name="Cart" component={PlaceholderScreen} />

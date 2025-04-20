@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { Surface, Text } from 'react-native-paper';
 import { Product } from '../types';
 import { Colors } from '../constants/colors';
 
@@ -17,12 +18,12 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
   onPress,
 }) => {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity onPress={onPress} style={styles.container}>
       {/* Arka plan dekoratif şekli */}
       <View style={styles.backgroundShape} />
       
       {/* Ana kart */}
-      <View style={styles.cardContainer}>
+      <Surface style={styles.cardContainer} elevation={4}>
         {/* Resim içeren alan */}
         <View style={styles.cardContent}>
           <Image 
@@ -34,9 +35,9 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
         
         {/* İndirim yazısı */}
         <View style={styles.discountContainer}>
-          <Text style={styles.discountText}>{discount}</Text>
+          <Text variant="displaySmall" style={styles.discountText}>{discount}</Text>
         </View>
-      </View>
+      </Surface>
     </TouchableOpacity>
   );
 };
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
     bottom: 20,
   },
   discountText: {
-    fontSize: 32,
     fontWeight: '700',
     color: Colors.lightText,
   },

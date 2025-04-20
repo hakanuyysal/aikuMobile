@@ -1,8 +1,9 @@
 import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Surface, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Product} from '../types';
-import {Colors} from '../constants/colors';
+import { Product } from '../types';
+import { Colors } from '../constants/colors';
 
 type ProductCardProps = {
   product: Product;
@@ -17,7 +18,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={styles.skewContainer}>
+      <Surface style={styles.skewContainer} elevation={3}>
         <Image
           source={product.imageUri}
           style={styles.image}
@@ -35,12 +36,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </TouchableOpacity>
 
         <View style={styles.infoContainer}>
-          <Text style={styles.type}>{product.type}</Text>
-          <Text style={styles.brand}>{product.brand}</Text>
-          <Text style={styles.name}>- {product.name}</Text>
-          <Text style={styles.price}>$ {product.price.toFixed(2)}</Text>
+          <Text style={styles.type} variant="labelSmall">{product.type}</Text>
+          <Text style={styles.brandName} variant="titleMedium">{product.brand} - {product.name}</Text>
+          <Text style={styles.price} variant="titleMedium">$ {product.price.toFixed(2)}</Text>
         </View>
-      </View>
+      </Surface>
     </TouchableOpacity>
   );
 };
@@ -58,14 +58,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBackground,
     overflow: 'hidden',
     transform: [{skewY: '-5deg'}],
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 10,
   },
   image: {
     width: '80%',
@@ -95,23 +87,15 @@ const styles = StyleSheet.create({
     transform: [{skewY: '5deg'}],
   },
   type: {
-    fontSize: 12,
     color: Colors.inactive,
     marginBottom: 4,
   },
-  brand: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.lightText,
-  },
-  name: {
-    fontSize: 18,
+  brandName: {
     fontWeight: '600',
     color: Colors.lightText,
     marginBottom: 4,
   },
   price: {
-    fontSize: 16,
     fontWeight: '600',
     color: Colors.lightText,
   },

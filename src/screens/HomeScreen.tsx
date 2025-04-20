@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   Platform,
   SafeAreaView,
 } from 'react-native';
+import { Text, IconButton, Surface } from 'react-native-paper';
 import { Colors } from '../constants/colors';
 import { PRODUCTS } from '../constants/data';
-import SearchButton from '../components/SearchButton';
-import CategoryButton from '../components/CategoryButton';
 import ProductCard from '../components/ProductCard';
 import FeaturedProduct from '../components/FeaturedProduct';
+import CategoryButton from '../components/CategoryButton';
 
 // Görsele uygun kategori butonları
 const categories = ['All', 'Road', 'Path', 'Mountain', 'Helmet'];
@@ -66,12 +65,18 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Choose Your Bike</Text>
-          <View style={styles.searchContainer}>
-            <SearchButton onPress={handleSearch} />
-          </View>
-        </View>
+        <Surface style={styles.header} elevation={0}>
+          <Text variant="headlineMedium" style={styles.title}>Choose Your Bike</Text>
+          <IconButton
+            icon="magnify"
+            mode="contained"
+            containerColor={Colors.primary}
+            iconColor={Colors.lightText}
+            size={24}
+            onPress={handleSearch}
+            style={styles.searchButton}
+          />
+        </Surface>
 
         <FeaturedProduct
           product={products[0]}
@@ -122,15 +127,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 8,
+    backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 32,
     fontWeight: '700',
     color: Colors.lightText,
   },
-  searchContainer: {
-    transform: [{ skewY: '-5deg' }],
-    overflow: 'hidden',
+  searchButton: {
+    margin: 0,
   },
   categoriesContainer: {
     marginVertical: 16,
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productsContent: {
-    paddingBottom: 120, // Yeni TabBar tasarımı için daha fazla boşluk
+    paddingBottom: 120, // TabBar için daha fazla boşluk
   },
   productRow: {
     justifyContent: 'space-between',
