@@ -53,18 +53,26 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
                   styles.tab,
                   isFocused && styles.activeTab
                 ]}>
-                <Icon
-                  name={iconMap[route.name] || 'circle'}
-                  color={isFocused ? Colors.lightText : Colors.inactive}
-                  size={isFocused ? 28 : 24}
-                  style={isFocused ? styles.activeIcon : {}}
-                />
+                {isFocused ? (
+                  <View style={styles.activeIconContainer}>
+                    <Icon
+                      name={iconMap[route.name] || 'circle'}
+                      color={Colors.lightText}
+                      size={28}
+                    />
+                  </View>
+                ) : (
+                  <Icon
+                    name={iconMap[route.name] || 'circle'}
+                    color={Colors.inactive}
+                    size={24}
+                  />
+                )}
               </TouchableOpacity>
             </View>
           );
         })}
       </View>
-      <View style={styles.indicator} />
     </View>
   );
 };
@@ -149,8 +157,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 16,
     marginTop: -25,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+    width: 65,
+    height: 65,
+    justifyContent: 'center',
+    alignItems: 'center',
     transform: [
       { translateY: -5 }, 
       { scale: 1.1 }, 
@@ -164,17 +177,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 8,
     elevation: 15,
+    overflow: 'hidden',
   },
-  activeIcon: {
+  activeIconContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     transform: [{ skewX: '15deg' }],
-  },
-  indicator: {
-    width: 80,
-    height: 3,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 1.5,
-    marginTop: 5,
-    transform: [{ skewY: '2deg' }],
   }
 });
 
