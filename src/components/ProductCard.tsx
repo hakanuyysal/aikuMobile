@@ -1,0 +1,95 @@
+import React from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Product } from '../types';
+import { Colors } from '../constants/colors';
+
+type ProductCardProps = {
+  product: Product;
+  onPress: () => void;
+  onFavoritePress: () => void;
+};
+
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onPress,
+  onFavoritePress,
+}) => {
+  return (
+    <TouchableOpacity style={styles.container} onPress={onPress}>
+      <View style={styles.skewContainer}>
+        <Image source={product.imageUri} style={styles.image} />
+        
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={onFavoritePress}>
+          <Icon
+            name={product.isFavorite ? 'heart' : 'heart-outline'}
+            size={22}
+            color={product.isFavorite ? Colors.primary : Colors.lightText}
+          />
+        </TouchableOpacity>
+        
+        <View style={styles.infoContainer}>
+          <Text style={styles.type}>{product.type}</Text>
+          <Text style={styles.name}>{product.brand} - {product.name}</Text>
+          <Text style={styles.price}>$ {product.price.toFixed(2)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: '48%',
+    height: 200,
+    marginBottom: 16,
+  },
+  skewContainer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    backgroundColor: Colors.cardBackground,
+    overflow: 'hidden',
+    transform: [{ skewY: '-5deg' }],
+  },
+  image: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'contain',
+    transform: [{ skewY: '5deg' }],
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoContainer: {
+    padding: 12,
+    transform: [{ skewY: '5deg' }],
+  },
+  type: {
+    fontSize: 12,
+    color: Colors.inactive,
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.lightText,
+    marginBottom: 8,
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.lightText,
+  },
+});
+
+export default ProductCard; 
