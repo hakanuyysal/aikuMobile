@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     backgroundColor: Colors.cardBackground,
     overflow: 'hidden',
-    transform: [{perspective: 800}, {skewY: '-4deg'}],
+    transform: [{perspective: 800}, {skewY: '-3deg'}],
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.2,

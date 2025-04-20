@@ -1,7 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import {TouchableOpacity, StyleSheet, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors } from '../constants/colors';
+import {Colors} from '../constants/colors';
 
 type CategoryButtonProps = {
   title: string;
@@ -14,8 +14,8 @@ const iconMap: Record<string, string> = {
   All: 'grid',
   Road: 'bicycle',
   Path: 'roads',
-  Mountain: 'image-filter-hdr', 
-  Helmet: 'help-circle-outline'
+  Mountain: 'image-filter-hdr',
+  Helmet: 'help-circle-outline',
 };
 
 const CategoryButton: React.FC<CategoryButtonProps> = ({
@@ -25,13 +25,14 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
 }) => {
   return (
     <TouchableOpacity onPress={onPress}>
-      <View style={[
-        styles.container,
-        isActive ? styles.activeContainer : styles.inactiveContainer,
-      ]}>
-        <Icon 
-          name={iconMap[title] || 'circle'} 
-          size={24} 
+      <View
+        style={[
+          styles.container,
+          isActive ? styles.activeContainer : styles.inactiveContainer,
+        ]}>
+        <Icon
+          name={iconMap[title] || 'circle'}
+          size={30}
           color={isActive ? Colors.lightText : Colors.inactive}
         />
       </View>
@@ -41,12 +42,14 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 5,
+    marginBottom: 5,
     width: 60,
     height: 60,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ skewY: '-5deg' }],
+    transform: [{skewY: '-5deg'}],
   },
   activeContainer: {
     backgroundColor: Colors.primary,
@@ -56,4 +59,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CategoryButton; 
+export default CategoryButton;
