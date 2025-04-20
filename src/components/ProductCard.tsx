@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Product } from '../types';
-import { Colors } from '../constants/colors';
+import {Product} from '../types';
+import {Colors} from '../constants/colors';
 
 type ProductCardProps = {
   product: Product;
@@ -18,8 +18,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.skewContainer}>
-        <Image source={product.imageUri} style={styles.image} />
-        
+        <Image
+          source={product.imageUri}
+          style={styles.image}
+          resizeMode="contain"
+        />
+
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={onFavoritePress}>
@@ -29,7 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             color={product.isFavorite ? Colors.primary : Colors.lightText}
           />
         </TouchableOpacity>
-        
+
         <View style={styles.infoContainer}>
           <Text style={styles.type}>{product.type}</Text>
           <Text style={styles.brand}>{product.brand}</Text>
@@ -53,15 +57,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: Colors.cardBackground,
     overflow: 'hidden',
-    transform: [{ skewY: '-5deg' }],
+    transform: [{skewY: '-5deg'}],
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 10,
   },
   image: {
-    width: '70%',
+    width: '80%',
     height: 100,
     resizeMode: 'contain',
     alignSelf: 'center',
     marginTop: 10,
-    transform: [{ skewY: '5deg' }],
+    transform: [{skewY: '5deg'}],
   },
   favoriteButton: {
     position: 'absolute',
@@ -72,7 +84,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ skewY: '5deg' }],
+    transform: [{skewY: '5deg'}],
   },
   infoContainer: {
     padding: 12,
@@ -80,7 +92,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    transform: [{ skewY: '5deg' }],
+    transform: [{skewY: '5deg'}],
   },
   type: {
     fontSize: 12,
@@ -105,4 +117,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProductCard; 
+export default ProductCard;
