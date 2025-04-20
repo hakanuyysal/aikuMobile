@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
     width: '48%',
     height: 200,
     marginBottom: 16,
+    marginTop: 10,
   },
   skewContainer: {
     width: '100%',
@@ -58,6 +59,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBackground,
     overflow: 'hidden',
     transform: [{skewY: '-5deg'}],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   image: {
     width: '80%',
