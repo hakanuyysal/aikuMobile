@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 200,
-    marginVertical: 16,
+    marginVertical: 10,
   },
   skewContainer: {
     flex: 1,
@@ -46,21 +46,17 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
+    resizeMode: 'cover',
     transform: [{ skewY: '5deg' }],
   },
   discountContainer: {
     position: 'absolute',
     left: 20,
     bottom: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: Colors.discountBackground,
     transform: [{ skewY: '5deg' }],
   },
   discountText: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '700',
     color: Colors.lightText,
   },

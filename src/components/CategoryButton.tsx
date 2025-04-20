@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, TouchableOpacity, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
 
 type CategoryButtonProps = {
@@ -8,55 +9,50 @@ type CategoryButtonProps = {
   onPress: () => void;
 };
 
+// Kategori ikonları
+const iconMap: Record<string, string> = {
+  All: 'grid',
+  Road: 'bicycle',
+  Path: 'roads',
+  Mountain: 'image-filter-hdr', 
+  Helmet: 'help-circle-outline'
+};
+
 const CategoryButton: React.FC<CategoryButtonProps> = ({
   title,
   isActive = false,
   onPress,
 }) => {
   return (
-    <TouchableOpacity style={styles.outerContainer} onPress={onPress}>
+    <TouchableOpacity onPress={onPress}>
       <View style={[
         styles.container,
         isActive ? styles.activeContainer : styles.inactiveContainer,
       ]}>
-        <Text
-          style={[
-            styles.text,
-            isActive ? styles.activeText : styles.inactiveText,
-          ]}>
-          {title}
-        </Text>
+        <Icon 
+          name={iconMap[title] || 'circle'} 
+          size={24} 
+          color={isActive ? Colors.lightText : Colors.inactive}
+        />
       </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    marginRight: 8,
-  },
   container: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    width: 60,
+    height: 60,
     borderRadius: 12,
-    transform: [{ skewX: '-5deg' }],
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ skewY: '-5deg' }],
   },
   activeContainer: {
     backgroundColor: Colors.primary,
   },
   inactiveContainer: {
     backgroundColor: Colors.cardBackground,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: '500',
-    transform: [{ skewX: '5deg' }],
-  },
-  activeText: {
-    color: Colors.lightText,
-  },
-  inactiveText: {
-    color: Colors.inactive,
   },
 });
 

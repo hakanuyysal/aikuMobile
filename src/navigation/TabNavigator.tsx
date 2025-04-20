@@ -20,7 +20,15 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: Colors.tabBarBackground },
+        tabBarStyle: { 
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          elevation: 0,
+          shadowOpacity: 0,
+          borderTopWidth: 0,
+          height: 0,
+          zIndex: 0,
+        },
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.inactive,
       }}

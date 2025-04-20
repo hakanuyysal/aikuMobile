@@ -25,14 +25,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
           onPress={onFavoritePress}>
           <Icon
             name={product.isFavorite ? 'heart' : 'heart-outline'}
-            size={22}
+            size={24}
             color={product.isFavorite ? Colors.primary : Colors.lightText}
           />
         </TouchableOpacity>
         
         <View style={styles.infoContainer}>
           <Text style={styles.type}>{product.type}</Text>
-          <Text style={styles.name}>{product.brand} - {product.name}</Text>
+          <Text style={styles.brand}>{product.brand}</Text>
+          <Text style={styles.name}>- {product.name}</Text>
           <Text style={styles.price}>$ {product.price.toFixed(2)}</Text>
         </View>
       </View>
@@ -55,23 +56,30 @@ const styles = StyleSheet.create({
     transform: [{ skewY: '-5deg' }],
   },
   image: {
-    width: '100%',
-    height: 120,
+    width: '70%',
+    height: 100,
     resizeMode: 'contain',
+    alignSelf: 'center',
+    marginTop: 10,
     transform: [{ skewY: '5deg' }],
   },
   favoriteButton: {
     position: 'absolute',
     top: 10,
     right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ skewY: '5deg' }],
   },
   infoContainer: {
     padding: 12,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     transform: [{ skewY: '5deg' }],
   },
   type: {
@@ -79,14 +87,19 @@ const styles = StyleSheet.create({
     color: Colors.inactive,
     marginBottom: 4,
   },
-  name: {
-    fontSize: 14,
+  brand: {
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.lightText,
-    marginBottom: 8,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.lightText,
+    marginBottom: 4,
   },
   price: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: Colors.lightText,
   },

@@ -14,7 +14,8 @@ import CategoryButton from '../components/CategoryButton';
 import ProductCard from '../components/ProductCard';
 import FeaturedProduct from '../components/FeaturedProduct';
 
-const categories = ['All', 'Road', 'Mountain', 'Urban', 'Touring'];
+// Görsele uygun kategori butonları
+const categories = ['All', 'Road', 'Path', 'Mountain', 'Helmet'];
 
 const HomeScreen = () => {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -45,11 +46,13 @@ const HomeScreen = () => {
   };
 
   const renderCategoryButton = ({ item }: { item: string }) => (
-    <CategoryButton
-      title={item}
-      isActive={activeCategory === item}
-      onPress={() => handleCategoryPress(item)}
-    />
+    <View style={styles.categoryButtonWrapper}>
+      <CategoryButton
+        title={item}
+        isActive={activeCategory === item}
+        onPress={() => handleCategoryPress(item)}
+      />
+    </View>
   );
 
   const renderProductCard = ({ item }: { item: typeof products[0] }) => (
@@ -65,7 +68,9 @@ const HomeScreen = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Choose Your Bike</Text>
-          <SearchButton onPress={handleSearch} />
+          <View style={styles.searchContainer}>
+            <SearchButton onPress={handleSearch} />
+          </View>
         </View>
 
         <FeaturedProduct
@@ -74,15 +79,16 @@ const HomeScreen = () => {
           onPress={() => handleProductPress(products[0].id)}
         />
 
-        <FlatList
-          data={categories}
-          renderItem={renderCategoryButton}
-          keyExtractor={item => item}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesList}
-          contentContainerStyle={styles.categoriesContent}
-        />
+        <View style={styles.categoriesContainer}>
+          <FlatList
+            data={categories}
+            renderItem={renderCategoryButton}
+            keyExtractor={item => item}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContent}
+          />
+        </View>
 
         <FlatList
           data={products}
@@ -92,6 +98,7 @@ const HomeScreen = () => {
           columnWrapperStyle={styles.productRow}
           showsVerticalScrollIndicator={false}
           style={styles.productsList}
+          contentContainerStyle={styles.productsContent}
         />
       </View>
     </SafeAreaView>
@@ -102,11 +109,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingTop: Platform.OS === 'ios' ? 60 : 16, // iOS için dinamik island altında kalmaması için daha fazla padding
+    paddingTop: Platform.OS === 'ios' ? 40 : 16,
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -116,18 +124,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     color: Colors.lightText,
   },
-  categoriesList: {
-    marginVertical: 12,
+  searchContainer: {
+    transform: [{ skewY: '-5deg' }],
+    overflow: 'hidden',
+  },
+  categoriesContainer: {
+    marginVertical: 16,
   },
   categoriesContent: {
     paddingRight: 16,
+    justifyContent: 'space-between',
+  },
+  categoryButtonWrapper: {
+    marginRight: 12,
   },
   productsList: {
     flex: 1,
+  },
+  productsContent: {
+    paddingBottom: 120, // Yeni TabBar tasarımı için daha fazla boşluk
   },
   productRow: {
     justifyContent: 'space-between',
