@@ -5,6 +5,9 @@ import { View, Text } from 'react-native';
 import TabBar from '../components/TabBar';
 import { TabParamList } from '../types';
 import { Colors } from '../constants/colors';
+import MapScreen from '../screens/MapScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -35,10 +38,10 @@ const TabNavigator = () => {
       tabBar={props => <TabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Map" component={PlaceholderScreen} />
+      <Tab.Screen name="Message" component={PlaceholderScreen} />
       <Tab.Screen name="Cart" component={PlaceholderScreen} />
-      <Tab.Screen name="Profile" component={PlaceholderScreen} />
-      <Tab.Screen name="Orders" component={PlaceholderScreen} />
+      <Tab.Screen name="Map" component={MapScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

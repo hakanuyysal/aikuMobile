@@ -9,6 +9,7 @@ import {
 import {Surface, Text} from 'react-native-paper';
 import {Product} from '../types';
 import {Colors} from '../constants/colors';
+import LinearGradient from 'react-native-linear-gradient';
 
 type FeaturedProductProps = {
   product: Product;
@@ -27,24 +28,23 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
     <TouchableOpacity onPress={onPress} style={styles.container}>
       {/* Arka plan dekoratif şekli */}
       <View style={styles.backgroundShape} />
-
+      
       {/* Ana kart */}
       <Surface style={styles.cardContainer} elevation={4}>
-        {/* Resim içeren alan */}
-        <View style={styles.cardContent}>
-          <Image
-            source={require('../assets/images/bcycle.png')}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        </View>
+        <LinearGradient
+          colors={['white', '#4966A6']}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+          style={styles.gradientContainer}
+        >
 
-        {/* İndirim yazısı */}
-        <View style={styles.discountContainer}>
-          <Text variant="displaySmall" style={styles.discountText}>
-            {discount}
-          </Text>
-        </View>
+          {/* İndirim yazısı */}
+          <View style={styles.discountContainer}>
+            <Text variant="displaySmall" style={styles.discountText}>
+              {discount}
+            </Text>
+          </View>
+        </LinearGradient>
       </Surface>
     </TouchableOpacity>
   );
@@ -78,9 +78,8 @@ const styles = StyleSheet.create({
   cardContainer: {
     flex: 1,
     borderRadius: 15,
-    backgroundColor: Colors.cardBackground,
     overflow: 'hidden',
-    transform: [{perspective: 800}, {skewY: '-3deg'}],
+    transform: [{perspective: 800}, {skewY: '0deg'}],
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.2,
@@ -88,6 +87,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
     marginTop: 4,
+  },
+  gradientContainer: {
+    flex: 1,
+    borderRadius: 15,
+    padding: 0,
   },
   cardContent: {
     width: '100%',
@@ -112,7 +116,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Bold',
     marginBottom: -10,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
+    textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 10,
   },
 });

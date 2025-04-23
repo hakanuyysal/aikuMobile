@@ -1,21 +1,12 @@
 import React from 'react';
-import {TouchableOpacity, StyleSheet, View} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Colors} from '../constants/colors';
+import { TouchableOpacity, StyleSheet, Text, View } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { Colors } from '../constants/colors';
 
 type CategoryButtonProps = {
   title: string;
   isActive?: boolean;
   onPress: () => void;
-};
-
-// Kategori ikonları
-const iconMap: Record<string, string> = {
-  All: 'grid',
-  Road: 'bicycle',
-  Path: 'roads',
-  Mountain: 'image-filter-hdr',
-  Helmet: 'help-circle-outline',
 };
 
 const CategoryButton: React.FC<CategoryButtonProps> = ({
@@ -24,38 +15,44 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
   onPress,
 }) => {
   return (
-    <TouchableOpacity onPress={onPress}>
-      <View
+    <TouchableOpacity onPress={onPress} style={styles.buttonWrapper}>
+      <LinearGradient
+        colors={['white', '#4966A6']}
+        locations={[0, 0.3, 0.4, 0.7]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 3, y: 5 }}
         style={[
           styles.container,
-          isActive ? styles.activeContainer : styles.inactiveContainer,
-        ]}>
-        <Icon
-          name={iconMap[title] || 'circle'}
-          size={30}
-          color={isActive ? Colors.lightText : Colors.inactive}
-        />
-      </View>
+          { opacity: isActive ? 1 : 1 }, // İnaktif butonlar için opaklık
+        ]}
+      >
+        <Text
+          style={[
+            styles.text,
+            { color: isActive ? Colors.dark : Colors.inactive },
+          ]}
+        >
+          {title}
+        </Text>
+      </LinearGradient>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  buttonWrapper: {
+    marginRight: 12,
+  },
   container: {
-    marginTop: 5,
-    marginBottom: 5,
-    width: 60,
-    height: 60,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{skewY: '-5deg'}],
   },
-  activeContainer: {
-    backgroundColor: Colors.primary,
-  },
-  inactiveContainer: {
-    backgroundColor: Colors.cardBackground,
+  text: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

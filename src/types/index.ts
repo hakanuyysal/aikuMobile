@@ -13,5 +13,15 @@ export type TabParamList = {
   Map: undefined;
   Cart: undefined;
   Profile: undefined;
-  Orders: undefined;
-}; 
+  Message: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  UpdateProfile: { presentation: 'modal' };
+};
+
+export type UpdateProfileScreenProps = NativeStackScreenProps<
+  ProfileStackParamList,
+  'UpdateProfile'
+>;

@@ -1,23 +1,22 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Colors} from '../constants/colors';
-
+import { Colors } from '../constants/colors';
 type TabBarProps = {
   state: any;
   descriptors: any;
   navigation: any;
 };
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
+const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
   const iconMap: Record<string, string> = {
-    Home: 'bicycle',
+    Home: 'home-outline',
     Map: 'map-marker-outline',
-    Cart: 'home-outline',
+    Cart: 'credit-card-outline',
     Profile: 'account-outline',
-    Orders: 'clipboard-outline',
+    Message: 'message-badge-outline',
   };
 
   return (
@@ -25,7 +24,7 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
       <View style={styles.topShadow} />
       <View style={styles.container}>
         {state.routes.map((route: any, index: number) => {
-          const {options} = descriptors[route.key];
+          const { options } = descriptors[route.key];
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -36,16 +35,15 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate({name: route.name, merge: true});
+              navigation.navigate({ name: route.name, merge: true });
             }
           };
 
           return (
             <View key={index} style={styles.tabContainer}>
-              {isFocused && <View style={styles.activeShadow} />}
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={isFocused ? {selected: true} : {}}
+                accessibilityState={isFocused ? { selected: true } : {}}
                 accessibilityLabel={options.tabBarAccessibilityLabel}
                 testID={options.tabBarTestID}
                 onPress={onPress}
@@ -55,14 +53,14 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
                     <Icon
                       name={iconMap[route.name] || 'circle'}
                       color={Colors.lightText}
-                      size={30}
+                      size={25}
                     />
                   </View>
                 ) : (
                   <Icon
                     name={iconMap[route.name] || 'circle'}
                     color={Colors.inactive}
-                    size={28}
+                    size={25}
                   />
                 )}
               </TouchableOpacity>
@@ -76,11 +74,9 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
 
 const styles = StyleSheet.create({
   outerContainer: {
-    backgroundColor: 'rgba(26, 30, 41, 0.95)',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 15,
-    paddingBottom: 25,
+    backgroundColor: '#1A1E29', // Changed to fully opaque color
+    paddingTop: 10,
+    paddingBottom: 15,
     width: width,
     position: 'absolute',
     bottom: 0,
@@ -90,92 +86,68 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: -3,
+      height: -2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 10,
-    transform: [{perspective: 1000}, {skewY: '-2deg'}],
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 8,
   },
   topShadow: {
     position: 'absolute',
-    top: -15,
+    top: -10,
     left: 0,
     right: 0,
-    height: 15,
-    backgroundColor: 'transparent',
+    height: 10,
+    backgroundColor: '#1A1E29', // Match outerContainer to prevent transparency
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: -10,
+      height: -8,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 20,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 15,
   },
   container: {
     flexDirection: 'row',
     width: '100%',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    transform: [{skewY: '2deg'}],
   },
   tabContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 60,
+    height: 50,
     position: 'relative',
-  },
-  activeShadow: {
-    position: 'absolute',
-    top: -20,
-    width: 60,
-    height: 60,
-    borderRadius: 15,
-    backgroundColor: 'transparent',
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    elevation: 30,
-    transform: [{skewX: '-15deg'}],
   },
   tab: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   activeTab: {
     backgroundColor: Colors.primary,
-    borderRadius: 16,
-    marginTop: -25,
+    borderRadius: 12,
+    marginTop: -20,
     paddingTop: 0,
     paddingBottom: 0,
     paddingHorizontal: 0,
-    width: 58,
-    height: 58,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [
-      {translateY: -5},
-      {scale: 1.1},
-      {skewX: '-15deg'},
-      {skewY: '-8deg'},
-    ],
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 3,
     },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 10,
     borderWidth: 1,
-    elevation: 15,
+    borderColor: Colors.primary,
     overflow: 'hidden',
   },
   activeIconContainer: {
@@ -184,7 +156,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{skewX: '10deg'}],
+    transform: [{ skewX: '8deg' }],
   },
 });
 
