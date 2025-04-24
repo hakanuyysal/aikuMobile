@@ -14,7 +14,7 @@ import {DrawerNavigationProp} from '@react-navigation/drawer';
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.75;
 const CARD_SPACING = 12;
-const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2;
+const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2.5;
 
 interface PlanProps {
   title: string;
