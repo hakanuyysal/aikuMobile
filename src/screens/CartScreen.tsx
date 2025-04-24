@@ -160,8 +160,8 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>

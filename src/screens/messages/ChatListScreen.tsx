@@ -9,7 +9,6 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
@@ -64,7 +63,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     setTimeout(() => {
       setChats(mockChats);
       setRefreshing(false);
-    }, 1500);
+    }, 1000);
   }, []);
 
   const renderHeader = () => (
@@ -76,17 +75,6 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('CompanyList')}>
         <Icon name="create-outline" size={24} color={Colors.primary} />
       </TouchableOpacity>
-    </View>
-  );
-
-  const renderListHeader = () => (
-    <View style={styles.listHeader}>
-      {refreshing && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.loadingText}>Updating chats...</Text>
-        </View>
-      )}
     </View>
   );
 
@@ -121,8 +109,8 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
+      colors={['#1A1E29', '#1A1E29', '#3B82F730', '#3B82F715']}
+      locations={[0, 0.2, 0.5, 0.8]}
       start={{ x: 0, y: 0 }}
       end={{ x: 2, y: 1 }}
       style={styles.container}>
@@ -146,15 +134,16 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           keyExtractor={item => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          ListHeaderComponent={renderListHeader}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={Colors.primary}
               colors={[Colors.primary]}
-              progressBackgroundColor="rgba(255,255,255,0.1)"
-              progressViewOffset={20}
+              progressBackgroundColor="transparent"
+              progressViewOffset={-20}
+              style={{ position: 'absolute', top: -20 }}
             />
           }
         />
@@ -283,21 +272,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.inactive,
     lineHeight: 20,
-  },
-  listHeader: {
-    paddingVertical: 8,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  loadingText: {
-    color: Colors.primary,
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
   },
 });
 
