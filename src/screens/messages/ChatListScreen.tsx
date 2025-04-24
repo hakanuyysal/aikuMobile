@@ -9,10 +9,12 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface Chat {
   id: string;
@@ -62,7 +64,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     setTimeout(() => {
       setChats(mockChats);
       setRefreshing(false);
-    }, 1000);
+    }, 1500);
   }, []);
 
   const renderHeader = () => (
@@ -77,6 +79,17 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     </View>
   );
 
+  const renderListHeader = () => (
+    <View style={styles.listHeader}>
+      {refreshing && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={Colors.primary} />
+          <Text style={styles.loadingText}>Updating chats...</Text>
+        </View>
+      )}
+    </View>
+  );
+
   const renderItem = ({ item }: { item: Chat }) => (
     <TouchableOpacity
       style={styles.chatItem}
@@ -88,59 +101,74 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           style={styles.avatarImage} 
           resizeMode="contain"
         />
+        {item.unread > 0 && (
+          <View style={styles.unreadDot}>
+            <Text style={styles.unreadDotText}>{item.unread}</Text>
+          </View>
+        )}
       </View>
       <View style={styles.chatInfo}>
         <View style={styles.chatHeader}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.time}>{item.time}</Text>
         </View>
-        <View style={styles.messageRow}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-          {item.unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unread}</Text>
-            </View>
-          )}
-        </View>
+        <Text style={styles.lastMessage} numberOfLines={1}>
+          {item.lastMessage}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {renderHeader()}
-      <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search in chats"
-          placeholderTextColor={Colors.inactive}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search in chats"
+            placeholderTextColor={Colors.inactive}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <FlatList
+          data={chats.filter(chat =>
+            chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={renderListHeader}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+              progressBackgroundColor="rgba(255,255,255,0.1)"
+              progressViewOffset={20}
+            />
+          }
         />
-      </View>
-      <FlatList
-        data={chats.filter(chat =>
-          chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      />
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -167,12 +195,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     margin: 16,
-    paddingHorizontal: 12,
+    marginBottom: 8,
+    paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
     marginRight: 8,
@@ -191,66 +220,84 @@ const styles = StyleSheet.create({
   },
   chatItem: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: Colors.cardBackground,
-    marginBottom: 8,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFFFFF',
-    padding: 5,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 24,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: Colors.primary,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1A1E29',
+  },
+  unreadDotText: {
+    color: Colors.lightText,
+    fontSize: 11,
+    fontWeight: '600',
   },
   chatInfo: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: 'center',
   },
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.lightText,
+    letterSpacing: 0.3,
   },
   time: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.inactive,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   lastMessage: {
     fontSize: 14,
     color: Colors.inactive,
-    flex: 1,
-    marginRight: 8,
+    lineHeight: 20,
   },
-  unreadBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
+  listHeader: {
+    paddingVertical: 8,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
   },
-  unreadText: {
-    color: Colors.lightText,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 6,
+  loadingText: {
+    color: Colors.primary,
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {Colors} from '../../constants/colors';
 import {CompanyListScreenProps} from '../../types';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface Company {
   id: string;
@@ -79,40 +80,49 @@ const CompanyListScreen = ({navigation}: CompanyListScreenProps) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {renderHeader()}
-      <View style={styles.searchContainer}>
-        <Icon
-          name="search"
-          size={20}
-          color={Colors.lightText}
-          style={styles.searchIcon}
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
+        <View style={styles.searchContainer}>
+          <Icon
+            name="search"
+            size={20}
+            color={Colors.lightText}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search companies"
+            placeholderTextColor={Colors.inactive}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <FlatList
+          data={mockCompanies.filter(company =>
+            company.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
         />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search companies"
-          placeholderTextColor={Colors.inactive}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-      <FlatList
-        data={mockCompanies.filter(company =>
-          company.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        )}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-      />
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

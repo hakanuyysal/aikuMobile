@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatDetailScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface Message {
   id: string;
@@ -91,54 +92,63 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {renderHeader()}
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-      >
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          style={styles.messageList}
-          contentContainerStyle={styles.messageListContent}
-          inverted={false}
-          showsVerticalScrollIndicator={false}
-        />
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type a message..."
-            placeholderTextColor={Colors.inactive}
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            maxLength={1000}
-            returnKeyType="send"
-            onSubmitEditing={handleSendMessage}
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+        >
+          <FlatList
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.id}
+            style={styles.messageList}
+            contentContainerStyle={styles.messageListContent}
+            inverted={false}
+            showsVerticalScrollIndicator={false}
           />
-          <TouchableOpacity
-            style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={!message.trim()}>
-            <Icon
-              name="send"
-              size={24}
-              color={message.trim() ? Colors.primary : Colors.inactive}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type a message..."
+              placeholderTextColor={Colors.inactive}
+              value={message}
+              onChangeText={setMessage}
+              multiline
+              maxLength={1000}
+              returnKeyType="send"
+              onSubmitEditing={handleSendMessage}
             />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <TouchableOpacity
+              style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+              onPress={handleSendMessage}
+              disabled={!message.trim()}>
+              <Icon
+                name="send"
+                size={24}
+                color={message.trim() ? Colors.primary : Colors.inactive}
+              />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   keyboardAvoid: {
     flex: 1,
