@@ -146,7 +146,7 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
         <TouchableOpacity
           style={styles.menuButton}
           onPress={() => navigation.openDrawer()}>
-          <Icon name="menu" size={24} color={Colors.lightText} />
+          <Icon name="menu" size={30} color={Colors.lightText} />
         </TouchableOpacity>
         <View style={styles.toggle}>
           <TouchableOpacity
