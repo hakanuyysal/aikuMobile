@@ -7,7 +7,7 @@ import { TabParamList } from '../types';
 import { Colors } from '../constants/colors';
 import MapScreen from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-
+import CartScreen from '../screens/CartScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -39,7 +39,13 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Message" component={PlaceholderScreen} />
-      <Tab.Screen name="Cart" component={PlaceholderScreen} />
+      <Tab.Screen 
+        name="Cart" 
+        component={CartScreen}
+        options={{
+          title: 'Abonelikler'
+        }}
+      />
       <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

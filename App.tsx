@@ -1,11 +1,11 @@
 import React from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar, View, StyleSheet, LogBox } from 'react-native';
-import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import {NavigationContainer, DarkTheme} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {StatusBar, View, StyleSheet, LogBox} from 'react-native';
+import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
-import { Colors } from './src/constants/colors';
-import UpdateProfileScreen from './src/screens/UpdateProfileScreen'; // 👈 Modal olarak açılacak ekran
+import {Colors} from './src/constants/colors';
+import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 
 const RootStack = createNativeStackNavigator();
 
@@ -54,7 +54,7 @@ function App(): React.JSX.Element {
             <RootStack.Screen
               name="Main"
               component={TabNavigator}
-              options={{ headerShown: false }}
+              options={{headerShown: false}}
             />
             <RootStack.Screen
               name="UpdateProfile"
@@ -62,7 +62,7 @@ function App(): React.JSX.Element {
               options={{
                 presentation: 'modal',
                 title: 'Edit Profile',
-                headerStyle: { backgroundColor: Colors.cardBackground },
+                headerStyle: {backgroundColor: Colors.cardBackground},
                 headerTintColor: Colors.lightText,
               }}
             />
