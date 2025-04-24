@@ -81,7 +81,6 @@ const PlanCard: React.FC<PlanProps> = ({
       {isYearly && title !== 'Startup Plan' && (
         <Text style={styles.trial}>+3 months free with annual plan!</Text>
       )}
-      <Text style={styles.description}>{subtitle}</Text>
       {features.map((feature, idx) => (
         <Text key={idx} style={styles.feature}>
           • {feature}
@@ -279,7 +278,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 27,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 12,
     color: Colors.lightText,
   },
   period: {
