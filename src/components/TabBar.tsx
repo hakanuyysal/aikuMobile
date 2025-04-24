@@ -14,7 +14,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
   const iconMap: Record<string, string> = {
     Home: 'home-outline',
     Map: 'map-marker-outline',
-    Cart: 'credit-card-outline',
+    Cart: 'crown-outline',
     Profile: 'account-outline',
     Message: 'message-badge-outline',
   };
