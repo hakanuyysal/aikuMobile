@@ -1,16 +1,20 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors } from '../constants/colors';
-type TabBarProps = {
-  state: any;
-  descriptors: any;
-  navigation: any;
-};
+import {Colors} from '../constants/colors';
+import {useRoute} from '@react-navigation/native';
+import {TabBarProps} from '../types';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
-const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
+const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
+  const route = useRoute();
+
+  // ChatDetail ekranındaysa TabBar'ı gizle
+  if (route.name === 'ChatDetail') {
+    return null;
+  }
+
   const iconMap: Record<string, string> = {
     Home: 'home-outline',
     Map: 'map-marker-outline',
@@ -24,7 +28,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
       <View style={styles.topShadow} />
       <View style={styles.container}>
         {state.routes.map((route: any, index: number) => {
-          const { options } = descriptors[route.key];
+          const {options} = descriptors[route.key];
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -35,7 +39,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate({ name: route.name, merge: true });
+              navigation.navigate(route.name, {merge: true});
             }
           };
 
@@ -43,7 +47,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
             <View key={index} style={styles.tabContainer}>
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
+                accessibilityState={isFocused ? {selected: true} : {}}
                 accessibilityLabel={options.tabBarAccessibilityLabel}
                 testID={options.tabBarTestID}
                 onPress={onPress}
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ skewX: '8deg' }],
+    transform: [{skewX: '8deg'}],
   },
 });
 

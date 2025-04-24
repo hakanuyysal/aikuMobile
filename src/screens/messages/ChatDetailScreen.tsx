@@ -52,6 +52,20 @@ const mockMessages: Message[] = [
 const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
   const { name } = route.params;
   const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
+
+  const handleSendMessage = () => {
+    if (message.trim()) {
+      const newMessage: Message = {
+        id: (messages.length + 1).toString(),
+        text: message.trim(),
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        sender: 'me',
+      };
+      setMessages([...messages, newMessage]);
+      setMessage('');
+    }
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -87,12 +101,13 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
         <FlatList
-          data={mockMessages}
+          data={messages}
           renderItem={renderMessage}
           keyExtractor={item => item.id}
           style={styles.messageList}
           contentContainerStyle={styles.messageListContent}
           inverted={false}
+          showsVerticalScrollIndicator={false}
         />
         <View style={styles.inputContainer}>
           <TouchableOpacity style={styles.attachButton}>
@@ -105,9 +120,20 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
             value={message}
             onChangeText={setMessage}
             multiline
+            maxLength={1000}
+            returnKeyType="send"
+            onSubmitEditing={handleSendMessage}
           />
-          <TouchableOpacity style={styles.sendButton}>
-            <Icon name="send" size={24} color={Colors.primary} />
+          <TouchableOpacity 
+            style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+            onPress={handleSendMessage}
+            disabled={!message.trim()}
+          >
+            <Icon 
+              name="send" 
+              size={24} 
+              color={message.trim() ? Colors.primary : Colors.inactive} 
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -211,9 +237,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     maxHeight: 100,
     color: Colors.lightText,
+    fontSize: 16,
   },
   sendButton: {
     padding: 8,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });
 

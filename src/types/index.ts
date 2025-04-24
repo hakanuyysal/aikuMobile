@@ -1,4 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NavigationState, ParamListBase } from '@react-navigation/native';
+import { StackScreenProps } from '@react-navigation/stack';
+import { NavigationProp } from '@react-navigation/native';
 
 export interface Product {
   id: string;
@@ -15,13 +18,13 @@ export type TabParamList = {
   Map: undefined;
   Cart: undefined;
   Profile: undefined;
-  Message: undefined;
+  Message: { state?: NavigationState };
 };
 
 export type MessageStackParamList = {
   ChatList: undefined;
   ChatDetail: { chatId: string; name: string };
-};
+} & ParamListBase;
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
@@ -33,12 +36,18 @@ export type UpdateProfileScreenProps = NativeStackScreenProps<
   'UpdateProfile'
 >;
 
-export type ChatListScreenProps = NativeStackScreenProps<
+export type ChatListScreenProps = StackScreenProps<
   MessageStackParamList,
   'ChatList'
 >;
 
-export type ChatDetailScreenProps = NativeStackScreenProps<
+export type ChatDetailScreenProps = StackScreenProps<
   MessageStackParamList,
   'ChatDetail'
 >;
+
+export interface TabBarProps {
+  state: NavigationState;
+  descriptors: Record<string, any>;
+  navigation: NavigationProp<ParamListBase>;
+}
