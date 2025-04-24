@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   Dimensions,
   Animated,
+  SafeAreaView,
 } from 'react-native';
 import {Colors} from '../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
+import LinearGradient from 'react-native-linear-gradient';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.75;
@@ -54,17 +56,22 @@ const PlanCard: React.FC<PlanProps> = ({
 
   const opacity = scrollX.interpolate({
     inputRange,
-    outputRange: [0.6, 1, 0.6],
+    outputRange: [0.75, 1, 0.75],
   });
 
   const rotateY = scrollX.interpolate({
     inputRange,
-    outputRange: ['10deg', '0deg', '-10deg'],
+    outputRange: ['25deg', '0deg', '-25deg'],
   });
 
   const translateY = scrollX.interpolate({
     inputRange,
-    outputRange: [20, 0, 20],
+    outputRange: [30, 0, 30],
+  });
+
+  const translateX = scrollX.interpolate({
+    inputRange,
+    outputRange: [-15, 0, 15],
   });
 
   return (
@@ -78,7 +85,8 @@ const PlanCard: React.FC<PlanProps> = ({
             {scale},
             {rotateY},
             {translateY},
-            {perspective: 1000},
+            {translateX},
+            {perspective: 1500},
           ],
           opacity,
         },
@@ -149,70 +157,90 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
   ];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color={Colors.lightText} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Subscriptions</Text>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => navigation.openDrawer()}>
-          <Icon name="menu" size={30} color={Colors.lightText} />
-        </TouchableOpacity>
-        <View style={styles.toggle}>
-          <TouchableOpacity
-            style={[styles.toggleButton, !isYearly && styles.toggleActive]}
-            onPress={() => setIsYearly(false)}>
-            <Text
-              style={[styles.toggleText, !isYearly && styles.toggleTextActive]}>
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleButton, isYearly && styles.toggleActive]}
-            onPress={() => setIsYearly(true)}>
-            <Text
-              style={[styles.toggleText, isYearly && styles.toggleTextActive]}>
-              Yearly
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.gradientBackground}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}>
+              <Icon name="chevron-back" size={24} color={Colors.lightText} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Subscriptions</Text>
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={() => navigation.openDrawer()}>
+              <Icon name="menu" size={30} color={Colors.lightText} />
+            </TouchableOpacity>
+            <View style={styles.toggle}>
+              <TouchableOpacity
+                style={[styles.toggleButton, !isYearly && styles.toggleActive]}
+                onPress={() => setIsYearly(false)}>
+                <Text
+                  style={[
+                    styles.toggleText,
+                    !isYearly && styles.toggleTextActive,
+                  ]}>
+                  Monthly
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, isYearly && styles.toggleActive]}
+                onPress={() => setIsYearly(true)}>
+                <Text
+                  style={[
+                    styles.toggleText,
+                    isYearly && styles.toggleTextActive,
+                  ]}>
+                  Yearly
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      <Animated.ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        snapToInterval={CARD_WIDTH}
-        decelerationRate="fast"
-        onScroll={Animated.event(
-          [{nativeEvent: {contentOffset: {x: scrollX}}}],
-          {useNativeDriver: true},
-        )}
-        scrollEventThrottle={16}>
-        {plans.map((plan, index) => (
-          <PlanCard
-            key={index}
-            {...plan}
-            isYearly={isYearly}
-            index={index}
-            scrollX={scrollX}
-          />
-        ))}
-      </Animated.ScrollView>
-    </View>
+          <Animated.ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            snapToInterval={CARD_WIDTH}
+            decelerationRate="fast"
+            onScroll={Animated.event(
+              [{nativeEvent: {contentOffset: {x: scrollX}}}],
+              {useNativeDriver: true},
+            )}
+            scrollEventThrottle={16}>
+            {plans.map((plan, index) => (
+              <PlanCard
+                key={index}
+                {...plan}
+                isYearly={isYearly}
+                index={index}
+                scrollX={scrollX}
+              />
+            ))}
+          </Animated.ScrollView>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientBackground: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
   container: {
     marginTop: 10,
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     padding: 15,
@@ -265,22 +293,23 @@ const styles = StyleSheet.create({
   },
   planCard: {
     marginTop: 50,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 24,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 15,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 15,
     height: SCREEN_WIDTH * 0.9,
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: `${Colors.cardBackground}ee`,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: `${Colors.cardBackground}dd`,
+    backdropFilter: 'blur(10px)',
   },
   subtitle: {
     color: Colors.inactive,
@@ -328,9 +357,17 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.primary,
     borderRadius: 25,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     marginTop: 30,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
   },
   buttonText: {
     color: Colors.lightText,
