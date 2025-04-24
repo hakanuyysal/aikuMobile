@@ -49,12 +49,22 @@ const PlanCard: React.FC<PlanProps> = ({
 
   const scale = scrollX.interpolate({
     inputRange,
-    outputRange: [0.9, 1.1, 0.9],
+    outputRange: [0.85, 1.1, 0.85],
   });
 
   const opacity = scrollX.interpolate({
     inputRange,
-    outputRange: [0.7, 1, 0.7],
+    outputRange: [0.6, 1, 0.6],
+  });
+
+  const rotateY = scrollX.interpolate({
+    inputRange,
+    outputRange: ['10deg', '0deg', '-10deg'],
+  });
+
+  const translateY = scrollX.interpolate({
+    inputRange,
+    outputRange: [20, 0, 20],
   });
 
   return (
@@ -64,7 +74,12 @@ const PlanCard: React.FC<PlanProps> = ({
         {
           width: CARD_WIDTH,
           marginHorizontal: CARD_SPACING / 2,
-          transform: [{scale}],
+          transform: [
+            {scale},
+            {rotateY},
+            {translateY},
+            {perspective: 1000},
+          ],
           opacity,
         },
       ]}>
@@ -250,19 +265,22 @@ const styles = StyleSheet.create({
   },
   planCard: {
     marginTop: 50,
-    backgroundColor: Colors.cardBackground,
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 8,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
     height: SCREEN_WIDTH * 0.9,
     overflow: 'hidden',
+    backfaceVisibility: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: `${Colors.cardBackground}ee`,
   },
   subtitle: {
     color: Colors.inactive,
