@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontSize: 25,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
     color: Colors.lightText,
