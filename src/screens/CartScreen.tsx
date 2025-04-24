@@ -8,6 +8,8 @@ import {
   Animated,
 } from 'react-native';
 import {Colors} from '../constants/colors';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {DrawerNavigationProp} from '@react-navigation/drawer';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.75;
@@ -22,6 +24,10 @@ interface PlanProps {
   isYearly?: boolean;
   index: number;
   scrollX: Animated.Value;
+}
+
+interface CartScreenProps {
+  navigation: DrawerNavigationProp<any>;
 }
 
 const PlanCard: React.FC<PlanProps> = ({
@@ -67,8 +73,8 @@ const PlanCard: React.FC<PlanProps> = ({
       <Text style={styles.price}>
         ${isYearly ? yearlyPrice : price}
         <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
+        {isYearly && <Text style={styles.discount}> (10% off)</Text>}
       </Text>
-      {isYearly && <Text style={styles.discount}>(10% off)</Text>}
       {title === 'Startup Plan' && (
         <Text style={styles.trial}>6 month free trial!</Text>
       )}
@@ -88,7 +94,7 @@ const PlanCard: React.FC<PlanProps> = ({
   );
 };
 
-const CartScreen: React.FC = () => {
+const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
   const [isYearly, setIsYearly] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -131,7 +137,17 @@ const CartScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}>
+          <Icon name="chevron-back" size={24} color={Colors.lightText} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Subscriptions</Text>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => navigation.openDrawer()}>
+          <Icon name="menu" size={24} color={Colors.lightText} />
+        </TouchableOpacity>
         <View style={styles.toggle}>
           <TouchableOpacity
             style={[styles.toggleButton, !isYearly && styles.toggleActive]}
@@ -180,13 +196,20 @@ const CartScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 20 ,
+    marginTop: 10,
     flex: 1,
     backgroundColor: Colors.background,
   },
   header: {
-    padding: 20,
+    padding: 15,
     alignItems: 'center',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: 20,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 24,
@@ -194,12 +217,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: Colors.lightText,
   },
+  menuButton: {
+    position: 'absolute',
+    right: 20,
+    top: 20,
+    zIndex: 1,
+  },
   toggle: {
     flexDirection: 'row',
     backgroundColor: Colors.cardBackground,
     borderRadius: 25,
     padding: 4,
     marginBottom: 20,
+    marginTop: 10,
   },
   toggleButton: {
     paddingVertical: 8,
@@ -275,7 +305,7 @@ const styles = StyleSheet.create({
   feature: {
     fontSize: 14,
     marginBottom: 6,
-    marginTop: 3,
+    marginTop: 2,
     color: Colors.lightText,
   },
   button: {
@@ -283,7 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingVertical: 10,
     alignItems: 'center',
-    marginTop: 35,
+    marginTop: 30,
   },
   buttonText: {
     color: Colors.lightText,
