@@ -8,6 +8,7 @@ import {
   Image,
   TextInput,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
@@ -27,15 +28,15 @@ const mockChats: Chat[] = [
   {
     id: '1',
     name: 'Merge Turk Gold',
-    lastMessage: 'Merhaba, nasılsın?',
+    lastMessage: 'Please review the latest gold prices',
     time: '14:30',
     avatar: 'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
     unread: 2,
   },
   {
     id: '2',
-    name: 'Aloha Dijital',
-    lastMessage: 'Toplantı saat 15:00\'da',
+    name: 'Aloha Digital',
+    lastMessage: 'Meeting scheduled for 3 PM',
     time: '12:45',
     avatar: 'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
     unread: 0,
@@ -43,8 +44,8 @@ const mockChats: Chat[] = [
   {
     id: '3',
     name: 'Turkau Mining',
-    lastMessage: 'Tamam, görüşürüz!',
-    time: 'Dün',
+    lastMessage: 'Project update: Mining operations',
+    time: 'Yesterday',
     avatar: 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
     unread: 1,
   },
@@ -52,13 +53,24 @@ const mockChats: Chat[] = [
 
 const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [chats, setChats] = useState<Chat[]>(mockChats);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    // Simulate API call
+    setTimeout(() => {
+      setChats(mockChats);
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Mesajlar</Text>
+      <Text style={styles.headerTitle}>Messages</Text>
       <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('CompanyList')}>
         <Icon name="create-outline" size={24} color={Colors.primary} />
       </TouchableOpacity>
@@ -103,20 +115,23 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
         <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Sohbetlerde ara"
+          placeholder="Search in chats"
           placeholderTextColor={Colors.inactive}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
       <FlatList
-        data={mockChats.filter(chat =>
+        data={chats.filter(chat =>
           chat.name.toLowerCase().includes(searchQuery.toLowerCase())
         )}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         style={styles.list}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </SafeAreaView>
   );

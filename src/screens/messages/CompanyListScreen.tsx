@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Colors } from '../../constants/colors';
-import { CompanyListScreenProps } from '../../types';
+import {Colors} from '../../constants/colors';
+import {CompanyListScreenProps} from '../../types';
 
 interface Company {
   id: string;
@@ -24,48 +24,51 @@ const mockCompanies: Company[] = [
   {
     id: '1',
     name: 'Merge Turk Gold',
-    avatar: 'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
+    avatar:
+      'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
   },
   {
     id: '2',
     name: 'Aloha Dijital',
-    avatar: 'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
+    avatar:
+      'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
   },
   {
     id: '3',
     name: 'Turkau Mining',
-    avatar: 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
+    avatar:
+      'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
   },
 ];
 
-const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
+const CompanyListScreen = ({navigation}: CompanyListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Yeni Mesaj</Text>
+      <Text style={styles.headerTitle}>Select Company</Text>
       <View style={styles.headerButton} />
     </View>
   );
 
-  const renderItem = ({ item }: { item: Company }) => (
+  const renderItem = ({item}: {item: Company}) => (
     <TouchableOpacity
       style={styles.companyItem}
       onPress={() => {
-        // Yeni sohbet başlat ve ChatDetail ekranına yönlendir
-        navigation.navigate('ChatDetail', { 
+        navigation.navigate('ChatDetail', {
           chatId: item.id,
           name: item.name,
         });
-      }}
-    >
+      }}>
       <View style={styles.avatar}>
-        <Image 
-          source={{ uri: item.avatar }} 
-          style={styles.avatarImage} 
+        <Image
+          source={{uri: item.avatar}}
+          style={styles.avatarImage}
           resizeMode="contain"
         />
       </View>
@@ -79,10 +82,15 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     <SafeAreaView style={styles.container}>
       {renderHeader()}
       <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+        <Icon
+          name="search"
+          size={20}
+          color={Colors.lightText}
+          style={styles.searchIcon}
+        />
         <TextInput
           style={styles.searchInput}
-          placeholder="Şirket ara"
+          placeholder="Search companies"
           placeholderTextColor={Colors.inactive}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -90,7 +98,7 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       </View>
       <FlatList
         data={mockCompanies.filter(company =>
-          company.name.toLowerCase().includes(searchQuery.toLowerCase())
+          company.name.toLowerCase().includes(searchQuery.toLowerCase()),
         )}
         renderItem={renderItem}
         keyExtractor={item => item.id}
@@ -112,7 +120,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.cardBackground,
   },
   headerTitle: {
     fontSize: 20,
@@ -186,4 +193,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CompanyListScreen; 
+export default CompanyListScreen;

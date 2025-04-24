@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Dimensions, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import {useRoute} from '@react-navigation/native';
@@ -21,6 +21,14 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
     Cart: 'crown-outline',
     Profile: 'account-outline',
     Message: 'message-badge-outline',
+  };
+
+  const labelMap: Record<string, string> = {
+    Home: 'Home',
+    Map: 'Maps',
+    Cart: 'Premium',
+    Profile: 'Profile',
+    Message: 'Messages',
   };
 
   return (
@@ -61,11 +69,14 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
                     />
                   </View>
                 ) : (
-                  <Icon
-                    name={iconMap[route.name] || 'circle'}
-                    color={Colors.inactive}
-                    size={25}
-                  />
+                  <>
+                    <Icon
+                      name={iconMap[route.name] || 'circle'}
+                      color={Colors.inactive}
+                      size={25}
+                    />
+                    <Text style={styles.label}>{labelMap[route.name]}</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -161,6 +172,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     transform: [{skewX: '8deg'}],
+  },
+  label: {
+    color: Colors.inactive,
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

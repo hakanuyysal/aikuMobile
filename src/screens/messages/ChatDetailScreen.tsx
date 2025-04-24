@@ -25,27 +25,27 @@ interface Message {
 const mockMessages: Message[] = [
   {
     id: '1',
-    text: 'Merhaba, nasılsın?',
+    text: 'Hello! I would like to inquire about your latest gold investment packages.',
     time: '14:30',
-    sender: 'other',
+    sender: 'me',
   },
   {
     id: '2',
-    text: 'İyiyim, teşekkür ederim. Sen nasılsın?',
+    text: 'Of course! We currently have several investment options available. Would you like me to share our current rates?',
     time: '14:31',
-    sender: 'me',
-  },
-  {
-    id: '3',
-    text: 'Ben de iyiyim. Bugün hava çok güzel!',
-    time: '14:32',
     sender: 'other',
   },
   {
-    id: '4',
-    text: 'Evet, gerçekten öyle. Dışarı çıkmayı düşünüyor musun?',
-    time: '14:33',
+    id: '3',
+    text: 'Yes, please. I\'m particularly interested in long-term investment opportunities.',
+    time: '14:32',
     sender: 'me',
+  },
+  {
+    id: '4',
+    text: 'Perfect! Our most popular long-term package offers a competitive rate of 8% annually with a minimum investment period of 2 years. Would you like more details?',
+    time: '14:33',
+    sender: 'other',
   },
 ];
 
@@ -110,7 +110,7 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Mesaj yazın..."
+            placeholder="Type a message..."
             placeholderTextColor={Colors.inactive}
             value={message}
             onChangeText={setMessage}
@@ -119,15 +119,14 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
             returnKeyType="send"
             onSubmitEditing={handleSendMessage}
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
             onPress={handleSendMessage}
-            disabled={!message.trim()}
-          >
-            <Icon 
-              name="send" 
-              size={24} 
-              color={message.trim() ? Colors.primary : Colors.inactive} 
+            disabled={!message.trim()}>
+            <Icon
+              name="send"
+              size={24}
+              color={message.trim() ? Colors.primary : Colors.inactive}
             />
           </TouchableOpacity>
         </View>
@@ -150,13 +149,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.cardBackground,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
     color: Colors.lightText,
   },
