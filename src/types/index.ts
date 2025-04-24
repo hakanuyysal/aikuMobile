@@ -24,6 +24,7 @@ export type TabParamList = {
 export type MessageStackParamList = {
   ChatList: undefined;
   ChatDetail: { chatId: string; name: string };
+  CompanyList: undefined;
 } & ParamListBase;
 
 export type ProfileStackParamList = {
@@ -44,6 +45,11 @@ export type ChatListScreenProps = StackScreenProps<
 export type ChatDetailScreenProps = StackScreenProps<
   MessageStackParamList,
   'ChatDetail'
+>;
+
+export type CompanyListScreenProps = StackScreenProps<
+  MessageStackParamList,
+  'CompanyList'
 >;
 
 export interface TabBarProps {

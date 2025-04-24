@@ -10,47 +10,35 @@ import {
   SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ChatListScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
+import { CompanyListScreenProps } from '../../types';
 
-interface Chat {
+interface Company {
   id: string;
   name: string;
-  lastMessage: string;
-  time: string;
   avatar: string;
-  unread: number;
 }
 
-// Mock data
-const mockChats: Chat[] = [
+// Mock şirket verileri
+const mockCompanies: Company[] = [
   {
     id: '1',
     name: 'Merge Turk Gold',
-    lastMessage: 'Merhaba, nasılsın?',
-    time: '14:30',
     avatar: 'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
-    unread: 2,
   },
   {
     id: '2',
     name: 'Aloha Dijital',
-    lastMessage: 'Toplantı saat 15:00\'da',
-    time: '12:45',
     avatar: 'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
-    unread: 0,
   },
   {
     id: '3',
     name: 'Turkau Mining',
-    lastMessage: 'Tamam, görüşürüz!',
-    time: 'Dün',
     avatar: 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
-    unread: 1,
   },
 ];
 
-const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
+const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const renderHeader = () => (
@@ -58,17 +46,21 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Mesajlar</Text>
-      <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('CompanyList')}>
-        <Icon name="create-outline" size={24} color={Colors.primary} />
-      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Yeni Mesaj</Text>
+      <View style={styles.headerButton} />
     </View>
   );
 
-  const renderItem = ({ item }: { item: Chat }) => (
+  const renderItem = ({ item }: { item: Company }) => (
     <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => navigation.navigate('ChatDetail', { chatId: item.id, name: item.name })}
+      style={styles.companyItem}
+      onPress={() => {
+        // Yeni sohbet başlat ve ChatDetail ekranına yönlendir
+        navigation.navigate('ChatDetail', { 
+          chatId: item.id,
+          name: item.name,
+        });
+      }}
     >
       <View style={styles.avatar}>
         <Image 
@@ -77,21 +69,8 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           resizeMode="contain"
         />
       </View>
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
-        <View style={styles.messageRow}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-          {item.unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unread}</Text>
-            </View>
-          )}
-        </View>
+      <View style={styles.companyInfo}>
+        <Text style={styles.name}>{item.name}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -103,15 +82,15 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
         <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Sohbetlerde ara"
+          placeholder="Şirket ara"
           placeholderTextColor={Colors.inactive}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
       <FlatList
-        data={mockChats.filter(chat =>
-          chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        data={mockCompanies.filter(company =>
+          company.name.toLowerCase().includes(searchQuery.toLowerCase())
         )}
         renderItem={renderItem}
         keyExtractor={item => item.id}
@@ -133,6 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: Colors.cardBackground,
   },
   headerTitle: {
     fontSize: 20,
@@ -174,7 +154,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
   },
-  chatItem: {
+  companyItem: {
     flexDirection: 'row',
     padding: 12,
     backgroundColor: Colors.cardBackground,
@@ -194,49 +174,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  chatInfo: {
+  companyInfo: {
     flex: 1,
     marginLeft: 12,
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    justifyContent: 'center',
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.lightText,
   },
-  time: {
-    fontSize: 14,
-    color: Colors.inactive,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  lastMessage: {
-    fontSize: 14,
-    color: Colors.inactive,
-    flex: 1,
-    marginRight: 8,
-  },
-  unreadBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  unreadText: {
-    color: Colors.lightText,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-  },
 });
 
-export default ChatListScreen; 
+export default CompanyListScreen; 

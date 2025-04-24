@@ -11,6 +11,7 @@ import CartScreen from '../screens/CartScreen';
 import ChatListScreen from '../screens/messages/ChatListScreen';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import ChatDetailScreen from '../screens/messages/ChatDetailScreen';
+import CompanyListScreen from '../screens/messages/CompanyListScreen';
 import { NavigationState } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -21,6 +22,7 @@ const MessageNavigator = () => {
     <MessageStack.Navigator screenOptions={{headerShown: false}}>
       <MessageStack.Screen name="ChatList" component={ChatListScreen} />
       <MessageStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+      <MessageStack.Screen name="CompanyList" component={CompanyListScreen} />
     </MessageStack.Navigator>
   );
 };

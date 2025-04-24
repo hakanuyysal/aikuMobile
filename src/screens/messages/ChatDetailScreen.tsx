@@ -73,9 +73,7 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{name}</Text>
-      <TouchableOpacity style={styles.headerButton}>
-        <Icon name="ellipsis-horizontal" size={24} color={Colors.primary} />
-      </TouchableOpacity>
+      <View style={styles.headerButton} />
     </View>
   );
 
@@ -110,9 +108,6 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
           showsVerticalScrollIndicator={false}
         />
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Icon name="add-circle-outline" size={24} color={Colors.primary} />
-          </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder="Mesaj yazın..."
@@ -224,9 +219,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBackground,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-  },
-  attachButton: {
-    padding: 8,
   },
   input: {
     flex: 1,
