@@ -8,15 +8,21 @@ import { Colors } from '../constants/colors';
 import MapScreen from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CartScreen from '../screens/CartScreen';
+import ChatListScreen from '../screens/messages/ChatListScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ChatDetailScreen from '../screens/messages/ChatDetailScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
+const MessageStack = createNativeStackNavigator();
 
-// Geçici placeholder ekranlar
-const PlaceholderScreen = ({ route }: any) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-    <Text style={{ color: Colors.lightText }}>{route.name} Ekranı</Text>
-  </View>
-);
+const MessageNavigator = () => {
+  return (
+    <MessageStack.Navigator screenOptions={{ headerShown: false }}>
+      <MessageStack.Screen name="ChatList" component={ChatListScreen} />
+      <MessageStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </MessageStack.Navigator>
+  );
+};
 
 const TabNavigator = () => {
   return (
@@ -38,7 +44,7 @@ const TabNavigator = () => {
       tabBar={props => <TabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Message" component={PlaceholderScreen} />
+      <Tab.Screen name="Message" component={MessageNavigator} />
       <Tab.Screen 
         name="Cart" 
         component={CartScreen}

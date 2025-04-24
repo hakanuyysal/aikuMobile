@@ -1,3 +1,5 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 export interface Product {
   id: string;
   name: string;
@@ -16,6 +18,11 @@ export type TabParamList = {
   Message: undefined;
 };
 
+export type MessageStackParamList = {
+  ChatList: undefined;
+  ChatDetail: { chatId: string; name: string };
+};
+
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   UpdateProfile: { presentation: 'modal' };
@@ -24,4 +31,14 @@ export type ProfileStackParamList = {
 export type UpdateProfileScreenProps = NativeStackScreenProps<
   ProfileStackParamList,
   'UpdateProfile'
+>;
+
+export type ChatListScreenProps = NativeStackScreenProps<
+  MessageStackParamList,
+  'ChatList'
+>;
+
+export type ChatDetailScreenProps = NativeStackScreenProps<
+  MessageStackParamList,
+  'ChatDetail'
 >;

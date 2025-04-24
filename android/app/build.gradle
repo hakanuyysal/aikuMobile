@@ -90,5 +90,8 @@ dependencies {
     }
 }
 
-// Bu satırı EN ALTA ekle, vektörel ikon fontlarını kopyalamak için gereklidir
+project.ext.vectoricons = [
+    iconFontNames: [ 'Ionicons.ttf' ]
+]
+
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
