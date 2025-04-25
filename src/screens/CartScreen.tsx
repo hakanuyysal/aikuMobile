@@ -43,6 +43,8 @@ const PlanCard: React.FC<PlanProps> = ({
   scrollX,
 }) => {
   const yearlyPrice = Math.floor(price * 12 * 0.9);
+  const isStartupPlan = title === 'Startup Plan';
+  const displayPrice = isStartupPlan && !isYearly ? 0 : price;
 
   const inputRange = [
     (index - 1) * CARD_WIDTH,
@@ -95,7 +97,14 @@ const PlanCard: React.FC<PlanProps> = ({
       <Text style={styles.subtitle}>{subtitle}</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.price}>
-        ${isYearly ? yearlyPrice : price}
+        {isStartupPlan && !isYearly ? (
+          <>
+            <Text style={styles.originalPrice}>$49</Text>{' '}
+            <Text style={styles.newPrice}>$0</Text>
+          </>
+        ) : (
+          `$${isYearly ? yearlyPrice : displayPrice}`
+        )}
         <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
         {isYearly && <Text style={styles.discount}> (10% off)</Text>}
       </Text>
@@ -373,6 +382,17 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.sm,
     fontWeight: '700',
+  },
+  originalPrice: {
+    textDecorationLine: 'line-through',
+    color: Colors.inactive,
+    fontSize: metrics.fontSize.xxxl,
+    marginRight: metrics.margin.xs,
+  },
+  newPrice: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.xxxl,
+    fontWeight: 'bold',
   },
 });
 
