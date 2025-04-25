@@ -1,17 +1,17 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Dimensions, Text} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import {useRoute} from '@react-navigation/native';
 import {TabBarProps} from '../types';
 import LinearGradient from 'react-native-linear-gradient';
-
-const {width} = Dimensions.get('window');
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import metrics from '../constants/aikuMetric';
 
 const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   const route = useRoute();
+  const insets = useSafeAreaInsets();
 
-  // ChatDetail ekranındaysa TabBar'ı gizle
   if (route.name === 'ChatDetail') {
     return null;
   }
@@ -33,11 +33,21 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   };
 
   return (
-    <View style={styles.outerContainer}>
+    <View style={[styles.outerContainer, {paddingBottom: insets.bottom}]}>
       <LinearGradient
         colors={['rgba(26, 30, 41, 0)', 'rgba(26, 30, 41, 0.95)', '#1A1E29']}
-        style={styles.gradient}>
-        <View style={styles.container}>
+        style={[
+          styles.gradient,
+          {
+            marginBottom: metrics.tabBar.marginBottom,
+            paddingTop: metrics.spacing.md * -2,
+          },
+        ]}>
+        <View
+          style={[
+            styles.container,
+            {paddingBottom: metrics.tabBar.paddingBottom},
+          ]}>
           {state.routes.map((route: any, index: number) => {
             const {options} = descriptors[route.key];
             const isFocused = state.index === index;
@@ -67,17 +77,19 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
                         <Icon
                           name={iconMap[route.name] || 'circle'}
                           color={Colors.lightText}
-                          size={24}
+                          size={metrics.tabBar.iconSize}
                         />
                       </LinearGradient>
-                      <Text style={styles.activeLabel}>{labelMap[route.name]}</Text>
+                      <Text style={styles.activeLabel}>
+                        {labelMap[route.name]}
+                      </Text>
                     </View>
                   ) : (
                     <View style={styles.inactiveIconContainer}>
                       <Icon
                         name={iconMap[route.name] || 'circle'}
                         color={Colors.inactive}
-                        size={24}
+                        size={metrics.tabBar.iconSize}
                       />
                       <Text style={styles.label}>{labelMap[route.name]}</Text>
                     </View>
@@ -94,20 +106,19 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
 
 const styles = StyleSheet.create({
   outerContainer: {
-    width: width,
+    width: metrics.WIDTH,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
   },
   gradient: {
-    paddingTop: 20,
-    paddingBottom: 20,
+    width: '100%',
   },
   container: {
     flexDirection: 'row',
     width: '100%',
-    paddingHorizontal: 12,
+    paddingHorizontal: metrics.tabBar.paddingHorizontal,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -119,7 +130,7 @@ const styles = StyleSheet.create({
   tab: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
+    padding: metrics.spacing.xs,
   },
   activeIconContainer: {
     alignItems: 'center',
@@ -130,12 +141,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: metrics.tabBar.activeIconSize,
+    height: metrics.tabBar.activeIconSize,
+    borderRadius: metrics.tabBar.activeIconSize / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: metrics.spacing.xs,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
@@ -147,14 +158,14 @@ const styles = StyleSheet.create({
   },
   activeLabel: {
     color: Colors.primary,
-    fontSize: 12,
+    fontSize: metrics.fontSize.sm,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: metrics.spacing.xs,
   },
   label: {
     color: Colors.inactive,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: metrics.fontSize.sm,
+    marginTop: metrics.spacing.xs,
   },
 });
 
