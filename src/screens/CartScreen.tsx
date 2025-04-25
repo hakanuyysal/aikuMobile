@@ -41,7 +41,7 @@ const PlanCard: React.FC<PlanProps> = ({
   index,
   scrollX,
 }) => {
-  const yearlyPrice = Math.floor(price * 12 * 0.9); // %10 indirim
+  const yearlyPrice = Math.floor(price * 12 * 0.9);
 
   const inputRange = [
     (index - 1) * CARD_WIDTH,
@@ -309,7 +309,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     backgroundColor: `${Colors.cardBackground}dd`,
-    backdropFilter: 'blur(10px)',
   },
   subtitle: {
     color: Colors.inactive,
