@@ -27,10 +27,11 @@ const Login = ({navigation}: any) => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.title}>Welcome to Aiku!</Text>
             <Text style={styles.subtitle}>
-              Connect with AI entrepreneurs, investors, and industry leaders. Login to
-              grow your projects and be part of the future of innovation!
+              Connect with AI entrepreneurs, investors, and industry leaders.
+              Login to grow your projects and be part of the future of
+              innovation!
             </Text>
           </View>
 
@@ -38,7 +39,12 @@ const Login = ({navigation}: any) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputWrapper}>
-                <Icon name="mail-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
+                <Icon
+                  name="mail-outline"
+                  size={20}
+                  color={Colors.inactive}
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your email"
@@ -55,7 +61,12 @@ const Login = ({navigation}: any) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputWrapper}>
-                <Icon name="lock-closed-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
+                <Icon
+                  name="lock-closed-outline"
+                  size={20}
+                  color={Colors.inactive}
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={[styles.input, styles.passwordInput]}
                   placeholder="Enter your password"
@@ -77,31 +88,38 @@ const Login = ({navigation}: any) => {
               </View>
             </View>
 
-            <View style={styles.rememberContainer}>
-              <TouchableOpacity style={styles.checkbox}>
-                <Icon name="checkmark" size={16} color={Colors.inactive} />
-              </TouchableOpacity>
-              <Text style={styles.rememberText}>Remember Me</Text>
-            </View>
-
             <TouchableOpacity style={styles.loginButton}>
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
 
             <View style={styles.divider}>
               <View style={styles.line} />
-              <Text style={styles.dividerText}>Sign in with social accounts</Text>
+              <Text style={styles.dividerText}>
+                Sign in with social accounts
+              </Text>
               <View style={styles.line} />
             </View>
 
             <View style={styles.socialButtons}>
               <TouchableOpacity style={styles.socialButton}>
-                <Icon name="logo-google" size={20} color={Colors.lightText} style={styles.socialIcon} />
+                <Icon
+                  name="logo-google"
+                  size={20}
+                  color={Colors.lightText}
+                  style={styles.socialIcon}
+                />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialButton}>
-                <Icon name="logo-linkedin" size={20} color={Colors.lightText} style={styles.socialIcon} />
-                <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
+                <Icon
+                  name="logo-linkedin"
+                  size={20}
+                  color={Colors.lightText}
+                  style={styles.socialIcon}
+                />
+                <Text style={styles.socialButtonText}>
+                  Sign in with LinkedIn
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -153,27 +171,31 @@ const styles = StyleSheet.create({
   label: {
     fontSize: metrics.fontSize.md,
     fontWeight: '600',
-    marginBottom: metrics.margin.xs,
+    marginBottom: metrics.margin.sm,
     color: Colors.lightText,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: metrics.verticalScale(50),
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: metrics.borderRadius.sm,
-    backgroundColor: Colors.cardBackground,
-    paddingHorizontal: metrics.padding.md,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    height: metrics.verticalScale(45),
+    paddingHorizontal: metrics.padding.sm,
   },
   inputIcon: {
     marginRight: metrics.margin.sm,
+    opacity: 0.7,
   },
   input: {
     flex: 1,
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
     height: '100%',
+    paddingVertical: metrics.padding.sm,
+    backgroundColor: 'transparent',
+    opacity: 0.7,
   },
   passwordInput: {
     flex: 1,
@@ -244,11 +266,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: metrics.verticalScale(50),
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: metrics.borderRadius.circle,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'transparent',
+    opacity: 1.5,
+    shadowColor: 'rgba(255,255,255,0.1)',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   socialIcon: {
     marginRight: metrics.margin.sm,

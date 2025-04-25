@@ -214,21 +214,23 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: metrics.verticalScale(50),
-    borderWidth: 1,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
     borderColor: Colors.border,
-    borderRadius: metrics.borderRadius.sm,
-    backgroundColor: Colors.cardBackground,
-    paddingHorizontal: metrics.padding.md,
+    height: metrics.verticalScale(45),
+    paddingHorizontal: metrics.padding.sm,
   },
   inputIcon: {
     marginRight: metrics.margin.sm,
+    opacity: 0.7,
   },
   input: {
     flex: 1,
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
     height: '100%',
+    paddingVertical: metrics.padding.sm,
+    backgroundColor: 'transparent',
   },
   passwordInput: {
     flex: 1,
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
   signUpButton: {
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
-    borderRadius: metrics.borderRadius.circle,
+    borderRadius: metrics.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: metrics.margin.xl,
