@@ -15,4 +15,5 @@ export const Colors = {
   searchBackground: '#3B82F7',
   discountBackground: '#1A1E29',
   border: '#242C3B',
+  star: '#FFD700',
 };

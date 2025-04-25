@@ -21,7 +21,7 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
     Map: 'map-search',
     Cart: 'crown-outline',
     Profile: 'account-outline',
-    Message: 'message-badge-outline',
+    Message: 'message-cog-outline',
   };
 
   const labelMap: Record<string, string> = {
