@@ -17,10 +17,52 @@ const Register = ({navigation}: any) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleContinue = () => {
+    const newErrors = {
+      firstName: '',
+      lastName: '',
+      email: '',
+    };
+
+    let hasError = false;
+
+    if (!firstName.trim()) {
+      newErrors.firstName = 'Please enter your first name';
+      hasError = true;
+    }
+    if (!lastName.trim()) {
+      newErrors.lastName = 'Please enter your last name';
+      hasError = true;
+    }
+    if (!email.trim()) {
+      newErrors.email = 'Please enter your email';
+      hasError = true;
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address';
+      hasError = true;
+    }
+
+    setErrors(newErrors);
+
+    if (!hasError) {
+      navigation.navigate('RegisterPassword', {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+      });
+    }
+  };
 
   return (
     <LinearGradient
@@ -30,123 +72,124 @@ const Register = ({navigation}: any) => {
       end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
             <View style={styles.header}>
-              <Text style={styles.title}>Join the Future of AI Innovation!</Text>
+              <Text style={styles.title}>
+                Join the Future of AI Innovation!
+              </Text>
               <Text style={styles.subtitle}>
-                Be part of a thriving AI startup ecosystem. Connect with like-minded
-                innovators, collaborate, and scale your projects. Sign up now!
+                Be part of a thriving AI startup ecosystem. Connect with
+                like-minded innovators, collaborate, and scale your projects.
+                Sign up now!
               </Text>
             </View>
 
             <View style={styles.form}>
-              <View style={styles.nameContainer}>
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.label}>First Name</Text>
-                  <View style={styles.inputWrapper}>
-                    <Icon name="person-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter your first name"
-                      placeholderTextColor={Colors.inactive}
-                      value={firstName}
-                      onChangeText={setFirstName}
-                      selectionColor={Colors.primary}
-                    />
-                  </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>First Name</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    errors.firstName ? styles.inputError : null,
+                  ]}>
+                  <Icon
+                    name="person-outline"
+                    size={20}
+                    color={Colors.inactive}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your first name"
+                    placeholderTextColor={Colors.inactive}
+                    value={firstName}
+                    onChangeText={text => {
+                      setFirstName(text);
+                      if (errors.firstName) {
+                        setErrors({...errors, firstName: ''});
+                      }
+                    }}
+                    selectionColor={Colors.primary}
+                  />
                 </View>
+                {errors.firstName ? (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                ) : null}
+              </View>
 
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.label}>Last Name</Text>
-                  <View style={styles.inputWrapper}>
-                    <Icon name="person-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter your last name"
-                      placeholderTextColor={Colors.inactive}
-                      value={lastName}
-                      onChangeText={setLastName}
-                      selectionColor={Colors.primary}
-                    />
-                  </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Last Name</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    errors.lastName ? styles.inputError : null,
+                  ]}>
+                  <Icon
+                    name="person-outline"
+                    size={20}
+                    color={Colors.inactive}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your last name"
+                    placeholderTextColor={Colors.inactive}
+                    value={lastName}
+                    onChangeText={text => {
+                      setLastName(text);
+                      if (errors.lastName) {
+                        setErrors({...errors, lastName: ''});
+                      }
+                    }}
+                    selectionColor={Colors.primary}
+                  />
                 </View>
+                {errors.lastName ? (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="mail-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    errors.email ? styles.inputError : null,
+                  ]}>
+                  <Icon
+                    name="mail-outline"
+                    size={20}
+                    color={Colors.inactive}
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your email"
                     placeholderTextColor={Colors.inactive}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={text => {
+                      setEmail(text);
+                      if (errors.email) {
+                        setErrors({...errors, email: ''});
+                      }
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     selectionColor={Colors.primary}
                   />
                 </View>
+                {errors.email ? (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                ) : null}
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="lock-closed-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.passwordInput]}
-                    placeholder="Enter your password"
-                    placeholderTextColor={Colors.inactive}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    selectionColor={Colors.primary}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}>
-                    <Icon
-                      name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                      size={20}
-                      color={Colors.inactive}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="lock-closed-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.passwordInput]}
-                    placeholder="Confirm your password"
-                    placeholderTextColor={Colors.inactive}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                    selectionColor={Colors.primary}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeIcon}>
-                    <Icon
-                      name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-                      size={20}
-                      color={Colors.inactive}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <Text style={styles.termsText}>
-                By clicking "Sign Up", you agree to our Terms of Service and Privacy
-                Policy and acknowledge our Personal Data Protection Notice.
-              </Text>
-
-              <TouchableOpacity style={styles.signUpButton}>
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleContinue}>
+                <Text style={styles.continueButtonText}>Continue</Text>
               </TouchableOpacity>
 
               <View style={styles.footer}>
@@ -178,7 +221,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.xl,
+    marginBottom: metrics.margin.xxl,
   },
   title: {
     fontSize: metrics.fontSize.xxxl,
@@ -194,21 +237,13 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
   },
-  nameContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: metrics.margin.md,
-  },
-  halfWidth: {
-    flex: 1,
-  },
   inputContainer: {
     marginBottom: metrics.margin.lg,
   },
   label: {
     fontSize: metrics.fontSize.md,
     fontWeight: '600',
-    marginBottom: metrics.margin.xs,
+    marginBottom: metrics.margin.sm,
     color: Colors.lightText,
   },
   inputWrapper: {
@@ -220,6 +255,15 @@ const styles = StyleSheet.create({
     borderRadius: metrics.borderRadius.md,
     height: metrics.verticalScale(45),
     paddingHorizontal: metrics.padding.sm,
+  },
+  inputError: {
+    borderColor: Colors.error,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: metrics.fontSize.sm,
+    marginTop: metrics.margin.xs,
+    marginLeft: metrics.margin.xs,
   },
   inputIcon: {
     marginRight: metrics.margin.sm,
@@ -234,25 +278,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     opacity: 0.7,
   },
-  passwordInput: {
-    flex: 1,
-  },
-  eyeIcon: {
-    padding: metrics.padding.xs,
-  },
-  termsText: {
-    fontSize: metrics.fontSize.sm,
-    color: Colors.inactive,
-    marginBottom: metrics.margin.lg,
-    lineHeight: metrics.fontSize.md * 1.4,
-  },
-  signUpButton: {
+  continueButton: {
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: metrics.margin.xl,
+    marginTop: metrics.margin.xl,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
@@ -262,7 +295,7 @@ const styles = StyleSheet.create({
     shadowRadius: metrics.scale(12),
     elevation: 8,
   },
-  signUpButtonText: {
+  continueButtonText: {
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
     fontWeight: '700',
@@ -283,4 +316,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Register; 
+export default Register;

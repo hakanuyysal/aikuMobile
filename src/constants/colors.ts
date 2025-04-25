@@ -16,4 +16,5 @@ export const Colors = {
   discountBackground: '#1A1E29',
   border: '#242C3B',
   star: '#FFD700',
+  error: '#FF4444',
 };
