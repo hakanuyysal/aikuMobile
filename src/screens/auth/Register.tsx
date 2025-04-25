@@ -97,7 +97,7 @@ const Register = ({navigation}: any) => {
                   ]}>
                   <Icon
                     name="person-outline"
-                    size={20}
+                    size={22}
                     color={Colors.inactive}
                     style={styles.inputIcon}
                   />
@@ -129,7 +129,7 @@ const Register = ({navigation}: any) => {
                   ]}>
                   <Icon
                     name="person-outline"
-                    size={20}
+                    size={24}
                     color={Colors.inactive}
                     style={styles.inputIcon}
                   />
@@ -161,7 +161,7 @@ const Register = ({navigation}: any) => {
                   ]}>
                   <Icon
                     name="mail-outline"
-                    size={20}
+                    size={24}
                     color={Colors.inactive}
                     style={styles.inputIcon}
                   />
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: metrics.fontSize.md,
     fontWeight: '600',
-    marginBottom: metrics.margin.sm,
+    marginBottom: metrics.margin.md,
     color: Colors.lightText,
   },
   inputWrapper: {
@@ -253,8 +253,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: metrics.borderRadius.md,
-    height: metrics.verticalScale(45),
-    paddingHorizontal: metrics.padding.sm,
+    height: metrics.verticalScale(55),
+    paddingHorizontal: metrics.padding.md,
   },
   inputError: {
     borderColor: Colors.error,
@@ -266,15 +266,15 @@ const styles = StyleSheet.create({
     marginLeft: metrics.margin.xs,
   },
   inputIcon: {
-    marginRight: metrics.margin.sm,
+    marginRight: metrics.margin.md,
     opacity: 0.7,
   },
   input: {
     flex: 1,
-    fontSize: metrics.fontSize.md,
+    fontSize: metrics.fontSize.lg,
     color: Colors.lightText,
     height: '100%',
-    paddingVertical: metrics.padding.sm,
+    paddingVertical: metrics.padding.md,
     backgroundColor: 'transparent',
     opacity: 0.7,
   },
