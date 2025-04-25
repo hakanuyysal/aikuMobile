@@ -12,6 +12,7 @@ import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import Video from 'react-native-video';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
@@ -23,63 +24,11 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
   const logoScale = useMemo(() => new Animated.Value(0), []);
   const logoOpacity = useMemo(() => new Animated.Value(0), []);
   const logoPosition = useMemo(() => new Animated.Value(0), []);
-  const backgroundOpacity = useMemo(() => new Animated.Value(0), []);
   const spinnerOpacity = useMemo(() => new Animated.Value(0), []);
   const splashImageOpacity = useMemo(() => new Animated.Value(0), []);
-  const gradientPosition1 = useMemo(() => new Animated.Value(0), []);
-  const gradientPosition2 = useMemo(() => new Animated.Value(0), []);
-  const gradientRotation = useMemo(() => new Animated.Value(0), []);
+  const overlayOpacity = useMemo(() => new Animated.Value(0.4), []);
 
   const startAnimations = useCallback(() => {
-    Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(gradientPosition1, {
-            toValue: 1,
-            duration: 3000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(gradientPosition1, {
-            toValue: 0,
-            duration: 3000,
-            useNativeDriver: true,
-          }),
-        ]),
-
-        Animated.sequence([
-          Animated.timing(gradientPosition2, {
-            toValue: 1,
-            duration: 4000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(gradientPosition2, {
-            toValue: 0,
-            duration: 4000,
-            useNativeDriver: true,
-          }),
-        ]),
-
-        Animated.sequence([
-          Animated.timing(gradientRotation, {
-            toValue: 1,
-            duration: 10000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(gradientRotation, {
-            toValue: 0,
-            duration: 10000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ).start();
-
-    Animated.timing(backgroundOpacity, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-
     Animated.sequence([
       Animated.parallel([
         Animated.timing(logoOpacity, {
@@ -94,9 +43,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
           useNativeDriver: true,
         }),
       ]),
-
       Animated.delay(500),
-
       Animated.parallel([
         Animated.timing(logoPosition, {
           toValue: -metrics.getWidthPercentage(22),
@@ -109,9 +56,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
           useNativeDriver: true,
         }),
       ]),
-
       Animated.delay(300),
-
       Animated.timing(spinnerOpacity, {
         toValue: 1,
         duration: 500,
@@ -119,15 +64,11 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
       }),
     ]).start();
   }, [
-    backgroundOpacity,
     logoOpacity,
     logoScale,
     logoPosition,
     splashImageOpacity,
     spinnerOpacity,
-    gradientPosition1,
-    gradientPosition2,
-    gradientRotation,
   ]);
 
   useEffect(() => {
@@ -135,15 +76,10 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
 
     const timer = setTimeout(() => {
       navigation.navigate('Main');
-    }, 30500);
+    }, 35500);
 
     return () => clearTimeout(timer);
   }, [navigation, startAnimations]);
-
-  const spin = gradientRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   return (
     <View style={styles.container}>
@@ -151,98 +87,32 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         barStyle="light-content"
         backgroundColor={Colors.statusBarBackground}
       />
-      {/* Ana gradient arka plan */}
-      <LinearGradient
-        colors={[
-          Colors.background,
-          Colors.primary + '20',
-          Colors.background,
-          Colors.secondary + '15',
-          Colors.background,
-        ]}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
-        style={styles.gradientBackground}
+
+      {/* Video Arka Plan */}
+      <Video
+        source={require('../../assets/images/video.mp4')}
+        style={styles.backgroundVideo}
+        repeat
+        muted
+        resizeMode="cover"
+        rate={1.0}
+        ignoreSilentSwitch="obey"
       />
-      {/* Hareketli gradient katmanı 1 */}
+
+      {/* Flu overlay efekti */}
       <Animated.View
         style={[
-          styles.gradientOverlay,
+          styles.overlay,
           {
-            opacity: 0.4,
-            transform: [
-              {
-                translateY: gradientPosition1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, metrics.HEIGHT],
-                }),
-              },
-              {rotate: spin},
-            ],
+            opacity: overlayOpacity,
           },
         ]}>
         <LinearGradient
-          colors={[
-            'transparent',
-            Colors.primary + '30',
-            Colors.secondary + '30',
-            'transparent',
-          ]}
+          colors={[Colors.background + 'CC', Colors.background + '99']}
           style={StyleSheet.absoluteFill}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
         />
       </Animated.View>
-      {/* Hareketli gradient katmanı 2 */}
-      <Animated.View
-        style={[
-          styles.gradientOverlay,
-          {
-            opacity: 0.3,
-            transform: [
-              {
-                translateY: gradientPosition2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [metrics.HEIGHT * -1, 0],
-                }),
-              },
-              {rotate: spin},
-            ],
-          },
-        ]}>
-        <LinearGradient
-          colors={[
-            'transparent',
-            Colors.secondary + '20',
-            Colors.primary + '20',
-            'transparent',
-          ]}
-          style={StyleSheet.absoluteFill}
-          start={{x: 1, y: 0}}
-          end={{x: 0, y: 1}}
-        />
-      </Animated.View>
-      {/* Işık efekti katmanı */}
-      <Animated.View
-        style={[
-          styles.lightEffect,
-          {
-            transform: [
-              {
-                rotate: gradientRotation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['-45deg', '45deg'],
-                }),
-              },
-            ],
-          },
-        ]}>
-        <LinearGradient
-          colors={['transparent', Colors.primary + '05', 'transparent']}
-          style={StyleSheet.absoluteFill}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
-        />
-      </Animated.View>
+
       <View style={styles.contentWrapper}>
         <View style={styles.contentContainer}>
           <Animated.View
@@ -250,14 +120,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
               styles.logoContainer,
               {
                 opacity: logoOpacity,
-                transform: [
-                  {
-                    scale: logoScale,
-                  },
-                  {
-                    translateX: logoPosition,
-                  },
-                ],
+                transform: [{scale: logoScale}, {translateX: logoPosition}],
               },
             ]}>
             <Image
@@ -269,9 +132,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
           <Animated.View
             style={[
               styles.splashImageContainer,
-              {
-                opacity: splashImageOpacity,
-              },
+              {opacity: splashImageOpacity},
             ]}>
             <Image
               source={require('../../../src/assets/images/splash.png')}
@@ -295,20 +156,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  gradientBackground: {
+  backgroundVideo: {
     ...StyleSheet.absoluteFillObject,
   },
-  gradientOverlay: {
+  overlay: {
     ...StyleSheet.absoluteFillObject,
-    height: metrics.HEIGHT * 2,
-  },
-  lightEffect: {
-    ...StyleSheet.absoluteFillObject,
-    height: metrics.HEIGHT * 3,
-    width: metrics.WIDTH * 3,
-    position: 'absolute',
-    left: -metrics.WIDTH,
-    top: -metrics.HEIGHT,
+    backgroundColor: 'transparent',
   },
   contentWrapper: {
     flex: 1,
