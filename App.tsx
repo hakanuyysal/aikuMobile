@@ -7,6 +7,7 @@ import TabNavigator from './src/navigation/TabNavigator';
 import {Colors} from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 import AuthNavigator from './src/navigation/AuthNavigator';
+import SplashScreen from './src/screens/splash/SplashScreen';
 
 const RootStack = createNativeStackNavigator();
 
@@ -54,7 +55,12 @@ function App(): React.JSX.Element {
           backgroundColor={Colors.statusBarBackground}
         />
         <NavigationContainer theme={navigationTheme}>
-          <RootStack.Navigator>
+          <RootStack.Navigator initialRouteName="Splash">
+            <RootStack.Screen
+              name="Splash"
+              component={SplashScreen}
+              options={{headerShown: false}}
+            />
             {isAuthenticated ? (
               <>
                 <RootStack.Screen

@@ -8,11 +8,11 @@ import {
   Animated,
   SafeAreaView,
 } from 'react-native';
-import {Colors} from '../constants/colors';
+import {Colors} from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
 import LinearGradient from 'react-native-linear-gradient';
-import metrics from '../constants/aikuMetric';
+import metrics from '../../constants/aikuMetric';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = metrics.getWidthPercentage(75);
