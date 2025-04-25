@@ -1,6 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, Text, View } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../constants/colors';
 
 type CategoryButtonProps = {
@@ -11,44 +10,41 @@ type CategoryButtonProps = {
 
 const CategoryButton: React.FC<CategoryButtonProps> = ({
   title,
-  isActive = false,
+  isActive,
   onPress,
 }) => {
   return (
     <TouchableOpacity onPress={onPress} style={styles.buttonWrapper}>
-      <LinearGradient
-        colors={['white', '#4966A6']}
-        locations={[0, 0.3, 0.4, 0.7]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 3, y: 5 }}
-        style={[
-          styles.container,
-          { opacity: isActive ? 1 : 1 }, // İnaktif butonlar için opaklık
-        ]}
-      >
+      <View style={[styles.container, isActive && styles.activeContainer]}>
         <Text
           style={[
             styles.text,
-            { color: isActive ? Colors.dark : Colors.inactive },
+            { 
+              color: isActive ? Colors.lightText : Colors.lightText,
+            },
           ]}
         >
           {title}
         </Text>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   buttonWrapper: {
-    marginRight: 12,
+    // No margin, spacing handled by parent
   },
   container: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 8, // Reduced vertical padding
+    paddingHorizontal: 8, // Reduced horizontal padding to fit better
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)', // Subtle background for active state
+    borderRadius: 8,
   },
   text: {
     fontSize: 14,

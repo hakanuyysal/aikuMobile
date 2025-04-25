@@ -18,10 +18,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F7', '#3B82F7']}
-      locations={[0.1, 0.2, 0.2, 0.5]}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 3.5, y: 0.8 }}
+      end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}
     >
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
@@ -50,7 +50,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
           {/* Profile Card */}
-          <LinearGradient colors={['#fff', '#4966A6']} style={styles.profileCard}>
+          <View style={styles.profileCard}>
             <View style={styles.imageContainer}>
               <Image
                 source={require('../assets/images/Alohaicon.png')}
@@ -71,30 +71,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             >
               Edit Profile
             </Button>
-          </LinearGradient>
+          </View>
 
           {/* Info Cards */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-            <LinearGradient colors={['#fff', '#4966A6']} style={styles.infoCard}>
+            <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Personal Details</Text>
-              <Text>First Name: {profile.firstName}</Text>
-              <Text>Last Name: {profile.lastName}</Text>
-              <Text>Phone: {profile.phone}</Text>
-              <Text>Location: {profile.location}</Text>
-            </LinearGradient>
+              <Text style={styles.cardText}>First Name: {profile.firstName}</Text>
+              <Text style={styles.cardText}>Last Name: {profile.lastName}</Text>
+              <Text style={styles.cardText}>Phone: {profile.phone}</Text>
+              <Text style={styles.cardText}>Location: {profile.location}</Text>
+            </View>
 
-            <LinearGradient colors={['#fff', '#4966A6']} style={styles.infoCard}>
+            <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Profile Information</Text>
-              <Text>{profile.profileInfo || 'No profile info yet.'}</Text>
-            </LinearGradient>
+              <Text style={styles.cardText}>{profile.profileInfo || 'No profile info yet.'}</Text>
+            </View>
 
-            <LinearGradient colors={['#fff', '#4966A6']} style={styles.infoCard}>
+            <View style={styles.infoCard}>
               <Text style={styles.cardTitle}>Social Media</Text>
-              <Text>LinkedIn: {profile.social.linkedin}</Text>
-              <Text>Instagram: {profile.social.instagram}</Text>
-              <Text>Facebook: {profile.social.facebook}</Text>
-              <Text>Twitter/X: {profile.social.twitter}</Text>
-            </LinearGradient>
+              <Text style={styles.cardText}>LinkedIn: {profile.social.linkedin}</Text>
+              <Text style={styles.cardText}>Instagram: {profile.social.instagram}</Text>
+              <Text style={styles.cardText}>Facebook: {profile.social.facebook}</Text>
+              <Text style={styles.cardText}>Twitter/X: {profile.social.twitter}</Text>
+            </View>
           </ScrollView>
         </ScrollView>
       </SafeAreaView>
@@ -145,6 +145,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 24,
+    backgroundColor: `${Colors.cardBackground}dd`, // Matches the muted tone of other screens
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)', // Matches other cards
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.44,
+    shadowRadius: 10.32,
+    elevation: 16,
   },
   imageContainer: {
     width: 120,
@@ -163,7 +174,7 @@ const styles = StyleSheet.create({
   welcome: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Colors.darkText,
+    color: Colors.lightText, // Updated for readability on dark background
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -190,12 +201,26 @@ const styles = StyleSheet.create({
     marginRight: 16,
     marginTop: 25,
     justifyContent: 'center',
+    backgroundColor: `${Colors.cardBackground}dd`, // Matches the muted tone of other screens
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)', // Matches other cards
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.44,
+    shadowRadius: 10.32,
+    elevation: 16,
   },
   cardTitle: {
-    color: '#1A1E29',
+    color: Colors.lightText, // Updated for readability on dark background
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 8,
+  },
+  cardText: {
+    color: Colors.lightText, // Added for consistency and readability
   },
 });
 
