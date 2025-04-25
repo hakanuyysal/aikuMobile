@@ -12,10 +12,11 @@ import {Colors} from '../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {DrawerNavigationProp} from '@react-navigation/drawer';
 import LinearGradient from 'react-native-linear-gradient';
+import metrics from '../constants/aikuMetric';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.75;
-const CARD_SPACING = 12;
+const CARD_WIDTH = metrics.getWidthPercentage(75);
+const CARD_SPACING = metrics.spacing.sm;
 const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2.5;
 
 interface PlanProps {
@@ -239,51 +240,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    marginTop: 10,
     flex: 1,
   },
   header: {
-    padding: 15,
+    padding: metrics.padding.md,
     alignItems: 'center',
     position: 'relative',
   },
   backButton: {
     position: 'absolute',
-    left: 20,
-    top: 20,
+    left: metrics.margin.lg,
+    top: metrics.margin.lg,
     zIndex: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: metrics.margin.lg,
     color: Colors.lightText,
   },
   menuButton: {
     position: 'absolute',
-    right: 20,
-    top: 20,
+    right: metrics.margin.lg,
+    top: metrics.margin.lg,
     zIndex: 1,
   },
   toggle: {
     flexDirection: 'row',
     backgroundColor: Colors.cardBackground,
-    borderRadius: 25,
-    padding: 4,
-    marginBottom: 20,
-    marginTop: 10,
+    borderRadius: metrics.borderRadius.circle,
+    padding: metrics.padding.xs,
+    marginBottom: metrics.margin.lg,
+    marginTop: metrics.margin.sm,
   },
   toggleButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 20,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.xl,
+    borderRadius: metrics.borderRadius.xl,
   },
   toggleActive: {
     backgroundColor: Colors.primary,
   },
   toggleText: {
     color: Colors.inactive,
-    fontSize: 16,
+    fontSize: metrics.fontSize.md,
   },
   toggleTextActive: {
     color: Colors.lightText,
@@ -292,18 +292,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_OFFSET - CARD_SPACING / 2,
   },
   planCard: {
-    marginTop: 50,
-    borderRadius: 24,
-    padding: 24,
+    marginTop: metrics.margin.xxl,
+    borderRadius: metrics.borderRadius.xl,
+    padding: metrics.padding.xl,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 15,
+      height: metrics.scale(15),
     },
     shadowOpacity: 0.5,
-    shadowRadius: 20,
+    shadowRadius: metrics.scale(20),
     elevation: 15,
-    height: SCREEN_WIDTH * 0.9,
+    height: metrics.getHeightPercentage(42),
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     borderWidth: 1,
@@ -312,67 +312,67 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: Colors.inactive,
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: metrics.fontSize.sm,
+    marginBottom: metrics.margin.xs,
   },
   title: {
-    fontSize: 28,
+    fontSize: metrics.fontSize.xxxl,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: metrics.margin.sm,
     color: Colors.lightText,
   },
   price: {
-    fontSize: 27,
+    fontSize: metrics.fontSize.xxxl,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: metrics.margin.sm,
     color: Colors.lightText,
   },
   period: {
-    fontSize: 17,
+    fontSize: metrics.fontSize.lg,
     color: Colors.inactive,
   },
   discount: {
     color: Colors.primary,
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: metrics.fontSize.md,
+    marginBottom: metrics.margin.xs,
   },
   trial: {
     color: Colors.star,
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: metrics.fontSize.sm,
+    marginBottom: metrics.margin.sm,
     fontWeight: 'bold',
   },
   description: {
     color: Colors.inactive,
-    fontSize: 14,
-    marginBottom: 8,
-    lineHeight: 16,
+    fontSize: metrics.fontSize.sm,
+    marginBottom: metrics.margin.sm,
+    lineHeight: metrics.scale(16),
   },
   feature: {
-    fontSize: 14,
-    marginBottom: 6,
-    marginTop: 2,
+    fontSize: metrics.fontSize.sm,
+    marginBottom: metrics.margin.xs,
+    marginTop: metrics.margin.xs,
     color: Colors.lightText,
   },
   button: {
     backgroundColor: Colors.primary,
-    borderRadius: 25,
-    paddingVertical: 12,
+    borderRadius: metrics.borderRadius.circle,
+    paddingVertical: metrics.padding.md,
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: metrics.margin.xl,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: metrics.scale(8),
     },
     shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowRadius: metrics.scale(12),
     elevation: 8,
   },
   buttonText: {
     color: Colors.lightText,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: metrics.fontSize.sm,
+    fontWeight: '700',
   },
 });
 
