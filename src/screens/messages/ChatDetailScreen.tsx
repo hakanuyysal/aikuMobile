@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import {
   Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ChatDetailScreenProps } from '../../types';
-import { Colors } from '../../constants/colors';
+import {ChatDetailScreenProps} from '../../types';
+import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
+import metrics from '../../constants/aikuMetric';
 
 interface Message {
   id: string;
@@ -38,7 +39,7 @@ const mockMessages: Message[] = [
   },
   {
     id: '3',
-    text: 'Yes, please. I\'m particularly interested in long-term investment opportunities.',
+    text: "Yes, please. I'm particularly interested in long-term investment opportunities.",
     time: '14:32',
     sender: 'me',
   },
@@ -50,8 +51,8 @@ const mockMessages: Message[] = [
   },
 ];
 
-const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
-  const { name } = route.params;
+const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
+  const {name} = route.params;
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>(mockMessages);
 
@@ -60,7 +61,10 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
       const newMessage: Message = {
         id: (messages.length + 1).toString(),
         text: message.trim(),
-        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString('tr-TR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
         sender: 'me',
       };
       setMessages([...messages, newMessage]);
@@ -70,7 +74,9 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{name}</Text>
@@ -78,13 +84,31 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
     </View>
   );
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View style={[styles.messageContainer, item.sender === 'me' ? styles.myMessage : styles.otherMessage]}>
-      <View style={[styles.messageBubble, item.sender === 'me' ? styles.myBubble : styles.otherBubble]}>
-        <Text style={[styles.messageText, item.sender === 'me' ? styles.myMessageText : styles.otherMessageText]}>
+  const renderMessage = ({item}: {item: Message}) => (
+    <View
+      style={[
+        styles.messageContainer,
+        item.sender === 'me' ? styles.myMessage : styles.otherMessage,
+      ]}>
+      <View
+        style={[
+          styles.messageBubble,
+          item.sender === 'me' ? styles.myBubble : styles.otherBubble,
+        ]}>
+        <Text
+          style={[
+            styles.messageText,
+            item.sender === 'me'
+              ? styles.myMessageText
+              : styles.otherMessageText,
+          ]}>
           {item.text}
         </Text>
-        <Text style={[styles.timeText, item.sender === 'me' ? styles.myTimeText : styles.otherTimeText]}>
+        <Text
+          style={[
+            styles.timeText,
+            item.sender === 'me' ? styles.myTimeText : styles.otherTimeText,
+          ]}>
           {item.time}
         </Text>
       </View>
@@ -95,16 +119,15 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {renderHeader()}
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-        >
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
           <FlatList
             data={messages}
             renderItem={renderMessage}
@@ -127,12 +150,16 @@ const ChatDetailScreen = ({ navigation, route }: ChatDetailScreenProps) => {
               onSubmitEditing={handleSendMessage}
             />
             <TouchableOpacity
-              style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+              style={[
+                styles.sendButton,
+                message.trim() ? styles.sendButtonActive : null,
+                !message.trim() && styles.sendButtonDisabled,
+              ]}
               onPress={handleSendMessage}
               disabled={!message.trim()}>
               <Icon
                 name="send"
-                size={24}
+                size={metrics.scale(24)}
                 color={message.trim() ? Colors.primary : Colors.inactive}
               />
             </TouchableOpacity>
@@ -157,28 +184,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
   },
   backButton: {
-    padding: 8,
+    padding: metrics.padding.sm,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: metrics.fontSize.xl,
     fontWeight: '600',
     color: Colors.lightText,
+    marginLeft: -metrics.margin.sm,
   },
   headerButton: {
-    padding: 8,
+    padding: metrics.padding.sm,
   },
   messageList: {
     flex: 1,
   },
   messageListContent: {
-    padding: 16,
+    padding: metrics.padding.md,
+    paddingBottom: metrics.padding.xl,
   },
   messageContainer: {
-    marginVertical: 4,
+    marginVertical: metrics.margin.xs,
     flexDirection: 'row',
   },
   myMessage: {
@@ -189,20 +218,20 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '70%',
-    padding: 12,
-    borderRadius: 16,
+    padding: metrics.padding.sm,
+    borderRadius: metrics.borderRadius.lg,
   },
   myBubble: {
     backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: metrics.borderRadius.xs,
   },
   otherBubble: {
     backgroundColor: Colors.cardBackground,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: metrics.borderRadius.xs,
   },
   messageText: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: metrics.fontSize.md,
+    marginBottom: metrics.margin.xs,
   },
   myMessageText: {
     color: Colors.lightText,
@@ -211,7 +240,7 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
   },
   timeText: {
-    fontSize: 12,
+    fontSize: metrics.fontSize.xs,
     alignSelf: 'flex-end',
   },
   myTimeText: {
@@ -223,28 +252,43 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    backgroundColor: Colors.cardBackground,
+    padding: metrics.padding.md,
+    backgroundColor: Colors.background,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+    paddingBottom: metrics.isIOS ? metrics.padding.lg : metrics.padding.sm,
+    marginTop: metrics.margin.xs,
+    marginBottom: -35,
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 8,
-    maxHeight: 100,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.xl,
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
+    marginHorizontal: metrics.margin.sm,
+    minHeight: metrics.scale(40),
+    maxHeight: metrics.scale(100),
     color: Colors.lightText,
-    fontSize: 16,
+    fontSize: metrics.fontSize.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   sendButton: {
-    padding: 8,
+    padding: metrics.padding.sm,
+    width: metrics.scale(40),
+    height: metrics.scale(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: metrics.borderRadius.circle,
+    backgroundColor: 'transparent',
+  },
+  sendButtonActive: {
+    backgroundColor: Colors.primary + '20',
   },
   sendButtonDisabled: {
     opacity: 0.5,
   },
 });
 
-export default ChatDetailScreen; 
+export default ChatDetailScreen;

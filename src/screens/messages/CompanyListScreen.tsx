@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {Colors} from '../../constants/colors';
 import {CompanyListScreenProps} from '../../types';
 import LinearGradient from 'react-native-linear-gradient';
+import metrics from '../../constants/aikuMetric';
 
 interface Company {
   id: string;
@@ -128,62 +129,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: metrics.fontSize.xl,
     fontWeight: 'bold',
     color: Colors.lightText,
     flex: 1,
     textAlign: 'center',
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    padding: metrics.padding.sm,
+    width: metrics.scale(40),
   },
   headerButton: {
-    padding: 8,
-    width: 40,
+    padding: metrics.padding.sm,
+    width: metrics.scale(40),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.cardBackground,
-    margin: 16,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    margin: metrics.margin.md,
+    paddingHorizontal: metrics.padding.sm,
+    borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: metrics.margin.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: metrics.padding.sm,
+    fontSize: metrics.fontSize.md,
     color: Colors.lightText,
   },
   list: {
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: metrics.padding.md,
   },
   companyItem: {
     flexDirection: 'row',
-    padding: 12,
+    padding: metrics.padding.sm,
     backgroundColor: Colors.cardBackground,
-    marginBottom: 8,
-    borderRadius: 12,
+    marginBottom: metrics.margin.sm,
+    borderRadius: metrics.borderRadius.md,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: metrics.scale(50),
+    height: metrics.scale(50),
+    borderRadius: metrics.scale(25),
     backgroundColor: '#FFFFFF',
-    padding: 5,
+    padding: metrics.padding.xs,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -193,11 +194,11 @@ const styles = StyleSheet.create({
   },
   companyInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: metrics.margin.sm,
     justifyContent: 'center',
   },
   name: {
-    fontSize: 16,
+    fontSize: metrics.fontSize.md,
     fontWeight: '600',
     color: Colors.lightText,
   },
