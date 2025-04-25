@@ -17,6 +17,38 @@ const RegisterPassword = ({navigation}: any) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({
+    password: '',
+    confirmPassword: '',
+  });
+
+  const validatePassword = () => {
+    const newErrors = {
+      password: '',
+      confirmPassword: '',
+    };
+
+    let isValid = true;
+
+    if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+      isValid = false;
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSignUp = () => {
+    if (validatePassword()) {
+      navigation.navigate('EmailVerification');
+    }
+  };
 
   return (
     <LinearGradient
@@ -45,7 +77,7 @@ const RegisterPassword = ({navigation}: any) => {
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, errors.password ? styles.inputError : null]}>
                 <Icon
                   name="lock-closed-outline"
                   size={22}
@@ -57,7 +89,12 @@ const RegisterPassword = ({navigation}: any) => {
                   placeholder="Enter your password"
                   placeholderTextColor={Colors.inactive}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) {
+                      setErrors({...errors, password: ''});
+                    }
+                  }}
                   secureTextEntry={!showPassword}
                   selectionColor={Colors.primary}
                 />
@@ -71,11 +108,14 @@ const RegisterPassword = ({navigation}: any) => {
                   />
                 </TouchableOpacity>
               </View>
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Confirm Password</Text>
-              <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, errors.confirmPassword ? styles.inputError : null]}>
                 <Icon
                   name="lock-closed-outline"
                   size={24}
@@ -87,7 +127,12 @@ const RegisterPassword = ({navigation}: any) => {
                   placeholder="Confirm your password"
                   placeholderTextColor={Colors.inactive}
                   value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (errors.confirmPassword) {
+                      setErrors({...errors, confirmPassword: ''});
+                    }
+                  }}
                   secureTextEntry={!showConfirmPassword}
                   selectionColor={Colors.primary}
                 />
@@ -103,6 +148,9 @@ const RegisterPassword = ({navigation}: any) => {
                   />
                 </TouchableOpacity>
               </View>
+              {errors.confirmPassword ? (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              ) : null}
             </View>
 
             <Text style={styles.termsText}>
@@ -111,7 +159,7 @@ const RegisterPassword = ({navigation}: any) => {
               Notice.
             </Text>
 
-            <TouchableOpacity style={styles.signUpButton}>
+            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
               <Text style={styles.signUpButtonText}>Sign Up</Text>
             </TouchableOpacity>
 
@@ -244,6 +292,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: metrics.padding.xs,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: metrics.fontSize.sm,
+    marginTop: metrics.margin.xs,
+    marginLeft: metrics.margin.xs,
+  },
+  inputError: {
+    borderColor: Colors.error,
   },
 });
 
