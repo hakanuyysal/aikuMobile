@@ -149,12 +149,12 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.xl,
+    marginBottom: metrics.margin.xxl,
   },
   title: {
     fontSize: metrics.fontSize.xxxl,
     fontWeight: 'bold',
-    marginBottom: metrics.margin.sm,
+    marginBottom: metrics.margin.md,
     color: Colors.lightText,
   },
   subtitle: {
@@ -208,28 +208,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: metrics.margin.lg,
   },
-  checkbox: {
-    width: metrics.scale(20),
-    height: metrics.scale(20),
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: metrics.borderRadius.xs,
-    marginRight: metrics.margin.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.cardBackground,
-  },
-  rememberText: {
-    fontSize: metrics.fontSize.md,
-    color: Colors.inactive,
-  },
   loginButton: {
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.circle,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: metrics.margin.xl,
+    marginBottom: metrics.margin.xxl,
+    marginTop: metrics.margin.xl,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
@@ -247,12 +233,12 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: metrics.margin.xl,
+    marginBottom: metrics.margin.xxl,
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   dividerText: {
     marginHorizontal: metrics.margin.md,
