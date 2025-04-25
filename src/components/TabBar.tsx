@@ -35,7 +35,13 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   return (
     <View style={[styles.outerContainer, {paddingBottom: insets.bottom}]}>
       <LinearGradient
-        colors={['rgba(26, 30, 41, 0)', 'rgba(26, 30, 41, 0.95)', '#1A1E29']}
+        colors={[
+          'rgba(26, 30, 41, 0.03)',
+          'rgba(26, 30, 41, 1)',
+          'rgba(26, 30, 41, 1)',
+          '#1A1E29',
+        ]}
+        locations={[0, 0.5, 0.8, 1]}
         style={[
           styles.gradient,
           {
@@ -150,9 +156,9 @@ const styles = StyleSheet.create({
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 5,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 8,
   },
