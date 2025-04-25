@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
+import metrics from '../../constants/aikuMetric';
 
 interface Chat {
   id: string;
@@ -163,63 +164,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
     flex: 1,
     textAlign: 'center',
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    padding: metrics.padding.sm,
+    width: metrics.scale(40),
   },
   headerButton: {
-    padding: 8,
-    width: 40,
+    padding: metrics.padding.sm,
+    width: metrics.scale(40),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    margin: 16,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    margin: metrics.margin.md,
+    marginBottom: metrics.margin.sm,
+    paddingHorizontal: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: metrics.margin.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: metrics.padding.sm,
+    fontSize: metrics.fontSize.md,
     color: Colors.lightText,
   },
   list: {
     flex: 1,
+    paddingTop: metrics.padding.xl,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: metrics.padding.md,
   },
   chatItem: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.xs,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: metrics.scale(52),
+    height: metrics.scale(52),
+    borderRadius: metrics.scale(26),
     backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: 4,
+    padding: metrics.padding.xs,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -227,16 +229,16 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
+    borderRadius: metrics.scale(24),
   },
   unreadDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -metrics.scale(2),
+    right: -metrics.scale(2),
     backgroundColor: Colors.primary,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: metrics.scale(20),
+    height: metrics.scale(20),
+    borderRadius: metrics.scale(10),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -244,34 +246,34 @@ const styles = StyleSheet.create({
   },
   unreadDotText: {
     color: Colors.lightText,
-    fontSize: 11,
+    fontSize: metrics.fontSize.xs,
     fontWeight: '600',
   },
   chatInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: metrics.margin.sm,
     justifyContent: 'center',
   },
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: metrics.margin.xs,
   },
   name: {
-    fontSize: 16,
+    fontSize: metrics.fontSize.md,
     fontWeight: '600',
     color: Colors.lightText,
     letterSpacing: 0.3,
   },
   time: {
-    fontSize: 13,
+    fontSize: metrics.fontSize.xs,
     color: Colors.inactive,
   },
   lastMessage: {
-    fontSize: 14,
+    fontSize: metrics.fontSize.sm,
     color: Colors.inactive,
-    lineHeight: 20,
+    lineHeight: metrics.scale(20),
   },
 });
 
