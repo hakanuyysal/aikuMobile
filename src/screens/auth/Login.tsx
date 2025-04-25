@@ -1,0 +1,277 @@
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+} from 'react-native';
+import metrics from '../../constants/aikuMetric';
+import {Colors} from '../../constants/colors';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+const Login = ({navigation}: any) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
+      style={styles.gradientBackground}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.subtitle}>
+              Connect with AI entrepreneurs, investors, and industry leaders. Login to
+              grow your projects and be part of the future of innovation!
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="mail-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor={Colors.inactive}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  selectionColor={Colors.primary}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="lock-closed-outline" size={20} color={Colors.inactive} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="Enter your password"
+                  placeholderTextColor={Colors.inactive}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  selectionColor={Colors.primary}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}>
+                  <Icon
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color={Colors.inactive}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.rememberContainer}>
+              <TouchableOpacity style={styles.checkbox}>
+                <Icon name="checkmark" size={16} color={Colors.inactive} />
+              </TouchableOpacity>
+              <Text style={styles.rememberText}>Remember Me</Text>
+            </View>
+
+            <TouchableOpacity style={styles.loginButton}>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.line} />
+              <Text style={styles.dividerText}>Sign in with social accounts</Text>
+              <View style={styles.line} />
+            </View>
+
+            <View style={styles.socialButtons}>
+              <TouchableOpacity style={styles.socialButton}>
+                <Icon name="logo-google" size={20} color={Colors.lightText} style={styles.socialIcon} />
+                <Text style={styles.socialButtonText}>Sign in with Google</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialButton}>
+                <Icon name="logo-linkedin" size={20} color={Colors.lightText} style={styles.socialIcon} />
+                <Text style={styles.socialButtonText}>Sign in with LinkedIn</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.signUpText}>Sign Up!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+};
+
+const styles = StyleSheet.create({
+  gradientBackground: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    padding: metrics.padding.lg,
+  },
+  header: {
+    marginTop: metrics.margin.xl,
+    marginBottom: metrics.margin.xl,
+  },
+  title: {
+    fontSize: metrics.fontSize.xxxl,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.sm,
+    color: Colors.lightText,
+  },
+  subtitle: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.inactive,
+    lineHeight: metrics.fontSize.lg * 1.4,
+  },
+  form: {
+    flex: 1,
+  },
+  inputContainer: {
+    marginBottom: metrics.margin.lg,
+  },
+  label: {
+    fontSize: metrics.fontSize.md,
+    fontWeight: '600',
+    marginBottom: metrics.margin.xs,
+    color: Colors.lightText,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: metrics.verticalScale(50),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: metrics.borderRadius.sm,
+    backgroundColor: Colors.cardBackground,
+    paddingHorizontal: metrics.padding.md,
+  },
+  inputIcon: {
+    marginRight: metrics.margin.sm,
+  },
+  input: {
+    flex: 1,
+    fontSize: metrics.fontSize.md,
+    color: Colors.lightText,
+    height: '100%',
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  eyeIcon: {
+    padding: metrics.padding.xs,
+  },
+  rememberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: metrics.margin.lg,
+  },
+  checkbox: {
+    width: metrics.scale(20),
+    height: metrics.scale(20),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: metrics.borderRadius.xs,
+    marginRight: metrics.margin.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.cardBackground,
+  },
+  rememberText: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.inactive,
+  },
+  loginButton: {
+    backgroundColor: Colors.primary,
+    height: metrics.verticalScale(50),
+    borderRadius: metrics.borderRadius.circle,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: metrics.margin.xl,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: metrics.scale(8),
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: metrics.scale(12),
+    elevation: 8,
+  },
+  loginButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.lg,
+    fontWeight: '700',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: metrics.margin.xl,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: metrics.margin.md,
+    color: Colors.inactive,
+    fontSize: metrics.fontSize.sm,
+  },
+  socialButtons: {
+    gap: metrics.margin.md,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    height: metrics.verticalScale(50),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: metrics.borderRadius.circle,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.cardBackground,
+  },
+  socialIcon: {
+    marginRight: metrics.margin.sm,
+  },
+  socialButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: metrics.margin.xl,
+  },
+  footerText: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.inactive,
+  },
+  signUpText: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+});
+
+export default Login;

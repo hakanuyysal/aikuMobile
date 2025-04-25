@@ -6,6 +6,7 @@ import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
 import {Colors} from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
+import AuthNavigator from './src/navigation/AuthNavigator';
 
 const RootStack = createNativeStackNavigator();
 
@@ -42,6 +43,9 @@ const navigationTheme = {
 };
 
 function App(): React.JSX.Element {
+  // Test amaçlı olarak isAuthenticated kullanıcazs
+  const isAuthenticated = false;
+
   return (
     <PaperProvider theme={materialTheme}>
       <View style={styles.container}>
@@ -51,21 +55,31 @@ function App(): React.JSX.Element {
         />
         <NavigationContainer theme={navigationTheme}>
           <RootStack.Navigator>
-            <RootStack.Screen
-              name="Main"
-              component={TabNavigator}
-              options={{headerShown: false}}
-            />
-            <RootStack.Screen
-              name="UpdateProfile"
-              component={UpdateProfileScreen}
-              options={{
-                presentation: 'modal',
-                title: 'Edit Profile',
-                headerStyle: {backgroundColor: Colors.cardBackground},
-                headerTintColor: Colors.lightText,
-              }}
-            />
+            {isAuthenticated ? (
+              <>
+                <RootStack.Screen
+                  name="Main"
+                  component={TabNavigator}
+                  options={{headerShown: false}}
+                />
+                <RootStack.Screen
+                  name="UpdateProfile"
+                  component={UpdateProfileScreen}
+                  options={{
+                    presentation: 'modal',
+                    title: 'Edit Profile',
+                    headerStyle: {backgroundColor: Colors.cardBackground},
+                    headerTintColor: Colors.lightText,
+                  }}
+                />
+              </>
+            ) : (
+              <RootStack.Screen
+                name="Auth"
+                component={AuthNavigator}
+                options={{headerShown: false}}
+              />
+            )}
           </RootStack.Navigator>
         </NavigationContainer>
       </View>
