@@ -154,7 +154,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
     const timer = setTimeout(() => {
       navigation.reset({
         index: 0,
-        routes: [{name: 'Auth'}],
+        routes: [{name: 'Main'}],
       });
     }, 10500);
 
