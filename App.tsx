@@ -45,7 +45,7 @@ const navigationTheme = {
 
 function App(): React.JSX.Element {
   // Test amaçlı olarak isAuthenticated kullanıcazs
-  const isAuthenticated = true;
+  const isAuthenticated = false;
 
   return (
     <PaperProvider theme={materialTheme}>

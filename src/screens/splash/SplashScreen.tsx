@@ -13,12 +13,12 @@ import metrics from '../../constants/aikuMetric';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Video from 'react-native-video';
+// @ts-ignore
+import {version as APP_VERSION} from '../../../package.json';
 
 interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
-
-const APP_VERSION = process.env.APP_VERSION;
 
 const SplashScreen: React.FC<Props> = ({navigation}) => {
   const logoScale = useMemo(() => new Animated.Value(0), []);
@@ -26,7 +26,8 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
   const logoPosition = useMemo(() => new Animated.Value(0), []);
   const spinnerOpacity = useMemo(() => new Animated.Value(0), []);
   const splashImageOpacity = useMemo(() => new Animated.Value(0), []);
-  const overlayOpacity = useMemo(() => new Animated.Value(0.4), []);
+  const overlayOpacity = useMemo(() => new Animated.Value(0.2), []);
+  const darkOverlayOpacity = useMemo(() => new Animated.Value(0), []);
 
   const startAnimations = useCallback(() => {
     Animated.sequence([
@@ -57,11 +58,18 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         }),
       ]),
       Animated.delay(300),
-      Animated.timing(spinnerOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
+      Animated.parallel([
+        Animated.timing(spinnerOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(darkOverlayOpacity, {
+          toValue: 0.7,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
   }, [
     logoOpacity,
@@ -69,6 +77,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
     logoPosition,
     splashImageOpacity,
     spinnerOpacity,
+    darkOverlayOpacity,
   ]);
 
   useEffect(() => {
@@ -76,7 +85,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
 
     const timer = setTimeout(() => {
       navigation.navigate('Main');
-    }, 35500);
+    }, 5500);
 
     return () => clearTimeout(timer);
   }, [navigation, startAnimations]);
@@ -99,7 +108,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         ignoreSilentSwitch="obey"
       />
 
-      {/* Flu overlay efekti */}
+      {/* Mavi Gradient overlay efekti */}
       <Animated.View
         style={[
           styles.overlay,
@@ -108,7 +117,31 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
           },
         ]}>
         <LinearGradient
-          colors={[Colors.background + 'CC', Colors.background + '99']}
+          colors={[
+            'rgba(0, 153, 255, 0.3)',
+            'rgba(0, 153, 255, 0.2)',
+            'rgba(0, 153, 255, 0.3)',
+          ]}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
+      {/* Karanlık overlay efekti */}
+      <Animated.View
+        style={[
+          styles.darkOverlay,
+          {
+            opacity: darkOverlayOpacity,
+          },
+        ]}>
+        <LinearGradient
+          colors={[
+            'rgba(0, 0, 0, 0.8)',
+            'rgba(0, 0, 0, 0.6)',
+            'rgba(0, 0, 0, 0.8)',
+          ]}
+          locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFill}
         />
       </Animated.View>
@@ -144,7 +177,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
       </View>
       <Animated.View
         style={[styles.bottomContainer, {opacity: spinnerOpacity}]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={Colors.lightText} />
         <Text style={styles.versionText}>v{APP_VERSION}</Text>
       </Animated.View>
     </View>
@@ -158,15 +191,23 @@ const styles = StyleSheet.create({
   },
   backgroundVideo: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
+    zIndex: 2,
+  },
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    zIndex: 2,
   },
   contentWrapper: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 3,
   },
   contentContainer: {
     width: metrics.WIDTH,
@@ -205,12 +246,13 @@ const styles = StyleSheet.create({
     bottom: metrics.padding.xl * 2,
     alignItems: 'center',
     width: '100%',
+    zIndex: 3,
   },
   versionText: {
     color: Colors.lightText,
     marginTop: metrics.padding.sm,
     fontSize: 12,
-    opacity: 0.7,
+    opacity: 0.9,
   },
 });
 
