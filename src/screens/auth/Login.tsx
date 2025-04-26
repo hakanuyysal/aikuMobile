@@ -41,7 +41,7 @@ const Login = ({navigation}: any) => {
               <View style={styles.inputWrapper}>
                 <Icon
                   name="mail-outline"
-                  size={20}
+                  size={22}
                   color={Colors.inactive}
                   style={styles.inputIcon}
                 />
@@ -63,7 +63,7 @@ const Login = ({navigation}: any) => {
               <View style={styles.inputWrapper}>
                 <Icon
                   name="lock-closed-outline"
-                  size={20}
+                  size={22}
                   color={Colors.inactive}
                   style={styles.inputIcon}
                 />
@@ -81,7 +81,7 @@ const Login = ({navigation}: any) => {
                   style={styles.eyeIcon}>
                   <Icon
                     name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
+                    size={22}
                     color={Colors.inactive}
                   />
                 </TouchableOpacity>
