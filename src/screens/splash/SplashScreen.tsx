@@ -156,7 +156,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         index: 0,
         routes: [{name: 'Auth'}],
       });
-    }, 5500);
+    }, 10500);
 
     return () => clearTimeout(timer);
   }, [navigation, startAnimations]);
