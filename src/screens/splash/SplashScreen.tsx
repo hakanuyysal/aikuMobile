@@ -7,12 +7,12 @@ import {
   StatusBar,
   ActivityIndicator,
   Text,
+  Dimensions,
 } from 'react-native';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import Video from 'react-native-video';
 // @ts-ignore
 import {version as APP_VERSION} from '../../../package.json';
 
@@ -20,31 +20,61 @@ interface Props {
   navigation: NavigationProp<ParamListBase>;
 }
 
+const {width: WIDTH} = Dimensions.get('window');
+
 const SplashScreen: React.FC<Props> = ({navigation}) => {
-  const logoScale = useMemo(() => new Animated.Value(0), []);
+  const logoScale = useMemo(() => new Animated.Value(0.1), []);
   const logoOpacity = useMemo(() => new Animated.Value(0), []);
   const logoPosition = useMemo(() => new Animated.Value(0), []);
+  const logoRotateX = useMemo(() => new Animated.Value(45), []);
+  const logoPerspective = useMemo(() => new Animated.Value(850), []);
   const spinnerOpacity = useMemo(() => new Animated.Value(0), []);
   const splashImageOpacity = useMemo(() => new Animated.Value(0), []);
-  const overlayOpacity = useMemo(() => new Animated.Value(0.2), []);
-  const darkOverlayOpacity = useMemo(() => new Animated.Value(0), []);
+  const spotlightScale = useMemo(() => new Animated.Value(0.5), []);
+  const spotlightOpacity = useMemo(() => new Animated.Value(0), []);
 
   const startAnimations = useCallback(() => {
     Animated.sequence([
+      // Önce spot ışık efekti
+      Animated.parallel([
+        Animated.timing(spotlightOpacity, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.spring(spotlightScale, {
+          toValue: 1,
+          tension: 5,
+          friction: 3,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Logo derinlik animasyonu
       Animated.parallel([
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 800,
+          duration: 1200,
           useNativeDriver: true,
         }),
         Animated.spring(logoScale, {
           toValue: 1,
-          tension: 10,
-          friction: 2,
+          tension: 6,
+          friction: 3,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoRotateX, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoPerspective, {
+          toValue: 1000,
+          duration: 1200,
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(500),
+      Animated.delay(300),
+      // Diğer animasyonlar
       Animated.parallel([
         Animated.timing(logoPosition, {
           toValue: -metrics.getWidthPercentage(22),
@@ -58,26 +88,22 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         }),
       ]),
       Animated.delay(300),
-      Animated.parallel([
-        Animated.timing(spinnerOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(darkOverlayOpacity, {
-          toValue: 0.7,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(spinnerOpacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [
     logoOpacity,
     logoScale,
     logoPosition,
+    logoRotateX,
+    logoPerspective,
     splashImageOpacity,
     spinnerOpacity,
-    darkOverlayOpacity,
+    spotlightOpacity,
+    spotlightScale,
   ]);
 
   useEffect(() => {
@@ -97,52 +123,24 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         backgroundColor={Colors.statusBarBackground}
       />
 
-      {/* Video Arka Plan */}
-      <Video
-        source={require('../../assets/images/video.mp4')}
-        style={styles.backgroundVideo}
-        repeat
-        muted
-        resizeMode="cover"
-        rate={1.0}
-        ignoreSilentSwitch="obey"
-      />
-
-      {/* Mavi Gradient overlay efekti */}
+      {/* Spot Işık Efekti */}
       <Animated.View
         style={[
-          styles.overlay,
+          styles.spotlight,
           {
-            opacity: overlayOpacity,
+            opacity: spotlightOpacity,
+            transform: [{scale: spotlightScale}],
           },
         ]}>
         <LinearGradient
           colors={[
-            'rgba(0, 153, 255, 0.3)',
-            'rgba(0, 153, 255, 0.2)',
-            'rgba(0, 153, 255, 0.3)',
+            'rgba(0, 153, 255, 0.4)',
+            'rgba(0, 153, 255, 0.1)',
+            'rgba(0, 153, 255, 0)',
           ]}
-          locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
-
-      {/* Karanlık overlay efekti */}
-      <Animated.View
-        style={[
-          styles.darkOverlay,
-          {
-            opacity: darkOverlayOpacity,
-          },
-        ]}>
-        <LinearGradient
-          colors={[
-            'rgba(0, 0, 0, 0.8)',
-            'rgba(0, 0, 0, 0.6)',
-            'rgba(0, 0, 0, 0.8)',
-          ]}
-          locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFill}
+          style={styles.spotlightGradient}
+          start={{x: 0.5, y: 0.5}}
+          end={{x: 1, y: 1}}
         />
       </Animated.View>
 
@@ -153,7 +151,15 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
               styles.logoContainer,
               {
                 opacity: logoOpacity,
-                transform: [{scale: logoScale}, {translateX: logoPosition}],
+                transform: [
+                  {perspective: logoPerspective},
+                  {rotateX: logoRotateX.interpolate({
+                    inputRange: [0, 360],
+                    outputRange: ['0deg', '360deg'],
+                  })},
+                  {scale: logoScale},
+                  {translateX: logoPosition},
+                ],
               },
             ]}>
             <Image
@@ -189,19 +195,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  backgroundVideo: {
-    ...StyleSheet.absoluteFillObject,
+  spotlight: {
+    position: 'absolute',
+    width: WIDTH * 2,
+    height: WIDTH * 2,
+    top: -WIDTH / 2,
+    left: -WIDTH / 2,
     zIndex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-    zIndex: 2,
-  },
-  darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-    zIndex: 2,
+  spotlightGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: WIDTH,
   },
   contentWrapper: {
     flex: 1,
