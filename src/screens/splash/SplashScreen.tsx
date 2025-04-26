@@ -39,12 +39,6 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
 
   const startAnimations = useCallback(() => {
     Animated.sequence([
-      // Background gradient fade in
-      Animated.timing(backgroundGradientOpacity, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
       // Particles fade in
       Animated.timing(particlesOpacity, {
         toValue: 1,
@@ -132,6 +126,12 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
         friction: 5,
         useNativeDriver: true,
       }),
+      // Background gradient fade in - en son
+      Animated.timing(backgroundGradientOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [
     logoOpacity,
@@ -173,13 +173,15 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
       <Animated.View style={[styles.backgroundGradient, { opacity: backgroundGradientOpacity }]}>
         <LinearGradient
           colors={[
-            'rgba(10, 15, 30, 1)',   // Daha koyu lacivert
-            'rgba(30, 50, 100, 0.2)', // Orta ton mavi
-            'rgba(10, 15, 30, 1)',   // Daha koyu lacivert
+            '#1A1E29',
+            '#1A1E29',
+            '#3B82F780',
+            '#3B82F740',
           ]}
+          locations={[0, 0.3, 0.6, 0.9]}
           style={StyleSheet.absoluteFill}
           start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
+          end={{x: 2, y: 1}}
         />
       </Animated.View>
 
@@ -274,7 +276,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(10, 15, 30, 1)',  // Daha koyu lacivert
+    backgroundColor: '#1A1E29',
   },
   backgroundGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -343,7 +345,7 @@ const styles = StyleSheet.create({
     width: metrics.getWidthPercentage(30),
     height: metrics.getWidthPercentage(30),
     position: 'absolute',
-    top:metrics.getWidthPercentage(8),
+    top:metrics.getWidthPercentage(5),
     right: metrics.getWidthPercentage(23),
     alignItems: 'center',
     justifyContent: 'center',
