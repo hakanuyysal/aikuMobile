@@ -154,9 +154,25 @@ const RegisterPassword = ({navigation}: any) => {
             </View>
 
             <Text style={styles.termsText}>
-              By clicking "Sign Up", you agree to our Terms of Service and
-              Privacy Policy and acknowledge our Personal Data Protection
-              Notice.
+              By clicking "Sign Up", you agree to our{' '}
+              <Text
+                style={styles.linkText}
+                onPress={() => navigation.navigate('TermsOfService')}>
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.linkText}
+                onPress={() => navigation.navigate('PrivacyPolicy')}>
+                Privacy Policy
+              </Text>{' '}
+              and acknowledge our{' '}
+              <Text
+                style={styles.linkText}
+                onPress={() => navigation.navigate('PersonalDataProtection')}>
+                Personal Data Protection Notice
+              </Text>
+              .
             </Text>
 
             <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
@@ -303,6 +319,10 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: Colors.error,
+  },
+  linkText: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
 });
 
