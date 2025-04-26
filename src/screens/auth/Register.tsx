@@ -279,6 +279,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   continueButton: {
+    width: '90%',
+    alignSelf: 'center',
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.md,

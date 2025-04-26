@@ -258,6 +258,8 @@ const styles = StyleSheet.create({
   signUpButton: {
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
+    width: '90%',
+    alignSelf: 'center',
     borderRadius: metrics.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',

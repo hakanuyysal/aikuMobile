@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingVertical: metrics.padding.md,
     backgroundColor: 'transparent',
-    opacity: 0.7,
+    opacity: 0.8,
   },
   passwordInput: {
     flex: 1,
@@ -209,6 +209,8 @@ const styles = StyleSheet.create({
     marginBottom: metrics.margin.lg,
   },
   loginButton: {
+    width: '90%',
+    alignSelf: 'center',
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.circle,
