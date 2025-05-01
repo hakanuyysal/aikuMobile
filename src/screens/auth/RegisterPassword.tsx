@@ -6,13 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import {useAuth} from '../../contexts/AuthContext';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {AuthStackParamList} from '../../navigation/AuthNavigator';
 
-const RegisterPassword = ({navigation}: any) => {
+type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterPassword'>;
+
+const RegisterPassword = ({navigation, route}: Props) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +28,9 @@ const RegisterPassword = ({navigation}: any) => {
     password: '',
     confirmPassword: '',
   });
+
+  const {register, loading} = useAuth();
+  const {firstName, lastName, email} = route.params;
 
   const validatePassword = () => {
     const newErrors = {
@@ -44,18 +54,24 @@ const RegisterPassword = ({navigation}: any) => {
     return isValid;
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (validatePassword()) {
-      navigation.navigate('EmailVerification');
+      try {
+        await register({
+          email,
+          password,
+          name: `${firstName} ${lastName}`,
+        });
+        navigation.navigate('EmailVerification');
+      } catch (error) {
+        Alert.alert('Hata', error instanceof Error ? error.message : 'Kayıt işlemi başarısız oldu');
+      }
     }
   };
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      colors={[Colors.gradientStart, Colors.gradientEnd]}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -175,8 +191,15 @@ const RegisterPassword = ({navigation}: any) => {
               .
             </Text>
 
-            <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-              <Text style={styles.signUpButtonText}>Sign Up</Text>
+            <TouchableOpacity 
+              style={styles.signUpButton} 
+              onPress={handleSignUp}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color={Colors.lightText} />
+              ) : (
+                <Text style={styles.signUpButtonText}>Sign Up</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.footer}>

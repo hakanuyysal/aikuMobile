@@ -8,7 +8,21 @@ import TermsOfService from '../screens/legal/TermsOfService';
 import PrivacyPolicy from '../screens/legal/PrivacyPolicy';
 import PersonalDataProtection from '../screens/legal/PersonalDataProtection';
 
-const Stack = createNativeStackNavigator();
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  RegisterPassword: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  EmailVerification: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+  PersonalDataProtection: undefined;
+};
+
+const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 const AuthNavigator = () => {
   return (

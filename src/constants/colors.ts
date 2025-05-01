@@ -17,4 +17,7 @@ export const Colors = {
   border: '#242C3B',
   star: '#FFD700',
   error: '#FF4444',
+  gradientStart: '#1A1E29',
+  gradientEnd: '#3B82F780',
+  inputBackground: '#242C3B',
 };

@@ -18,7 +18,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {version as APP_VERSION} from '../../../package.json';
 
 interface Props {
-  navigation: NavigationProp<ParamListBase>;
+  navigation?: NavigationProp<ParamListBase>;
 }
 
 const {width: WIDTH} = Dimensions.get('window');
@@ -152,11 +152,12 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
     startAnimations();
 
     const timer = setTimeout(() => {
-      // isAuthenticated false olduğu için direkt Auth'a yönlendir
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'Auth'}],
-      });
+      if (navigation) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Auth'}],
+        });
+      }
     }, 10500);
 
     return () => clearTimeout(timer);

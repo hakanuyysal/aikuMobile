@@ -7,13 +7,19 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import {useAuth} from '../../contexts/AuthContext';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {AuthStackParamList} from '../../navigation/AuthNavigator';
 
-const Register = ({navigation}: any) => {
+type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+
+const Register = ({navigation}: Props) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -22,6 +28,8 @@ const Register = ({navigation}: any) => {
     lastName: '',
     email: '',
   });
+
+  const {loading} = useAuth();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,10 +74,7 @@ const Register = ({navigation}: any) => {
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      colors={[Colors.gradientStart, Colors.gradientEnd]}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -188,8 +193,13 @@ const Register = ({navigation}: any) => {
 
               <TouchableOpacity
                 style={styles.continueButton}
-                onPress={handleContinue}>
-                <Text style={styles.continueButtonText}>Continue</Text>
+                onPress={handleContinue}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color={Colors.lightText} />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.footer}>

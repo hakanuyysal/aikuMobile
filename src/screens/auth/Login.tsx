@@ -6,16 +6,49 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import {useAuth} from '../../contexts/AuthContext';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {AuthStackParamList} from '../../navigation/AuthNavigator';
 
-const Login = ({navigation}: any) => {
+type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+
+const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const {login, loading, googleLogin, linkedInLogin} = useAuth();
+
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const token = 'google-token';
+      await googleLogin(token);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
+    }
+  };
+
+  const handleLinkedInLogin = async () => {
+    try {
+      await linkedInLogin();
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
+    }
+  };
 
   return (
     <LinearGradient
@@ -88,8 +121,15 @@ const Login = ({navigation}: any) => {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.loginButton}>
-              <Text style={styles.loginButtonText}>Login</Text>
+            <TouchableOpacity 
+              style={styles.loginButton}
+              onPress={handleLogin}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color={Colors.lightText} />
+              ) : (
+                <Text style={styles.loginButtonText}>Login</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.divider}>
@@ -101,7 +141,10 @@ const Login = ({navigation}: any) => {
             </View>
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity 
+                style={styles.socialButton}
+                onPress={handleGoogleLogin}
+                disabled={loading}>
                 <Icon
                   name="logo-google"
                   size={20}
@@ -110,7 +153,10 @@ const Login = ({navigation}: any) => {
                 />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity 
+                style={styles.socialButton}
+                onPress={handleLinkedInLogin}
+                disabled={loading}>
                 <Icon
                   name="logo-linkedin"
                   size={20}
@@ -195,7 +241,7 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingVertical: metrics.padding.md,
     backgroundColor: 'transparent',
-    opacity: 0.8,
+    opacity: 0.7,
   },
   passwordInput: {
     flex: 1,
@@ -209,8 +255,6 @@ const styles = StyleSheet.create({
     marginBottom: metrics.margin.lg,
   },
   loginButton: {
-    width: '90%',
-    alignSelf: 'center',
     backgroundColor: Colors.primary,
     height: metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.circle,
