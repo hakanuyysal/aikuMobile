@@ -80,10 +80,20 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
           onPress: async () => {
             try {
               await AuthService.logout();
-              updateUser({} as any);
+              if (updateUser) {
+                updateUser({} as any);
+              }
               onClose();
             } catch (error) {
-              Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
+              console.error('Logout error:', error);
+              Alert.alert(
+                'Hata',
+                'Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.',
+                [{
+                  text: 'Tamam',
+                  onPress: () => onClose(),
+                }],
+              );
             }
           },
         },

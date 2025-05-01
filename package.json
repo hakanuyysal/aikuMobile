@@ -29,6 +29,7 @@
     "https-browserify": "^1.0.0",
     "react": "19.0.0",
     "react-native": "0.79.1",
+    "react-native-config": "^1.5.5",
     "react-native-crypto": "^2.2.0",
     "react-native-fetch-api": "^3.0.0",
     "react-native-geolocation-service": "^5.3.1",

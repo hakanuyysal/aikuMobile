@@ -1,8 +1,8 @@
-import { storage } from '../storage/mmkv';
 import { supabase } from '../config/supabase';
 import { Provider } from '@supabase/supabase-js';
 import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
 
 interface UserData {
   email: string;
@@ -26,10 +26,11 @@ interface LinkedInResponse {
 }
 
 class AuthService {
-  private baseURL = 'https://api.aikuaiplatform.com';
+  private baseURL: string;
   private axios: AxiosInstance;
 
   constructor() {
+    this.baseURL = Config.API_URL || 'http://localhost:3000';
     this.axios = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,
@@ -64,10 +65,25 @@ class AuthService {
 
   async logout() {
     try {
-      await this.axios.post('/logout');
-      await AsyncStorage.removeItem('token');
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        // Token yoksa direkt çıkış yapmış sayılır
+        return;
+      }
+
+      try {
+        // Önce API'ye çıkış isteği gönder
+        await this.axios.post('/logout');
+      } catch (error) {
+        // API hatası olsa bile devam et
+        console.warn('Logout API error:', error);
+      }
+
+      // Her durumda local storage'ı temizle
+      await AsyncStorage.multiRemove(['token', 'user']);
     } catch (error) {
-      throw this.handleError(error);
+      console.error('Logout error:', error);
+      // Hata olsa bile sessizce devam et
     }
   }
 
@@ -129,7 +145,7 @@ class AuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${process.env.EXPO_PUBLIC_APP_URL}/auth/callback`,
+          redirectTo: `${Config.APP_URL}/auth/callback`,
           scopes: 'openid profile email',
           queryParams: {
             prompt: 'consent',
