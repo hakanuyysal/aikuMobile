@@ -73,5 +73,16 @@
 		<string>Octicons.ttf</string>
 		<string>Zocial.ttf</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com</string>
 </dict>
 </plist>

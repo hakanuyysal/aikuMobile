@@ -1,6 +1,6 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
 import {storage} from '../storage/mmkv';
-import authService from '../services/AuthService';
+import BaseService from '../services/BaseService';
 
 interface User {
   id: string;
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       const token = storage.getString('auth_token');
       if (token) {
-        const userData = await authService.getCurrentUser();
+        const userData = await BaseService.getCurrentUser();
         setUser(userData);
       }
     } catch (error) {
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.login({email, password});
+      const response = await BaseService.login(email, password);
       setUser(response.user);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Giriş başarısız');
@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.register(userData);
+      const response = await BaseService.register(userData);
       setUser(response.user);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Kayıt başarısız');
@@ -86,7 +86,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       setLoading(true);
       setError(null);
-      await authService.logout();
+      storage.delete('auth_token');
+      storage.delete('user');
       setUser(null);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Çıkış başarısız');
@@ -100,7 +101,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.googleLogin(token);
+      const response = await BaseService.googleLogin(token);
       if (response.success && response.user) {
         setUser(response.user);
       } else {
@@ -120,12 +121,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.signInWithLinkedIn();
-      if (response?.user) {
-        setUser(response.user);
-      } else {
-        throw new Error('LinkedIn girişi başarısız');
-      }
+      // LinkedIn girişi için gerekli işlemler burada yapılacak
+      throw new Error('LinkedIn girişi henüz implement edilmedi');
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'LinkedIn girişi başarısız',
@@ -136,18 +133,19 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     }
   };
 
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    googleLogin,
+    linkedInLogin,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        login,
-        register,
-        logout,
-        googleLogin,
-        linkedInLogin,
-      }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
