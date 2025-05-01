@@ -1,6 +1,7 @@
 import BaseService from './BaseService';
 import { storage } from '../storage/mmkv';
 import { supabase } from '../config/supabase';
+import { Provider } from '@supabase/supabase-js';
 
 interface UserData {
   email: string;
@@ -11,6 +12,16 @@ interface UserData {
 interface LoginCredentials {
   email: string;
   password: string;
+}
+
+interface LinkedInResponse {
+  provider: Provider;
+  url: string;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
 }
 
 class AuthService extends BaseService {
@@ -113,7 +124,7 @@ class AuthService extends BaseService {
     }
   }
 
-  async signInWithLinkedIn() {
+  async signInWithLinkedIn(): Promise<LinkedInResponse> {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
@@ -128,7 +139,7 @@ class AuthService extends BaseService {
       });
 
       if (error) throw error;
-      return data;
+      return data as LinkedInResponse;
     } catch (error) {
       throw error;
     }
