@@ -2,8 +2,7 @@ import {Dimensions, Platform} from 'react-native';
 
 const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
 const actualWidth = WINDOW_WIDTH > WINDOW_HEIGHT ? WINDOW_HEIGHT : WINDOW_WIDTH;
-const actualHeight =
-  WINDOW_WIDTH > WINDOW_HEIGHT ? WINDOW_WIDTH : WINDOW_HEIGHT;
+const actualHeight = WINDOW_WIDTH > WINDOW_HEIGHT ? WINDOW_WIDTH : WINDOW_HEIGHT;
 
 const isIOS = Platform.OS === 'ios';
 
@@ -12,7 +11,7 @@ const baseHeight = isIOS ? 926 : 915;
 
 const widthRem = actualWidth / baseWidth;
 const heightRem = actualHeight / baseHeight;
-const rem = heightRem;
+const rem = Math.min(widthRem, heightRem); // Use the smaller scale factor to prevent overflow
 
 const scale = (size: number) => Math.round(size * widthRem);
 const verticalScale = (size: number) => Math.round(size * heightRem);
@@ -29,6 +28,7 @@ const platformValues = {
       : rem * 20
     : rem * 16,
   navigationBarHeight: isIOS ? rem * 44 : rem * 56,
+  menuWidth: Math.min(actualWidth * 0.85, 400), // Maximum menu width of 400 or 85% of screen width
 };
 
 const metrics = {
@@ -42,6 +42,7 @@ const metrics = {
   statusBarHeight: platformValues.statusBarHeight,
   navigationBarHeight: platformValues.navigationBarHeight,
   bottomSpacing: platformValues.bottomSpacing,
+  menuWidth: platformValues.menuWidth,
 
   margin: {
     xs: rem * 4,
@@ -50,6 +51,7 @@ const metrics = {
     lg: rem * 24,
     xl: rem * 32,
     xxl: rem * 40,
+    xxs: rem * 2,
   },
 
   padding: {
@@ -59,6 +61,7 @@ const metrics = {
     lg: rem * 24,
     xl: rem * 32,
     xxl: rem * 40,
+    xxs: rem * 2,
   },
 
   fontSize: {
@@ -102,7 +105,8 @@ const metrics = {
   moderateScale,
   getHeightPercentage: (percentage: number) =>
     actualHeight * (percentage / 100),
-  getWidthPercentage: (percentage: number) => actualWidth * (percentage / 100),
+  getWidthPercentage: (percentage: number) => 
+    Math.min(actualWidth * (percentage / 100), platformValues.menuWidth),
 
   isSmallDevice: actualHeight < 667,
   isMediumDevice: actualHeight >= 667 && actualHeight < 896,

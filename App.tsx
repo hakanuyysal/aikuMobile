@@ -98,7 +98,9 @@ function AppContent(): React.JSX.Element {
         <Menu
           user={{
             name: user.name || user.email,
-            avatar: undefined,
+            email: user.email,
+            avatar: user.photoURL,
+            role: user.role || 'Member'
           }}
           onClose={() => setIsMenuOpen(false)}
         />

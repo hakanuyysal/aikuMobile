@@ -1,7 +1,8 @@
-import BaseService from './BaseService';
 import { storage } from '../storage/mmkv';
 import { supabase } from '../config/supabase';
 import { Provider } from '@supabase/supabase-js';
+import axios, { AxiosInstance } from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserData {
   email: string;
@@ -24,23 +25,36 @@ interface LinkedInResponse {
   };
 }
 
-class AuthService extends BaseService {
+class AuthService {
+  private baseURL = 'https://api.aikuaiplatform.com';
+  private axios: AxiosInstance;
+
   constructor() {
-    super('/auth');
+    this.axios = axios.create({
+      baseURL: this.baseURL,
+      timeout: 10000,
+    });
+
+    // Token'ı her istekte otomatik ekle
+    this.axios.interceptors.request.use(async (config) => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
   }
 
   async register(userData: UserData) {
-    return await this.create(userData);
+    const response = await this.axios.post('/register', userData);
+    return response.data;
   }
 
   async login(credentials: LoginCredentials) {
     try {
-      const response = await this.axios.post(
-        `${this.baseURL}/login`,
-        credentials,
-      );
+      const response = await this.axios.post('/login', credentials);
       if (response.data.token) {
-        storage.set('auth_token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
       }
       return response.data;
     } catch (error) {
@@ -50,8 +64,8 @@ class AuthService extends BaseService {
 
   async logout() {
     try {
-      await this.axios.post(`${this.baseURL}/logout`);
-      storage.clearAll();
+      await this.axios.post('/logout');
+      await AsyncStorage.removeItem('token');
     } catch (error) {
       throw this.handleError(error);
     }
@@ -59,15 +73,14 @@ class AuthService extends BaseService {
 
   async getCurrentUser() {
     try {
-      const token = storage.getString('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (!token) throw new Error('Yetkisiz erişim');
 
-      const response = await this.axios.get(`${this.baseURL}/current-user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await this.axios.get('/current-user');
       return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      console.error('getCurrentUser error:', error);
+      return null;
     }
   }
 
@@ -89,7 +102,7 @@ class AuthService extends BaseService {
       );
 
       if (response.data && response.data.token) {
-        storage.set('auth_token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
         return {
           ...response.data,
           success: true,
@@ -97,29 +110,16 @@ class AuthService extends BaseService {
       }
 
       return {
-        ...response.data,
         success: false,
         error: 'Beklenmeyen yanıt formatı',
         details: 'Sunucu yanıtı token içermiyor',
       };
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'Google authentication error';
-      const errorDetails =
-        error.response?.data?.details || 'Authentication failed';
-      const errorCode =
-        error.response?.data?.errorCode ||
-        error.response?.status ||
-        'unknown_error';
-
       return {
         success: false,
-        error: errorMessage,
-        details: errorDetails,
-        errorCode: errorCode,
+        error: error.message || 'Google authentication error',
+        details: error.response?.data?.details || 'Authentication failed',
+        errorCode: error.response?.status || 'unknown_error',
       };
     }
   }
@@ -143,6 +143,13 @@ class AuthService extends BaseService {
     } catch (error) {
       throw error;
     }
+  }
+
+  private handleError(error: any) {
+    if (error.response) {
+      throw new Error(error.response.data.message || 'Bir hata oluştu');
+    }
+    throw error;
   }
 }
 

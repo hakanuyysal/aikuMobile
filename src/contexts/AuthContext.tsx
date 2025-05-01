@@ -1,26 +1,18 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
-import {storage} from '../storage/mmkv';
-import BaseService from '../services/BaseService';
+import AuthService from '../services/AuthService';
 
 interface User {
   id: string;
   email: string;
-  name?: string;
+  name: string;
+  photoURL?: string;
+  role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: {
-    email: string;
-    password: string;
-    name?: string;
-  }) => Promise<void>;
-  logout: () => Promise<void>;
-  googleLogin: (token: string) => Promise<void>;
-  linkedInLogin: () => Promise<void>;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,122 +22,30 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkUser();
+    loadUser();
   }, []);
 
-  const checkUser = async () => {
+  const loadUser = async () => {
     try {
-      const token = storage.getString('auth_token');
-      if (token) {
-        const userData = await BaseService.getCurrentUser();
+      const userData = await AuthService.getCurrentUser();
+      if (userData) {
         setUser(userData);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Bir hata oluştu');
+      console.error('Kullanıcı bilgileri yüklenirken hata:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await BaseService.login(email, password);
-      setUser(response.user);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Giriş başarısız');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (userData: {
-    email: string;
-    password: string;
-    name?: string;
-  }) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await BaseService.register(userData);
-      setUser(response.user);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Kayıt başarısız');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      storage.delete('auth_token');
-      storage.delete('user');
-      setUser(null);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Çıkış başarısız');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const googleLogin = async (token: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await BaseService.googleLogin(token);
-      if (response.success && response.user) {
-        setUser(response.user);
-      } else {
-        throw new Error(response.error || 'Google girişi başarısız');
-      }
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : 'Google girişi başarısız',
-      );
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const linkedInLogin = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      // LinkedIn girişi için gerekli işlemler burada yapılacak
-      throw new Error('LinkedIn girişi henüz implement edilmedi');
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : 'LinkedIn girişi başarısız',
-      );
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    register,
-    logout,
-    googleLogin,
-    linkedInLogin,
+  const updateUser = (data: Partial<User>) => {
+    setUser(prev => prev ? {...prev, ...data} : null);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{user, loading, updateUser}}>
       {children}
     </AuthContext.Provider>
   );

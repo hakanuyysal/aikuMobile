@@ -7,25 +7,30 @@ import {
   Image,
   ScrollView,
   Animated,
-  Dimensions,
   TouchableWithoutFeedback,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {Colors} from '../../src/constants/colors';
 import metrics from '../../src/constants/aikuMetric';
+import AuthService from '../../src/services/AuthService';
+import {useAuth} from '../../src/contexts/AuthContext';
 
 interface MenuProps {
   user: {
     name: string;
     avatar?: string;
+    email?: string;
+    role?: string;
   };
   onClose: () => void;
 }
 
-const MENU_WIDTH = metrics.getWidthPercentage(80); // Ekranın %80'i kadar genişlik
+const MENU_WIDTH = metrics.getWidthPercentage(70);
 
 const Menu: React.FC<MenuProps> = ({user, onClose}) => {
-  const slideAnim = useMemo(() => new Animated.Value(-MENU_WIDTH), []);
+  const {updateUser} = useAuth();
+  const slideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
@@ -46,7 +51,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
   const handleClose = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: -MENU_WIDTH,
+        toValue: MENU_WIDTH,
         duration: 300,
         useNativeDriver: true,
       }),
@@ -58,6 +63,40 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     ]).start(() => {
       onClose();
     });
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Çıkış Yap',
+      'Çıkış yapmak istediğinize emin misiniz?',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel',
+        },
+        {
+          text: 'Çıkış Yap',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AuthService.logout();
+              updateUser({} as any);
+              onClose();
+            } catch (error) {
+              Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleMenuItemPress = (title: string) => {
+    if (title === 'Logout') {
+      handleLogout();
+    } else {
+      console.log(`${title} pressed`);
+    }
   };
 
   const menuItems = [
@@ -83,8 +122,14 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
               },
             ]}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-                <Icon name="close" size={metrics.scale(24)} color={Colors.primary} />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleClose}>
+                <Icon
+                  name="close"
+                  size={metrics.scale(24)}
+                  color={Colors.primary}
+                />
               </TouchableOpacity>
               <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
@@ -92,29 +137,48 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
                     <Image source={{uri: user.avatar}} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Icon name="person" size={metrics.scale(40)} color={Colors.lightText} />
+                      <Icon
+                        name="person"
+                        size={metrics.scale(40)}
+                        color={Colors.lightText}
+                      />
                     </View>
                   )}
                 </View>
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   <Text style={styles.userName}>{user.name}</Text>
+                  {user.email && (
+                    <Text style={styles.userEmail}>{user.email}</Text>
+                  )}
+                  {user.role && (
+                    <Text style={styles.userRole}>{user.role}</Text>
+                  )}
                 </View>
               </View>
-              <TouchableOpacity style={styles.visitProfile}>
-                <Text style={styles.visitProfileText}>Visit your profile</Text>
-                <Icon name="chevron-right" size={metrics.scale(24)} color={Colors.primary} />
-              </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.menuItems}>
               {menuItems.map((item, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.menuItem}
-                  onPress={() => console.log(`${item.title} pressed`)}>
-                  <Icon name={item.icon} size={metrics.scale(24)} color={Colors.primary} />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  style={[
+                    styles.menuItem,
+                    item.title === 'Logout' && styles.logoutItem,
+                  ]}
+                  onPress={() => handleMenuItemPress(item.title)}>
+                  <Icon
+                    name={item.icon}
+                    size={metrics.scale(24)}
+                    color={item.title === 'Logout' ? Colors.error : Colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.menuItemText,
+                      item.title === 'Logout' && styles.logoutText,
+                    ]}>
+                    {item.title}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -128,90 +192,142 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 2,
   },
   container: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
+    top: metrics.statusBarHeight + metrics.margin.md,
+    right: 0,
+    bottom: metrics.margin.md,
     width: MENU_WIDTH,
     backgroundColor: Colors.background,
-    borderTopRightRadius: metrics.borderRadius.lg,
-    borderBottomRightRadius: metrics.borderRadius.lg,
+    borderTopLeftRadius: metrics.borderRadius.xl,
+    borderBottomLeftRadius: metrics.borderRadius.xl,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: -2,
+      height: 0,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
   },
   header: {
-    padding: metrics.padding.md,
+    padding: metrics.padding.lg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    backgroundColor: Colors.cardBackground,
   },
   closeButton: {
     position: 'absolute',
-    top: metrics.padding.md,
+    top: metrics.padding.sm,
     right: metrics.padding.md,
     zIndex: 1,
+    padding: metrics.padding.xs,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: metrics.borderRadius.circle,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: metrics.margin.sm,
-    marginTop: metrics.margin.xl,
+    marginBottom: metrics.margin.md,
+    marginTop: metrics.margin.lg,
   },
   avatarContainer: {
-    marginRight: metrics.margin.sm,
+    marginRight: metrics.margin.md,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
   },
   avatar: {
-    width: metrics.scale(60),
-    height: metrics.scale(60),
-    borderRadius: metrics.scale(30),
+    width: metrics.scale(70),
+    height: metrics.scale(70),
+    borderRadius: metrics.scale(35),
+    borderWidth: 3,
+    borderColor: Colors.primary,
   },
   avatarPlaceholder: {
-    width: metrics.scale(60),
-    height: metrics.scale(60),
-    borderRadius: metrics.scale(30),
+    width: metrics.scale(70),
+    height: metrics.scale(70),
+    borderRadius: metrics.scale(35),
     backgroundColor: Colors.cardBackground,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: Colors.primary,
   },
   welcomeSection: {
     flex: 1,
   },
   welcomeText: {
-    fontSize: metrics.fontSize.sm,
+    fontSize: metrics.fontSize.md,
     color: Colors.lightText,
+    opacity: 0.7,
+    marginBottom: metrics.spacing.xs,
   },
   userName: {
-    fontSize: metrics.fontSize.lg,
+    fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
+    marginBottom: metrics.margin.xs,
   },
-  visitProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: metrics.padding.xs,
+  userEmail: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    opacity: 0.7,
+    marginBottom: metrics.margin.xs,
   },
-  visitProfileText: {
+  userRole: {
     fontSize: metrics.fontSize.md,
     color: Colors.primary,
+    fontWeight: '600',
+    backgroundColor: `${Colors.primary}20`,
+    paddingHorizontal: metrics.padding.sm,
+    paddingVertical: metrics.spacing.xs,
+    borderRadius: metrics.borderRadius.sm,
+    alignSelf: 'flex-start',
   },
   menuItems: {
-    paddingTop: metrics.padding.sm,
+    paddingTop: metrics.padding.md,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: metrics.padding.md,
+    padding: metrics.padding.lg,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: `${Colors.border}50`,
+    backgroundColor: Colors.background,
   },
   menuItemText: {
-    marginLeft: metrics.margin.sm,
-    fontSize: metrics.fontSize.md,
+    marginLeft: metrics.margin.md,
+    fontSize: metrics.fontSize.lg,
     color: Colors.lightText,
+    fontWeight: '500',
+  },
+  logoutItem: {
+    marginTop: 'auto',
+    borderTopWidth: 1,
+    borderTopColor: `${Colors.border}50`,
+  },
+  logoutText: {
+    color: Colors.error,
+    fontWeight: '600',
   },
 });
 
-export default Menu; 
+export default Menu;
