@@ -28,7 +28,11 @@ const subcategories = {
   'Resources': ['Talent Pool', 'Investment Opportunities', 'How It Works'],
 };
 
-const HomeScreen = () => {
+interface HomeScreenProps {
+  onMenuOpen: () => void;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({onMenuOpen}) => {
   const [activeCategory, setActiveCategory] = useState('');
   const [products, setProducts] = useState(PRODUCTS);
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -134,7 +138,7 @@ const HomeScreen = () => {
               icon="menu"
               iconColor={Colors.lightText}
               size={30}
-              onPress={handleSearch}
+              onPress={onMenuOpen}
               style={styles.searchButton}
             />
           </Surface>

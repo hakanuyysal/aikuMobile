@@ -14,6 +14,10 @@ import ChatDetailScreen from '../screens/messages/ChatDetailScreen';
 import CompanyListScreen from '../screens/messages/CompanyListScreen';
 import { NavigationState } from '@react-navigation/native';
 
+interface TabNavigatorProps {
+  onMenuOpen: () => void;
+}
+
 const Tab = createBottomTabNavigator<TabParamList>();
 const MessageStack = createNativeStackNavigator();
 
@@ -27,7 +31,7 @@ const MessageNavigator = () => {
   );
 };
 
-const TabNavigator = () => {
+const TabNavigator: React.FC<TabNavigatorProps> = ({onMenuOpen}) => {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -62,7 +66,10 @@ const TabNavigator = () => {
 
         return <TabBar {...props} />;
       }}>
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen
+        name="Home"
+        component={props => <HomeScreen {...props} onMenuOpen={onMenuOpen} />}
+      />
       <Tab.Screen name="Message" component={MessageNavigator} />
       <Tab.Screen
         name="Cart"
