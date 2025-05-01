@@ -152,9 +152,10 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
     startAnimations();
 
     const timer = setTimeout(() => {
+      // isAuthenticated false olduğu için direkt Auth'a yönlendir
       navigation.reset({
         index: 0,
-        routes: [{name: 'Main'}],
+        routes: [{name: 'Auth'}],
       });
     }, 10500);
 
