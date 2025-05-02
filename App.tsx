@@ -11,6 +11,8 @@ import SplashScreen from './src/screens/splash/SplashScreen';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import Menu from './app/components/Menu';
 import SubscriptionDetails from './app/screens/SubscriptionDetails';
+import Favorites from './src/screens/Favorites';
+import CompanyDetails from './src/screens/CompanyDetails';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
@@ -18,6 +20,8 @@ export type RootStackParamList = {
   Auth: undefined;
   UpdateProfile: undefined;
   SubscriptionDetails: undefined;
+  Favorites: undefined;
+  CompanyDetails: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -89,6 +93,32 @@ function AppContent(): React.JSX.Element {
               component={SubscriptionDetails}
               options={{
                 title: 'Subscription Details',
+                headerTransparent: true,
+                headerTintColor: Colors.lightText,
+                headerBackTitle: undefined,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            />
+            <RootStack.Screen
+              name="Favorites"
+              component={Favorites}
+              options={{
+                title: 'Favorites',
+                headerTransparent: true,
+                headerTintColor: Colors.lightText,
+                headerBackTitle: undefined,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                },
+              }}
+            />
+            <RootStack.Screen
+              name="CompanyDetails"
+              component={CompanyDetails}
+              options={{
+                title: 'Company Details',
                 headerTransparent: true,
                 headerTintColor: Colors.lightText,
                 headerBackTitle: undefined,

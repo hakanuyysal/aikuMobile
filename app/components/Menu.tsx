@@ -118,6 +118,12 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     } else if (title === 'Subscription Details') {
       navigation.navigate('SubscriptionDetails');
       onClose();
+    } else if (title === 'Favorites') {
+      navigation.navigate('Favorites');
+      onClose();
+    } else if (title === 'Company Details') {
+      navigation.navigate('CompanyDetails');
+      onClose();
     } else {
       console.log(`${title} pressed`);
       onClose();
