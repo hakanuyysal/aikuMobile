@@ -9,10 +9,12 @@ import {
   Animated,
   TouchableWithoutFeedback,
   Alert,
+  Dimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {AppStackParamList} from '../navigation/AppNavigator';
+import {RootStackParamList} from '../../App';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {Colors} from '../../src/constants/colors';
 import metrics from '../../src/constants/aikuMetric';
@@ -22,6 +24,8 @@ import {useAuth} from '../../src/contexts/AuthContext';
 interface MenuProps {
   user: {
     name: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: string;
     email?: string;
     role?: string;
@@ -32,7 +36,7 @@ interface MenuProps {
 const MENU_WIDTH = metrics.getWidthPercentage(70);
 
 const Menu: React.FC<MenuProps> = ({user, onClose}) => {
-  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const {updateUser} = useAuth();
   const slideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
@@ -71,15 +75,15 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
 
   const handleLogout = async () => {
     Alert.alert(
-      'Çıkış Yap',
-      'Çıkış yapmak istediğinize emin misiniz?',
+      'Logout',
+      'Are you sure you want to logout?',
       [
         {
-          text: 'İptal',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Çıkış Yap',
+          text: 'Logout',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -91,10 +95,10 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
             } catch (error) {
               console.error('Logout error:', error);
               Alert.alert(
-                'Hata',
-                'Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.',
+                'Error',
+                'An error occurred while logging out. Please try again.',
                 [{
-                  text: 'Tamam',
+                  text: 'OK',
                   onPress: () => onClose(),
                 }],
               );
@@ -109,13 +113,14 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     if (title === 'Logout') {
       handleLogout();
     } else if (title === 'Personal Details') {
-      navigation.navigate('Profile');
+      navigation.navigate('UpdateProfile');
       onClose();
     } else if (title === 'Subscription Details') {
       navigation.navigate('SubscriptionDetails');
       onClose();
     } else {
       console.log(`${title} pressed`);
+      onClose();
     }
   };
 
@@ -167,13 +172,15 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
                 </View>
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
-                  <Text style={styles.userName}>{user.name}</Text>
+                  <Text style={styles.userName}>
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : "Murat Tanrıyakul"}
+                  </Text>
                   {user.email && (
                     <Text style={styles.userEmail}>{user.email}</Text>
                   )}
-                  {user.role && (
-                    <Text style={styles.userRole}>{user.role}</Text>
-                  )}
+                  <Text style={styles.planText}>Startup Plan</Text>
                 </View>
               </View>
             </View>
@@ -301,7 +308,7 @@ const styles = StyleSheet.create({
     marginBottom: metrics.spacing.xs,
   },
   userName: {
-    fontSize: metrics.fontSize.xxl,
+    fontSize: metrics.fontSize.xl,
     fontWeight: 'bold',
     color: Colors.lightText,
     marginBottom: metrics.margin.xs,
@@ -312,15 +319,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginBottom: metrics.margin.xs,
   },
-  userRole: {
+  planText: {
     fontSize: metrics.fontSize.md,
     color: Colors.primary,
     fontWeight: '600',
-    backgroundColor: `${Colors.primary}20`,
-    paddingHorizontal: metrics.padding.sm,
-    paddingVertical: metrics.spacing.xs,
-    borderRadius: metrics.borderRadius.sm,
-    alignSelf: 'flex-start',
   },
   menuItems: {
     paddingTop: metrics.padding.md,
