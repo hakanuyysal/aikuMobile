@@ -20,6 +20,11 @@ const CompanyDetails = ({navigation}: Props) => {
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Company Details',
+      headerTitleStyle: {
+        fontSize: metrics.fontSize.xl,
+        fontWeight: 'bold',
+        color: Colors.lightText,
+      },
     });
   }, [navigation]);
 

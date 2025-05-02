@@ -18,6 +18,11 @@ const Favorites = ({navigation}: Props) => {
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Favorites',
+      headerTitleStyle: {
+        fontSize: metrics.fontSize.xxl,
+        fontWeight: 'bold',
+        color: Colors.lightText,
+      },
     });
   }, [navigation]);
 
@@ -48,7 +53,7 @@ const styles = StyleSheet.create({
     padding: metrics.padding.md,
   },
   card: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'transparent',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
