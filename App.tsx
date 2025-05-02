@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar, View, StyleSheet, LogBox, TouchableOpacity} from 'react-native';
+import {StatusBar, View, StyleSheet} from 'react-native';
 import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
 import {Colors} from './src/constants/colors';
@@ -9,20 +9,20 @@ import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import SplashScreen from './src/screens/splash/SplashScreen';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import Menu from './app/components/Menu';
+import SubscriptionDetails from './app/screens/SubscriptionDetails';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
   Main: undefined;
   Auth: undefined;
   UpdateProfile: undefined;
+  SubscriptionDetails: undefined;
 };
 
-const RootStack = createNativeStackNavigator<RootStackParamList>();
+type Props = NativeStackScreenProps<RootStackParamList>;
 
-LogBox.ignoreLogs([
-  'Non-serializable values were found in the navigation state',
-]);
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const materialTheme = {
   ...MD3DarkTheme,
@@ -71,7 +71,7 @@ function AppContent(): React.JSX.Element {
           <>
             <RootStack.Screen
               name="Main"
-              component={props => <TabNavigator {...props} onMenuOpen={handleMenuOpen} />}
+              component={(props: Props) => <TabNavigator {...props} onMenuOpen={handleMenuOpen} />}
               options={{headerShown: false}}
             />
             <RootStack.Screen
@@ -80,6 +80,16 @@ function AppContent(): React.JSX.Element {
               options={{
                 presentation: 'modal',
                 title: 'Edit Profile',
+                headerStyle: {backgroundColor: Colors.cardBackground},
+                headerTintColor: Colors.lightText,
+              }}
+            />
+            <RootStack.Screen
+              name="SubscriptionDetails"
+              component={SubscriptionDetails}
+              options={{
+                presentation: 'modal',
+                title: 'Abonelik Detayları',
                 headerStyle: {backgroundColor: Colors.cardBackground},
                 headerTintColor: Colors.lightText,
               }}
@@ -128,7 +138,6 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
 });
 
