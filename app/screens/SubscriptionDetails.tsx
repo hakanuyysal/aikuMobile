@@ -6,6 +6,8 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Switch,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../src/constants/colors';
@@ -34,10 +36,10 @@ const SubscriptionDetails = ({navigation}: Props) => {
     });
   }, [navigation]);
 
-  const handleAutoRenewalToggle = () => {
-    setIsAutoRenewalEnabled(!isAutoRenewalEnabled);
+  const handleAutoRenewalToggle = (value: boolean) => {
+    setIsAutoRenewalEnabled(value);
     // Add API call here to update auto renewal status
-    console.log('Auto renewal toggled:', !isAutoRenewalEnabled);
+    console.log('Auto renewal toggled:', value);
   };
 
   const handleCancelSubscription = () => {
@@ -67,14 +69,22 @@ const SubscriptionDetails = ({navigation}: Props) => {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Auto Renewal:</Text>
-              <TouchableOpacity 
-                style={styles.toggleContainer}
-                onPress={handleAutoRenewalToggle}>
+              <View style={styles.toggleContainer}>
                 <Text style={[styles.infoValue, {marginRight: 8}]}>
                   {isAutoRenewalEnabled ? 'Enabled' : 'Disabled'}
                 </Text>
-                <View style={[styles.toggle, isAutoRenewalEnabled && styles.toggleActive]} />
-              </TouchableOpacity>
+                <Switch
+                  trackColor={{false: Colors.inactive, true: '#4CAF50'}}
+                  thumbColor={Colors.lightText}
+                  ios_backgroundColor={Colors.inactive}
+                  onValueChange={handleAutoRenewalToggle}
+                  value={isAutoRenewalEnabled}
+                  style={Platform.select({
+                    ios: {transform: [{scale: 0.8}]},
+                    android: {transform: [{scale: 0.9}]},
+                  })}
+                />
+              </View>
             </View>
           </View>
 
@@ -133,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.cardBackground,
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
-    marginBottom: metrics.margin.lg,
+    marginBottom: metrics.margin.md,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -177,15 +187,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  toggle: {
-    width: 40,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.inactive,
-  },
-  toggleActive: {
-    backgroundColor: '#4CAF50',
-  },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,8 +202,8 @@ const styles = StyleSheet.create({
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.md,
     alignItems: 'center',
-    marginTop: metrics.margin.md,
-    marginBottom: metrics.margin.xl,
+    marginTop: metrics.margin.sm,
+    marginBottom: metrics.margin.lg,
   },
   cancelButtonText: {
     color: Colors.lightText,
