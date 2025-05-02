@@ -30,10 +30,13 @@ class AuthService {
   private axios: AxiosInstance;
 
   constructor() {
-    this.baseURL = Config.API_URL || 'http://localhost:3000';
+    this.baseURL = 'https://api.aikuaiplatform.com/api';
     this.axios = axios.create({
       baseURL: this.baseURL,
-      timeout: 10000,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     // Token'ı her istekte otomatik ekle
@@ -53,7 +56,7 @@ class AuthService {
 
   async login(credentials: LoginCredentials) {
     try {
-      const response = await this.axios.post('/login', credentials);
+      const response = await this.axios.post('/auth/login', credentials);
       if (response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
       }
@@ -90,13 +93,18 @@ class AuthService {
   async getCurrentUser() {
     try {
       const token = await AsyncStorage.getItem('token');
-      if (!token) throw new Error('Yetkisiz erişim');
+      if (!token) {
+        throw new Error('Yetkisiz erişim');
+      }
 
-      const response = await this.axios.get('/current-user');
+      const response = await this.axios.get('/auth/currentUser', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       return response.data;
     } catch (error) {
-      console.error('getCurrentUser error:', error);
-      return null;
+      throw this.handleError(error);
     }
   }
 
@@ -169,4 +177,5 @@ class AuthService {
   }
 }
 
-export default new AuthService();
+const authService = new AuthService();
+export default authService;

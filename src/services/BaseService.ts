@@ -1,11 +1,12 @@
 import { storage } from '../storage/mmkv';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-class BaseService {
+export class BaseService {
+  private static instance: BaseService;
   private axios: AxiosInstance;
   private baseURL: string;
 
-  constructor(baseURL = '') {
+  private constructor(baseURL = '') {
     this.baseURL = baseURL;
     this.axios = axios.create({
       baseURL: 'https://api.aikuaiplatform.com/api',
@@ -14,6 +15,13 @@ class BaseService {
         'Content-Type': 'application/json',
       },
     });
+  }
+
+  public static getInstance(): BaseService {
+    if (!BaseService.instance) {
+      BaseService.instance = new BaseService();
+    }
+    return BaseService.instance;
   }
 
   // Tüm öğeleri getirme
@@ -223,4 +231,5 @@ class BaseService {
   }
 }
 
-export default new BaseService(); 
+const baseServiceInstance = BaseService.getInstance();
+export default baseServiceInstance; 

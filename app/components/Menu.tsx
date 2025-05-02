@@ -10,6 +10,9 @@ import {
   TouchableWithoutFeedback,
   Alert,
 } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {AppStackParamList} from '../navigation/AppNavigator';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {Colors} from '../../src/constants/colors';
 import metrics from '../../src/constants/aikuMetric';
@@ -29,6 +32,7 @@ interface MenuProps {
 const MENU_WIDTH = metrics.getWidthPercentage(70);
 
 const Menu: React.FC<MenuProps> = ({user, onClose}) => {
+  const navigation = useNavigation<StackNavigationProp<AppStackParamList>>();
   const {updateUser} = useAuth();
   const slideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
@@ -104,6 +108,12 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
   const handleMenuItemPress = (title: string) => {
     if (title === 'Logout') {
       handleLogout();
+    } else if (title === 'Personal Details') {
+      navigation.navigate('Profile');
+      onClose();
+    } else if (title === 'Subscription Details') {
+      navigation.navigate('SubscriptionDetails');
+      onClose();
     } else {
       console.log(`${title} pressed`);
     }

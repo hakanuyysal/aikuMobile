@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,25 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import BaseService from '../services/BaseService';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import {useNavigation} from '@react-navigation/native';
+import baseService from '../services/BaseService';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {useAuth} from '../contexts/AuthContext';
 
 GoogleSignin.configure({
-  webClientId: '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
-  iosClientId: '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
+  webClientId:
+    '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
+  iosClientId:
+    '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
 });
 
 const Login = () => {
   const navigation = useNavigation();
+  const {updateUser} = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,8 +41,9 @@ const Login = () => {
 
     try {
       setLoading(true);
-      const response = await BaseService.login(email, password);
-      if (response) {
+      const response = await baseService.login(email, password);
+      if (response && response.token) {
+        updateUser(response.user);
         navigation.navigate('Profile' as never);
       }
     } catch (error: any) {
@@ -49,11 +57,12 @@ const Login = () => {
     try {
       setLoading(true);
       await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      
-      if (userInfo.idToken) {
-        const response = await BaseService.googleLogin(userInfo.idToken);
+      const signInResult = await GoogleSignin.signIn();
+
+      if (signInResult && signInResult.idToken) {
+        const response = await baseService.googleLogin(signInResult.idToken);
         if (response.success) {
+          updateUser(response.user);
           navigation.navigate('Profile' as never);
         } else {
           throw new Error(response.error || 'Google ile giriş başarısız');
@@ -67,7 +76,10 @@ const Login = () => {
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         Alert.alert('Hata', 'Google Play Servisleri kullanılamıyor');
       } else {
-        Alert.alert('Hata', error.message || 'Google ile giriş yapılırken bir hata oluştu');
+        Alert.alert(
+          'Hata',
+          error.message || 'Google ile giriş yapılırken bir hata oluştu',
+        );
       }
     } finally {
       setLoading(false);
@@ -85,7 +97,8 @@ const Login = () => {
         <Text style={styles.welcomeText}>Hoş Geldin!</Text>
         <Text style={styles.subtitle}>
           AI girişimcileri, yatırımcıları ve sektör liderleriyle bağlantı kur.
-          Projelerini büyütmek ve inovasyonun geleceğinin bir parçası olmak için giriş yap!
+          Projelerini büyütmek ve inovasyonun geleceğinin bir parçası olmak için
+          giriş yap!
         </Text>
       </View>
 
@@ -109,17 +122,19 @@ const Login = () => {
           />
           <TouchableOpacity
             style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Icon name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#888" />
+            onPress={() => setShowPassword(!showPassword)}>
+            <Icon
+              name={showPassword ? 'eye-slash' : 'eye'}
+              size={20}
+              color="#888"
+            />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
           style={styles.loginButton}
           onPress={handleLogin}
-          disabled={loading}
-        >
+          disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -136,8 +151,7 @@ const Login = () => {
         <TouchableOpacity
           style={styles.googleButton}
           onPress={handleGoogleLogin}
-          disabled={loading}
-        >
+          disabled={loading}>
           <Image
             source={require('../assets/images/google.png')}
             style={styles.googleIcon}
@@ -147,7 +161,8 @@ const Login = () => {
 
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Hesabın yok mu? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('SignUp' as never)}>
             <Text style={styles.signupLink}>Kayıt Ol!</Text>
           </TouchableOpacity>
         </View>
@@ -267,4 +282,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Login; 
+export default Login;
