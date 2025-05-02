@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../src/constants/colors';
@@ -43,8 +44,24 @@ const SubscriptionDetails = ({navigation}: Props) => {
   };
 
   const handleCancelSubscription = () => {
-    // Add cancellation logic here
-    console.log('Subscription cancellation requested');
+    Alert.alert(
+      'Cancel Subscription',
+      'Are you sure you want to cancel your subscription? This action cannot be undone.',
+      [
+        {
+          text: 'No, Keep It',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: () => {
+            // Add cancellation logic here
+            console.log('Subscription cancellation confirmed');
+          },
+        },
+      ],
+    );
   };
 
   return (

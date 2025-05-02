@@ -88,10 +88,13 @@ function AppContent(): React.JSX.Element {
               name="SubscriptionDetails"
               component={SubscriptionDetails}
               options={{
-                presentation: 'modal',
-                title: 'Abonelik Detayları',
-                headerStyle: {backgroundColor: Colors.cardBackground},
+                title: 'Subscription Details',
+                headerTransparent: true,
                 headerTintColor: Colors.lightText,
+                headerBackTitle: undefined,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                },
               }}
             />
           </>
