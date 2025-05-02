@@ -124,6 +124,9 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     } else if (title === 'Company Details') {
       navigation.navigate('CompanyDetails');
       onClose();
+    } else if (title === 'Product Details') {
+      navigation.navigate('ProductDetails');
+      onClose();
     } else {
       console.log(`${title} pressed`);
       onClose();
