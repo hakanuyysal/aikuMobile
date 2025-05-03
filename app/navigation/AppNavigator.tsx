@@ -6,12 +6,15 @@ import ChatListScreen from '../../src/screens/messages/ChatListScreen';
 import ChatDetailScreen from '../../src/screens/messages/ChatDetailScreen';
 import SubscriptionDetails from '../screens/SubscriptionDetails';
 import ProfileScreen from '../../src/screens/ProfileScreen';
+import Settings from '../screens/Settings';
+import {Colors} from '../../src/constants/colors';
 
 export type AppStackParamList = {
   ChatList: undefined;
   ChatDetail: {chatId: string};
   Profile: undefined;
   SubscriptionDetails: undefined;
+  Settings: undefined;
 };
 
 export type AppStackNavigationProp<T extends keyof AppStackParamList> =
@@ -45,6 +48,21 @@ const AppNavigator = () => {
       <Stack.Screen
         name="SubscriptionDetails"
         component={SubscriptionDetails}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={Settings}
+        options={{
+          headerShown: true,
+          headerTitle: 'Settings',
+          headerTitleStyle: {
+            color: Colors.lightText,
+          },
+          headerStyle: {
+            backgroundColor: Colors.background,
+          },
+          headerTintColor: Colors.primary,
+        }}
       />
     </Stack.Navigator>
   );

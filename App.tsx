@@ -14,6 +14,7 @@ import SubscriptionDetails from './app/screens/SubscriptionDetails';
 import Favorites from './src/screens/Favorites';
 import CompanyDetails from './src/screens/CompanyDetails';
 import ProductDetails from './src/screens/ProductDetails';
+import Settings from './app/screens/Settings';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   Favorites: undefined;
   CompanyDetails: undefined;
   ProductDetails: undefined;
+  Settings: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -140,6 +142,17 @@ function AppContent(): React.JSX.Element {
                 headerStyle: {
                   backgroundColor: 'transparent',
                 },
+              }}
+            />
+            <RootStack.Screen
+              name="Settings"
+              component={Settings}
+              options={{
+                title: 'Settings',
+                headerStyle: {
+                  backgroundColor: Colors.background,
+                },
+                headerTintColor: Colors.lightText,
               }}
             />
           </>

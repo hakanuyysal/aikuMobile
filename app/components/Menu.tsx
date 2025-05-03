@@ -9,17 +9,16 @@ import {
   Animated,
   TouchableWithoutFeedback,
   Alert,
-  Dimensions,
+  Linking,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {AppStackParamList} from '../navigation/AppNavigator';
 import {RootStackParamList} from '../../App';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {Colors} from '../../src/constants/colors';
 import metrics from '../../src/constants/aikuMetric';
-import AuthService from '../../src/services/AuthService';
-import {useAuth} from '../../src/contexts/AuthContext';
 
 interface MenuProps {
   user: {
@@ -37,7 +36,6 @@ const MENU_WIDTH = metrics.getWidthPercentage(70);
 
 const Menu: React.FC<MenuProps> = ({user, onClose}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const {updateUser} = useAuth();
   const slideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
 
@@ -73,46 +71,8 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     });
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AuthService.logout();
-              if (updateUser) {
-                updateUser({} as any);
-              }
-              onClose();
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert(
-                'Error',
-                'An error occurred while logging out. Please try again.',
-                [{
-                  text: 'OK',
-                  onPress: () => onClose(),
-                }],
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
-
   const handleMenuItemPress = (title: string) => {
-    if (title === 'Logout') {
-      handleLogout();
-    } else if (title === 'Personal Details') {
+    if (title === 'Personal Details') {
       navigation.navigate('UpdateProfile');
       onClose();
     } else if (title === 'Subscription Details') {
@@ -126,6 +86,9 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
       onClose();
     } else if (title === 'Product Details') {
       navigation.navigate('ProductDetails');
+      onClose();
+    } else if (title === 'Settings') {
+      navigation.navigate('Settings');
       onClose();
     } else {
       console.log(`${title} pressed`);
@@ -141,8 +104,14 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     {title: 'Product Details', icon: 'inventory'},
     {title: 'Investment Details', icon: 'attach-money'},
     {title: 'Settings', icon: 'settings'},
-    {title: 'Logout', icon: 'logout'},
   ];
+
+  const openSocialMedia = (url: string) => {
+    Linking.openURL(url).catch(err => {
+      console.error('Error opening link:', err);
+      Alert.alert('Error', 'Could not open link');
+    });
+  };
 
   return (
     <TouchableWithoutFeedback onPress={handleClose}>
@@ -184,12 +153,15 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
                   <Text style={styles.userName}>
                     {user.firstName && user.lastName
                       ? `${user.firstName} ${user.lastName}`
-                      : "Murat Tanrıyakul"}
+                      : 'Murat Tanrıyakul'}
                   </Text>
                   {user.email && (
                     <Text style={styles.userEmail}>{user.email}</Text>
                   )}
-                  <Text style={styles.planText}>Startup Plan</Text>
+                  <View style={styles.planContainer}>
+                    <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />
+                    <Text style={styles.planText}>Startup Plan</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -198,25 +170,37 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
               {menuItems.map((item, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.menuItem,
-                    item.title === 'Logout' && styles.logoutItem,
-                  ]}
+                  style={styles.menuItem}
                   onPress={() => handleMenuItemPress(item.title)}>
                   <Icon
                     name={item.icon}
                     size={metrics.scale(24)}
-                    color={item.title === 'Logout' ? Colors.error : Colors.primary}
+                    color={Colors.primary}
                   />
-                  <Text
-                    style={[
-                      styles.menuItemText,
-                      item.title === 'Logout' && styles.logoutText,
-                    ]}>
-                    {item.title}
-                  </Text>
+                  <Text style={styles.menuItemText}>{item.title}</Text>
                 </TouchableOpacity>
               ))}
+
+              <View style={styles.socialSection}>
+                <View style={styles.socialButtons}>
+                  <TouchableOpacity
+                    style={styles.socialButton}
+                    onPress={() =>
+                      openSocialMedia('https://www.instagram.com/aikuai_platform/')
+                    }>
+                    <FontAwesome name="instagram" size={24} color={Colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.socialButton}
+                    onPress={() =>
+                      openSocialMedia('https://www.linkedin.com/company/aiku-ai-platform/')
+                    }>
+                    <FontAwesome name="linkedin-square" size={24} color={Colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.brandText}>Aiku</Text>
+                <Text style={styles.versionText}>Version 1.0.0</Text>
+              </View>
             </ScrollView>
           </Animated.View>
         </TouchableWithoutFeedback>
@@ -251,10 +235,10 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   header: {
-    padding: metrics.padding.lg,
+    padding: metrics.padding.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: Colors.border,
   },
   closeButton: {
     position: 'absolute',
@@ -328,6 +312,11 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginBottom: metrics.margin.xs,
   },
+  planContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: metrics.margin.xs,
+  },
   planText: {
     fontSize: metrics.fontSize.md,
     color: Colors.primary,
@@ -358,6 +347,31 @@ const styles = StyleSheet.create({
   logoutText: {
     color: Colors.error,
     fontWeight: '600',
+  },
+  socialSection: {
+    marginTop: metrics.margin.xl,
+    alignItems: 'center',
+    paddingBottom: metrics.padding.xl,
+  },
+  socialButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: metrics.margin.xl,
+    marginBottom: metrics.margin.md,
+  },
+  socialButton: {
+    padding: metrics.padding.sm,
+  },
+  brandText: {
+    fontSize: metrics.fontSize.xl,
+    color: Colors.primary,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.xs,
+  },
+  versionText: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    opacity: 0.7,
   },
 });
 

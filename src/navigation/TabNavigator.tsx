@@ -7,7 +7,7 @@ import {TabParamList} from '../types';
 import {Colors} from '../constants/colors';
 import MapScreen from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import CartScreen from '../screens/cart/CartScreen';
+import CartScreen from '../screens/subscriptions/CartScreen';
 import ChatListScreen from '../screens/messages/ChatListScreen';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import ChatDetailScreen from '../screens/messages/ChatDetailScreen';
