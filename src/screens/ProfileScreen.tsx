@@ -76,10 +76,10 @@ const ProfileScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#0F172A', '#1E293B', '#3B82F620']}
-      locations={[0, 0.5, 1]}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{x: 0, y: 0}}
-      end={{x: 1, y: 1}}
+      end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <Animated.View style={[styles.header, {height: headerHeight}]}>
@@ -105,18 +105,28 @@ const ProfileScreen = () => {
               </TouchableOpacity>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                {user?.name || 'Murat Tanrıyakul'}
-              </Text>
-              <Text style={styles.userEmail}>{user?.email}</Text>
-              <LinearGradient
-                colors={['#3B82F6', '#2563EB']}
-                start={{x: 0, y: 0}}
-                end={{x: 1, y: 0}}
-                style={styles.roleContainer}>
-                <MaterialCommunityIcons name="crown" size={16} color="#FFF" />
-                <Text style={styles.roleText}>Startup Plan</Text>
-              </LinearGradient>
+              <View style={styles.userInfoHeader}>
+                <View>
+                  <Text style={styles.userName}>
+                    {user?.name || 'Murat Tanrıyakul'}
+                  </Text>
+                  <Text style={styles.userEmail}>{user?.email}</Text>
+                  <View style={styles.roleWrapper}>
+                    <MaterialCommunityIcons 
+                      name="crown" 
+                      size={20} 
+                      color="#FFD700"
+                      style={styles.roleIcon}
+                    />
+                    <Text style={styles.roleText}>Startup Plan</Text>
+                  </View>
+                </View>
+                <TouchableOpacity 
+                  style={styles.settingsButton}
+                  onPress={() => navigation.navigate('Settings')}>
+                  <Icon name="settings" size={24} color={Colors.lightText} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Animated.View>
@@ -232,6 +242,17 @@ const styles = StyleSheet.create({
     marginLeft: metrics.margin.lg,
     flex: 1,
   },
+  userInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  settingsButton: {
+    padding: metrics.padding.xs,
+    borderRadius: metrics.borderRadius.circle,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
   userName: {
     fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
@@ -244,19 +265,26 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginBottom: metrics.margin.sm,
   },
-  roleContainer: {
+  roleWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: metrics.padding.sm,
-    borderRadius: metrics.borderRadius.circle,
     marginTop: metrics.margin.xs,
-    alignSelf: 'flex-start',
+    backgroundColor: Colors.background,
+    paddingHorizontal: metrics.padding.xs,
+    paddingVertical: metrics.padding.xxs,
+    borderRadius: metrics.borderRadius.circle,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+  },
+  roleIcon: {
+    marginRight: 6,
+    fontWeight: '900',
   },
   roleText: {
     color: Colors.lightText,
-    marginLeft: metrics.margin.xs,
     fontSize: metrics.fontSize.sm,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   menuContainer: {
     paddingHorizontal: metrics.padding.lg,
