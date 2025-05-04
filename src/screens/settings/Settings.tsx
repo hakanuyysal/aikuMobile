@@ -171,10 +171,10 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
 
   return (
     <LinearGradient
-      colors={['#0F172A', '#1E293B', '#3B82F620']}
-      locations={[0, 0.5, 1]}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{x: 0, y: 0}}
-      end={{x: 1, y: 1}}
+      end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
