@@ -11,11 +11,11 @@ import {
   Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {Colors} from '../../src/constants/colors';
-import metrics from '../../src/constants/aikuMetric';
+import {Colors} from '../../constants/colors';
+import metrics from '../../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
+import {RootStackParamList} from '../../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionDetails'>;
 

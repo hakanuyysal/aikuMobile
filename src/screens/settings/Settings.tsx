@@ -7,19 +7,17 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Linking,
   ActionSheetIOS,
   Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import LinearGradient from 'react-native-linear-gradient';
-import {Colors} from '../../src/constants/colors';
-import metrics from '../../src/constants/aikuMetric';
-import AuthService from '../../src/services/AuthService';
-import {useAuth} from '../../src/contexts/AuthContext';
+import {Colors} from '../../constants/colors';
+import metrics from '../../constants/aikuMetric';
+import AuthService from '../../services/AuthService';
+import {useAuth} from '../../contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {AppStackParamList} from '../navigation/AppNavigator';
+import {AppStackParamList} from '../../../app/navigation/AppNavigator';
 
 type SettingsScreenNavigationProp = StackNavigationProp<
   AppStackParamList,
@@ -101,14 +99,7 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
   };
 
   const handleContactUs = () => {
-    Alert.alert('Contact Us', 'Coming soon!');
-  };
-
-  const openSocialMedia = (url: string) => {
-    Linking.openURL(url).catch(err => {
-      console.error('Error opening link:', err);
-      Alert.alert('Error', 'Could not open link');
-    });
+    _navigation.navigate('ContactUs');
   };
 
   return (
@@ -189,43 +180,6 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
           </TouchableOpacity>
         </View>
 
-        {/* <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Social Media</Text>
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() =>
-                openSocialMedia('https://www.instagram.com/aikuai_platform/')
-              }>
-              <View style={styles.socialIconContainer}>
-                <FontAwesome
-                  name="instagram"
-                  size={32}
-                  color={Colors.primary}
-                />
-              </View>
-              <Text style={styles.socialText}>Instagram</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() =>
-                openSocialMedia(
-                  'https://www.linkedin.com/company/aiku-ai-platform/',
-                )
-              }>
-              <View style={styles.socialIconContainer}>
-                <FontAwesome
-                  name="linkedin"
-                  size={32}
-                  color={Colors.primary}
-                />
-              </View>
-              <Text style={styles.socialText}>LinkedIn</Text>
-            </TouchableOpacity>
-          </View>
-        </View> */}
-
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Icon name="logout" size={24} color={Colors.background} />
           <Text style={styles.logoutText}>Logout</Text>
@@ -298,26 +252,6 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
     color: Colors.primary,
     marginRight: metrics.margin.sm,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: metrics.margin.xl,
-    paddingHorizontal: metrics.padding.xl,
-  },
-  socialButton: {
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  socialIconContainer: {
-    marginBottom: metrics.margin.sm,
-    padding: metrics.padding.sm,
-  },
-  socialText: {
-    fontSize: metrics.fontSize.md,
-    color: Colors.primary,
-    marginTop: metrics.margin.xs,
-    fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row',

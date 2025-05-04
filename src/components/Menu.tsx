@@ -18,8 +18,8 @@ import {RootStackParamList} from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {Colors} from '../../src/constants/colors';
-import metrics from '../../src/constants/aikuMetric';
+import {Colors} from '../constants/colors';
+import metrics from '../constants/aikuMetric';
 
 interface MenuProps {
   user: {

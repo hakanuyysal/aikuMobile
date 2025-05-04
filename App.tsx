@@ -9,12 +9,12 @@ import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import SplashScreen from './src/screens/splash/SplashScreen';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import Menu from './app/components/Menu';
-import SubscriptionDetails from './app/screens/SubscriptionDetails';
+import Menu from './src/components/Menu';
+import SubscriptionDetails from './src/screens/subscriptions/SubscriptionDetails';
 import Favorites from './src/screens/Favorites';
 import CompanyDetails from './src/screens/CompanyDetails';
 import ProductDetails from './src/screens/ProductDetails';
-import Settings from './app/screens/Settings';
+import Settings from './src/screens/settings/Settings';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
