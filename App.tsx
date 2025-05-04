@@ -124,50 +124,28 @@ function AppContent(): React.JSX.Element {
                   name="Favorites"
                   component={Favorites}
                   options={{
-                    title: 'Favorites',
-                    headerTransparent: true,
-                    headerTintColor: Colors.lightText,
-                    headerBackTitle: undefined,
-                    headerStyle: {
-                      backgroundColor: 'transparent',
-                    },
+                    headerShown: false
                   }}
                 />
                 <RootStack.Screen
                   name="CompanyDetails"
                   component={CompanyDetails}
                   options={{
-                    title: 'Company Details',
-                    headerTransparent: true,
-                    headerTintColor: Colors.lightText,
-                    headerBackTitle: undefined,
-                    headerStyle: {
-                      backgroundColor: 'transparent',
-                    },
+                    headerShown: false
                   }}
                 />
                 <RootStack.Screen
                   name="ProductDetails"
                   component={ProductDetails}
                   options={{
-                    title: 'Product Details',
-                    headerTransparent: true,
-                    headerTintColor: Colors.lightText,
-                    headerBackTitle: undefined,
-                    headerStyle: {
-                      backgroundColor: 'transparent',
-                    },
+                    headerShown: false
                   }}
                 />
                 <RootStack.Screen
                   name="Settings"
                   component={Settings}
                   options={{
-                    title: 'Settings',
-                    headerStyle: {
-                      backgroundColor: Colors.background,
-                    },
-                    headerTintColor: Colors.lightText,
+                    headerShown: false
                   }}
                 />
                 <RootStack.Screen

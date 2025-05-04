@@ -6,28 +6,19 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
 const CompanyDetails = ({navigation}: Props) => {
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      title: 'Company Details',
-      headerTitleStyle: {
-        fontSize: metrics.fontSize.xl,
-        fontWeight: 'bold',
-        color: Colors.lightText,
-      },
-    });
-  }, [navigation]);
-
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -36,8 +27,20 @@ const CompanyDetails = ({navigation}: Props) => {
       end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="chevron-back" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Company Details</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => console.log('Add new company')}>
+            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
         <ScrollView style={styles.content}>
-
           {/* Turkau Mining Card */}
           <TouchableOpacity style={styles.companyCard}>
             <Image
@@ -52,7 +55,7 @@ const CompanyDetails = ({navigation}: Props) => {
 
           {/* Add New Company Card */}
           <TouchableOpacity style={styles.addCompanyCard}>
-            <Icon name="add-business" size={24} color={Colors.primary} />
+            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
             <Text style={styles.addCompanyText}>Add New Company</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -67,6 +70,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  header: {
+    padding: metrics.padding.md,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: metrics.margin.lg,
+    top: metrics.margin.lg,
+    zIndex: 1,
+  },
+  headerTitle: {
+    fontSize: metrics.fontSize.xl * 1.1,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.lg,
+    color: Colors.lightText,
   },
   content: {
     flex: 1,
@@ -113,6 +133,12 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontWeight: '500',
     marginLeft: metrics.margin.md,
+  },
+  addButton: {
+    position: 'absolute',
+    right: metrics.margin.lg,
+    top: metrics.margin.lg,
+    zIndex: 1,
   },
 });
 

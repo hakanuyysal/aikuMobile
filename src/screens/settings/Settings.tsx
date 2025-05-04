@@ -9,8 +9,10 @@ import {
   Alert,
   ActionSheetIOS,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import IoniconsIcon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
@@ -28,7 +30,7 @@ interface SettingsProps {
   navigation: SettingsScreenNavigationProp;
 }
 
-const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
+const Settings: React.FC<SettingsProps> = ({navigation}) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const {updateUser} = useAuth();
@@ -99,7 +101,7 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
   };
 
   const handleContactUs = () => {
-    _navigation.navigate('ContactUs');
+    navigation.navigate('ContactUs');
   };
 
   const settingsItems = [
@@ -174,50 +176,85 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
       start={{x: 0, y: 0}}
       end={{x: 1, y: 1}}
       style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.menuContainer}>
-          {settingsItems.map((item, index) => (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <IoniconsIcon
+              name="chevron-back"
+              size={24}
+              color={Colors.lightText}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Settings</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => console.log('Add new setting')}>
+            <Icon name="add-circle-outline" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.menuContainer}>
+            {settingsItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={item.onPress}
+                disabled={!item.onPress}
+                activeOpacity={0.7}>
+                <LinearGradient
+                  colors={item.gradient}
+                  style={styles.menuItemIcon}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 1}}>
+                  <Icon name={item.icon} size={24} color="#FFF" />
+                </LinearGradient>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                  <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+                </View>
+                {item.rightElement ? (
+                  item.rightElement
+                ) : (
+                  <View style={styles.menuItemArrow}>
+                    <Icon
+                      name="chevron-right"
+                      size={24}
+                      color={Colors.primary}
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.logoutContainer}>
             <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={item.onPress}
-              disabled={!item.onPress}
-              activeOpacity={0.7}>
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}>
               <LinearGradient
-                colors={item.gradient}
-                style={styles.menuItemIcon}
+                colors={['#FF4B4B', '#FF0000']}
+                style={styles.logoutGradient}
                 start={{x: 0, y: 0}}
                 end={{x: 1, y: 1}}>
-                <Icon name={item.icon} size={24} color="#FFF" />
-              </LinearGradient>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>{item.title}</Text>
-                <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
-              </View>
-              {item.rightElement ? (
-                item.rightElement
-              ) : (
-                <View style={styles.menuItemArrow}>
-                  <Icon name="chevron-right" size={24} color={Colors.primary} />
+                <View style={styles.logoutContent}>
+                  <Icon
+                    name="logout"
+                    size={22}
+                    color={Colors.lightText}
+                    style={styles.logoutIcon}
+                  />
+                  <Text style={styles.logoutText}>Logout</Text>
                 </View>
-              )}
+              </LinearGradient>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LinearGradient
-            colors={['#EF4444', '#DC2626']}
-            style={styles.logoutGradient}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 0}}>
-            <Icon name="logout" size={24} color={Colors.lightText} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -226,12 +263,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    padding: metrics.padding.md,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: metrics.margin.lg,
+    top: metrics.margin.md,
+    zIndex: 1,
+  },
+  headerTitle: {
+    fontSize: metrics.fontSize.xl * 1.1,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+    marginBottom: -metrics.margin.sm,
+  },
+  addButton: {
+    position: 'absolute',
+    right: metrics.margin.lg,
+    top: metrics.margin.lg,
+    zIndex: 1,
+    display: 'none',
+  },
   contentContainer: {
     padding: metrics.padding.lg,
-    paddingBottom: metrics.padding.xl,
+    paddingBottom: metrics.padding.xl * 2,
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   menuContainer: {
     paddingTop: metrics.padding.lg,
+    flex: 1,
   },
   menuItem: {
     flexDirection: 'row',
@@ -291,21 +358,40 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     marginRight: metrics.margin.sm,
   },
+  logoutContainer: {
+    paddingHorizontal: metrics.padding.xxl * 0.8,
+    paddingVertical: metrics.padding.xs,
+    marginLeft: -metrics.margin.xl ,
+  },
   logoutButton: {
-    marginTop: metrics.margin.xl,
+    width: '110%',
+    shadowColor: '#FF0000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   logoutGradient: {
+    borderRadius: metrics.borderRadius.lg,
+    overflow: 'hidden',
+  },
+  logoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: metrics.padding.md,
-    borderRadius: metrics.borderRadius.lg,
-    gap: metrics.margin.sm,
+    paddingVertical: metrics.padding.md,
+  },
+  logoutIcon: {
+    marginRight: metrics.margin.sm,
   },
   logoutText: {
     fontSize: metrics.fontSize.lg,
-    color: Colors.lightText,
     fontWeight: '600',
+    color: Colors.lightText,
+    letterSpacing: 0.5,
   },
 });
 

@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -17,17 +18,6 @@ import {RootStackParamList} from '../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 
 const ProductDetails = ({navigation}: Props) => {
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      title: 'Product Details',
-      headerTitleStyle: {
-        fontSize: metrics.fontSize.xxl,
-        fontWeight: 'bold',
-        color: Colors.lightText,
-      },
-    });
-  }, [navigation]);
-
   const handleAddProduct = () => {
     // Add product logic will be implemented here
     console.log('Add product pressed');
@@ -41,12 +31,25 @@ const ProductDetails = ({navigation}: Props) => {
       end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="chevron-back" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Product Details</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddProduct}>
+            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
         <ScrollView style={styles.content}>
           <View style={styles.card}>
             <Text style={styles.noProductsText}>No products found.</Text>
           </View>
           <TouchableOpacity style={styles.addProductCard} onPress={handleAddProduct}>
-            <Icon name="add-business" size={24} color={Colors.primary} />
+            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
             <Text style={styles.addProductText}>Add New Product</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -61,6 +64,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  header: {
+    padding: metrics.padding.md,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: metrics.margin.lg,
+    top: metrics.margin.lg,
+    zIndex: 1,
+  },
+  headerTitle: {
+    fontSize: metrics.fontSize.xl * 1.1,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.lg,
+    color: Colors.lightText,
   },
   content: {
     flex: 1,
@@ -97,6 +117,12 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontWeight: '500',
     marginLeft: metrics.margin.md,
+  },
+  addButton: {
+    position: 'absolute',
+    right: metrics.margin.lg,
+    top: metrics.margin.lg,
+    zIndex: 1,
   },
 });
 
