@@ -66,7 +66,10 @@ const SubscriptionDetails = ({navigation}: Props) => {
 
   return (
     <LinearGradient
-      colors={[Colors.gradientStart, Colors.gradientEnd]}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.content}>
@@ -154,21 +157,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: metrics.padding.md,
+    padding: metrics.padding.lg,
   },
   card: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   cardTitle: {
     fontSize: metrics.fontSize.xl,
