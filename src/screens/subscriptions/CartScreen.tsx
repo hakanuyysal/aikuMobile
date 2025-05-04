@@ -182,11 +182,6 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
               <Icon name="chevron-back" size={24} color={Colors.lightText} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Subscriptions</Text>
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => navigation.openDrawer()}>
-              <Icon name="menu" size={30} color={Colors.lightText} />
-            </TouchableOpacity>
             <View style={styles.toggle}>
               <TouchableOpacity
                 style={[styles.toggleButton, !isYearly && styles.toggleActive]}
@@ -267,12 +262,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: metrics.margin.lg,
     color: Colors.lightText,
-  },
-  menuButton: {
-    position: 'absolute',
-    right: metrics.margin.lg,
-    top: metrics.margin.lg,
-    zIndex: 1,
   },
   toggle: {
     flexDirection: 'row',
