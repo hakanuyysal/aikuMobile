@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar, View, StyleSheet} from 'react-native';
+import {StatusBar, View, StyleSheet, Animated} from 'react-native';
 import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
 import {Colors} from './src/constants/colors';
@@ -63,6 +63,8 @@ const navigationTheme = {
 function AppContent(): React.JSX.Element {
   const {user, loading} = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   if (loading) {
     return <SplashScreen />;
@@ -74,108 +76,129 @@ function AppContent(): React.JSX.Element {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <RootStack.Navigator initialRouteName={user ? 'Main' : 'Auth'}>
-        {user ? (
-          <>
-            <RootStack.Screen
-              name="Main"
-              component={(props: Props) => <TabNavigator {...props} onMenuOpen={handleMenuOpen} />}
-              options={{headerShown: false}}
-            />
-            <RootStack.Screen
-              name="UpdateProfile"
-              component={UpdateProfileScreen}
-              options={{
-                presentation: 'modal',
-                title: 'Edit Profile',
-                headerStyle: {backgroundColor: Colors.cardBackground},
-                headerTintColor: Colors.lightText,
-              }}
-            />
-            <RootStack.Screen
-              name="SubscriptionDetails"
-              component={SubscriptionDetails}
-              options={{
-                title: 'Subscription Details',
-                headerTransparent: true,
-                headerTintColor: Colors.lightText,
-                headerBackTitle: undefined,
-                headerStyle: {
-                  backgroundColor: 'transparent',
+      <View style={styles.mainContainer}>
+        <Animated.View
+          style={[
+            styles.mainContent,
+            {
+              transform: [
+                {
+                  translateX: slideAnim,
                 },
-              }}
-            />
-            <RootStack.Screen
-              name="Favorites"
-              component={Favorites}
-              options={{
-                title: 'Favorites',
-                headerTransparent: true,
-                headerTintColor: Colors.lightText,
-                headerBackTitle: undefined,
-                headerStyle: {
-                  backgroundColor: 'transparent',
+                {
+                  scale: scaleAnim,
                 },
-              }}
-            />
-            <RootStack.Screen
-              name="CompanyDetails"
-              component={CompanyDetails}
-              options={{
-                title: 'Company Details',
-                headerTransparent: true,
-                headerTintColor: Colors.lightText,
-                headerBackTitle: undefined,
-                headerStyle: {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            />
-            <RootStack.Screen
-              name="ProductDetails"
-              component={ProductDetails}
-              options={{
-                title: 'Product Details',
-                headerTransparent: true,
-                headerTintColor: Colors.lightText,
-                headerBackTitle: undefined,
-                headerStyle: {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            />
-            <RootStack.Screen
-              name="Settings"
-              component={Settings}
-              options={{
-                title: 'Settings',
-                headerStyle: {
-                  backgroundColor: Colors.background,
-                },
-                headerTintColor: Colors.lightText,
-              }}
-            />
-          </>
-        ) : (
-          <RootStack.Screen
-            name="Auth"
-            component={AuthNavigator}
-            options={{headerShown: false}}
+              ],
+            },
+          ]}>
+          <RootStack.Navigator initialRouteName={user ? 'Main' : 'Auth'}>
+            {user ? (
+              <>
+                <RootStack.Screen
+                  name="Main"
+                  component={(props: Props) => (
+                    <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
+                  )}
+                  options={{headerShown: false}}
+                />
+                <RootStack.Screen
+                  name="UpdateProfile"
+                  component={UpdateProfileScreen}
+                  options={{
+                    presentation: 'modal',
+                    title: 'Edit Profile',
+                    headerStyle: {backgroundColor: Colors.cardBackground},
+                    headerTintColor: Colors.lightText,
+                  }}
+                />
+                <RootStack.Screen
+                  name="SubscriptionDetails"
+                  component={SubscriptionDetails}
+                  options={{
+                    title: 'Subscription Details',
+                    headerTransparent: true,
+                    headerTintColor: Colors.lightText,
+                    headerBackTitle: undefined,
+                    headerStyle: {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+                <RootStack.Screen
+                  name="Favorites"
+                  component={Favorites}
+                  options={{
+                    title: 'Favorites',
+                    headerTransparent: true,
+                    headerTintColor: Colors.lightText,
+                    headerBackTitle: undefined,
+                    headerStyle: {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+                <RootStack.Screen
+                  name="CompanyDetails"
+                  component={CompanyDetails}
+                  options={{
+                    title: 'Company Details',
+                    headerTransparent: true,
+                    headerTintColor: Colors.lightText,
+                    headerBackTitle: undefined,
+                    headerStyle: {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+                <RootStack.Screen
+                  name="ProductDetails"
+                  component={ProductDetails}
+                  options={{
+                    title: 'Product Details',
+                    headerTransparent: true,
+                    headerTintColor: Colors.lightText,
+                    headerBackTitle: undefined,
+                    headerStyle: {
+                      backgroundColor: 'transparent',
+                    },
+                  }}
+                />
+                <RootStack.Screen
+                  name="Settings"
+                  component={Settings}
+                  options={{
+                    title: 'Settings',
+                    headerStyle: {
+                      backgroundColor: Colors.background,
+                    },
+                    headerTintColor: Colors.lightText,
+                  }}
+                />
+              </>
+            ) : (
+              <RootStack.Screen
+                name="Auth"
+                component={AuthNavigator}
+                options={{headerShown: false}}
+              />
+            )}
+          </RootStack.Navigator>
+        </Animated.View>
+
+        {isMenuOpen && user && (
+          <Menu
+            user={{
+              name: user.name || user.email,
+              email: user.email,
+              avatar: user.photoURL,
+              role: user.role || 'Member',
+            }}
+            onClose={() => setIsMenuOpen(false)}
+            mainViewRef={slideAnim}
+            scaleRef={scaleAnim}
           />
         )}
-      </RootStack.Navigator>
-
-      {isMenuOpen && user && (
-        <Menu
-          user={{
-            name: user.name || user.email,
-            email: user.email,
-            avatar: user.photoURL,
-            role: user.role || 'Member'
-          }}
-          onClose={() => setIsMenuOpen(false)}
-        />
-      )}
+      </View>
     </NavigationContainer>
   );
 }
@@ -199,6 +222,15 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  mainContent: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
 });
 

@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   Alert,
   Linking,
+  Dimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -30,19 +31,35 @@ interface MenuProps {
     role?: string;
   };
   onClose: () => void;
+  mainViewRef: Animated.AnimatedValue;
+  scaleRef: Animated.AnimatedValue;
 }
 
-const MENU_WIDTH = metrics.getWidthPercentage(70);
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MENU_WIDTH = SCREEN_WIDTH * 0.8;
+const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({user, onClose}) => {
+const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const slideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
+  const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
+  const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(slideAnim, {
+      Animated.timing(menuSlideAnim, {
         toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -MENU_WIDTH * 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: SCALE,
         duration: 300,
         useNativeDriver: true,
       }),
@@ -52,12 +69,22 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [slideAnim, fadeAnim]);
+  }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
 
   const handleClose = () => {
     Animated.parallel([
-      Animated.timing(slideAnim, {
+      Animated.timing(menuSlideAnim, {
         toValue: MENU_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }),
@@ -117,11 +144,11 @@ const Menu: React.FC<MenuProps> = ({user, onClose}) => {
     <TouchableWithoutFeedback onPress={handleClose}>
       <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
         <TouchableWithoutFeedback>
-          <Animated.View
+          <Animated.View 
             style={[
-              styles.container,
+              styles.menuContent,
               {
-                transform: [{translateX: slideAnim}],
+                transform: [{translateX: menuSlideAnim}],
               },
             ]}>
             <View style={styles.header}>
@@ -215,34 +242,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 2,
   },
-  container: {
+  menuContent: {
     position: 'absolute',
-    top: metrics.statusBarHeight + metrics.margin.md,
+    top: 0,
     right: 0,
-    bottom: metrics.margin.md,
+    bottom: 0,
     width: MENU_WIDTH,
     backgroundColor: Colors.background,
-    borderTopLeftRadius: metrics.borderRadius.xl,
-    borderBottomLeftRadius: metrics.borderRadius.xl,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: -2,
-      height: 0,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
+    paddingBottom: metrics.padding.xl,
   },
   header: {
     padding: metrics.padding.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     backgroundColor: Colors.border,
+    paddingTop: metrics.padding.xxl * 1.5,
   },
   closeButton: {
     position: 'absolute',
-    top: metrics.padding.sm,
+    top: metrics.padding.xxl * 2,
     right: metrics.padding.md,
     zIndex: 1,
     padding: metrics.padding.xs,
@@ -261,7 +280,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: metrics.margin.md,
-    marginTop: metrics.margin.lg,
+    marginTop: metrics.margin.xxl,
   },
   avatarContainer: {
     marginRight: metrics.margin.md,
