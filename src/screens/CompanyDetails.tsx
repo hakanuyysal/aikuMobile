@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: metrics.padding.md,
+    padding: metrics.padding.lg,
   },
   sectionTitle: {
     fontSize: metrics.fontSize.xl,
@@ -79,20 +79,14 @@ const styles = StyleSheet.create({
     marginBottom: metrics.margin.lg,
   },
   companyCard: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   companyLogo: {
     width: 50,
@@ -105,20 +99,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   addCompanyCard: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   addCompanyText: {
     fontSize: metrics.fontSize.lg,
