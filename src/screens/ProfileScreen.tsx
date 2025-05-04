@@ -35,7 +35,7 @@ const ProfileScreen = () => {
     {
       icon: 'account-outline',
       title: 'Personal Details',
-      subtitle: 'Name, email and profile information',
+      subtitle: 'Your personal information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('UpdateProfile'),
       gradient: ['#4F46E5', '#7C3AED'],
@@ -43,7 +43,7 @@ const ProfileScreen = () => {
     {
       icon: 'favorite-outline',
       title: 'Favorites',
-      subtitle: 'Your favorite AI solutions',
+      subtitle: 'Your favorite companies',
       iconType: 'MaterialIcons',
       onPress: () => navigation.navigate('Favorites'),
       gradient: ['#EC4899', '#D946EF'],
@@ -51,7 +51,7 @@ const ProfileScreen = () => {
     {
       icon: 'crown-outline',
       title: 'Subscription Details',
-      subtitle: 'Plan and subscription information',
+      subtitle: 'Subscription information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('SubscriptionDetails'),
       gradient: ['#F59E0B', '#EF4444'],
@@ -59,7 +59,7 @@ const ProfileScreen = () => {
     {
       icon: 'domain',
       title: 'Company Details',
-      subtitle: 'Your company information',
+      subtitle: 'Company information',
       iconType: 'MaterialIcons',
       onPress: () => navigation.navigate('CompanyDetails'),
       gradient: ['#10B981', '#3B82F6'],
@@ -67,7 +67,7 @@ const ProfileScreen = () => {
     {
       icon: 'view-grid-outline',
       title: 'Product Details',
-      subtitle: 'AI product information',
+      subtitle: 'Product information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('ProductDetails'),
       gradient: ['#6366F1', '#8B5CF6'],
@@ -89,7 +89,7 @@ const ProfileScreen = () => {
                 <Image source={{uri: user.photoURL}} style={styles.avatar} />
               ) : (
                 <LinearGradient
-                  colors={['#3B82F6', '#2563EB']}
+                  colors={['#2A2D3E', '#424867']}
                   style={styles.avatarPlaceholder}>
                   <Icon
                     name="person"
@@ -178,7 +178,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: metrics.padding.lg,
     justifyContent: 'flex-end',
     paddingBottom: metrics.padding.md,
-    marginTop: -metrics.padding.xxl * 1.2,
+    marginTop: -metrics.padding.xxl * 1.5,
+    marginBottom: metrics.margin.sm,
   },
   container: {
     flex: 1,
@@ -247,11 +248,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: metrics.padding.sm,
-    paddingVertical: metrics.padding.xs,
     borderRadius: metrics.borderRadius.circle,
     marginTop: metrics.margin.xs,
     alignSelf: 'flex-start',
-    display: 'none',
   },
   roleText: {
     color: Colors.lightText,
