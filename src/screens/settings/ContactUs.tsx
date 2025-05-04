@@ -113,24 +113,22 @@ const ContactUs = ({navigation}: Props) => {
             />
           </View>
 
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleSubmit}
-            activeOpacity={0.7}>
-            <LinearGradient
-              colors={[Colors.primary, Colors.secondary]}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}
-              style={styles.submitGradient}>
-              <IoniconsIcon
-                name="send"
-                size={24}
-                color={Colors.background}
-                style={styles.sendIcon}
-              />
-              <Text style={styles.submitButtonText}>SEND MESSAGE</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <View style={styles.submitButtonContainer}>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              activeOpacity={0.7}>
+              <View style={styles.submitContent}>
+                <IoniconsIcon
+                  name="paper-plane"
+                  size={24}
+                  color="#FFFFFF"
+                  style={styles.submitIcon}
+                />
+                <Text style={styles.submitButtonText}>Send Message</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.contactInfoContainer}>
             <TouchableOpacity
@@ -238,10 +236,16 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     padding: metrics.padding.lg,
   },
-  submitButton: {
+  submitButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
     marginTop: metrics.margin.xl,
+  },
+  submitButton: {
+    backgroundColor: Colors.primary,
     borderRadius: metrics.borderRadius.md,
-    overflow: 'hidden',
+    paddingVertical: metrics.padding.md,
+    paddingHorizontal: metrics.padding.xl,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
@@ -249,23 +253,22 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
-    alignSelf: 'stretch',
+    elevation: 4,
+    width: '90%',
   },
-  submitGradient: {
+  submitContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: metrics.padding.lg,
+  },
+  submitIcon: {
+    marginRight: metrics.margin.md,
   },
   submitButtonText: {
-    color: Colors.background,
+    color: '#FFFFFF',
     fontSize: metrics.fontSize.lg,
     fontWeight: '600',
-    letterSpacing: 1.5,
-  },
-  sendIcon: {
-    marginRight: metrics.margin.sm,
+    letterSpacing: 0.5,
   },
   contactInfoContainer: {
     marginTop: metrics.margin.xl * 1.5,
