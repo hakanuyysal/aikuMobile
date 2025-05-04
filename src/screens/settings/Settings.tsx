@@ -102,87 +102,120 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
     _navigation.navigate('ContactUs');
   };
 
+  const settingsItems = [
+    {
+      icon: 'dark-mode',
+      title: 'Dark Theme',
+      subtitle: 'Switch between light and dark mode',
+      iconType: 'MaterialIcons',
+      gradient: ['#4F46E5', '#7C3AED'],
+      rightElement: (
+        <Switch
+          value={isDarkMode}
+          onValueChange={setIsDarkMode}
+          trackColor={{false: Colors.border, true: Colors.primary}}
+          ios_backgroundColor={Colors.border}
+        />
+      ),
+    },
+    {
+      icon: 'notifications',
+      title: 'Notifications',
+      subtitle: 'Manage notification preferences',
+      iconType: 'MaterialIcons',
+      gradient: ['#EC4899', '#D946EF'],
+      rightElement: (
+        <Switch
+          value={notificationsEnabled}
+          onValueChange={setNotificationsEnabled}
+          trackColor={{false: Colors.border, true: Colors.primary}}
+          ios_backgroundColor={Colors.border}
+        />
+      ),
+    },
+    {
+      icon: 'language',
+      title: 'Language',
+      subtitle: 'Choose your preferred language',
+      iconType: 'MaterialIcons',
+      gradient: ['#F59E0B', '#EF4444'],
+      rightElement: (
+        <View style={styles.languageSelector}>
+          <Text style={styles.selectedLanguageText}>
+            {languages.find(lang => lang.code === selectedLanguage)?.name}
+          </Text>
+          <Icon name="arrow-forward-ios" size={16} color={Colors.primary} />
+        </View>
+      ),
+      onPress: handleLanguageSelect,
+    },
+    {
+      icon: 'feedback',
+      title: 'Send Feedback',
+      subtitle: 'Help us improve our service',
+      iconType: 'MaterialIcons',
+      gradient: ['#10B981', '#3B82F6'],
+      onPress: handleFeedback,
+    },
+    {
+      icon: 'contact-support',
+      title: 'Contact Us',
+      subtitle: 'Get in touch with our support team',
+      iconType: 'MaterialIcons',
+      gradient: ['#6366F1', '#8B5CF6'],
+      onPress: handleContactUs,
+    },
+  ];
+
   return (
     <LinearGradient
-      colors={[Colors.background, Colors.cardBackground]}
+      colors={['#0F172A', '#1E293B', '#3B82F620']}
+      locations={[0, 0.5, 1]}
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 1}}
       style={styles.container}>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          <View style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <Icon name="dark-mode" size={24} color={Colors.primary} />
-              <Text style={styles.settingText}>Dark Theme</Text>
-            </View>
-            <Switch
-              value={isDarkMode}
-              onValueChange={setIsDarkMode}
-              trackColor={{false: Colors.border, true: Colors.primary}}
-              ios_backgroundColor={Colors.border}
-            />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          <View style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <Icon name="notifications" size={24} color={Colors.primary} />
-              <Text style={styles.settingText}>Enable Notifications</Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{false: Colors.border, true: Colors.primary}}
-              ios_backgroundColor={Colors.border}
-            />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={handleLanguageSelect}>
-            <View style={styles.settingLeft}>
-              <Icon name="language" size={24} color={Colors.primary} />
-              <Text style={styles.settingText}>Language</Text>
-            </View>
-            <View style={styles.languageSelector}>
-              <Text style={styles.selectedLanguageText}>
-                {languages.find(lang => lang.code === selectedLanguage)?.name}
-              </Text>
-              <Icon name="arrow-forward-ios" size={16} color={Colors.primary} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.settingItem} onPress={handleFeedback}>
-            <View style={styles.settingLeft}>
-              <Icon name="feedback" size={24} color={Colors.primary} />
-              <Text style={styles.settingText}>Send Feedback</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={handleContactUs}>
-            <View style={styles.settingLeft}>
-              <Icon name="contact-support" size={24} color={Colors.primary} />
-              <Text style={styles.settingText}>Contact Us</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color={Colors.primary} />
-          </TouchableOpacity>
+      <ScrollView 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.menuContainer}>
+          {settingsItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={item.onPress}
+              disabled={!item.onPress}
+              activeOpacity={0.7}>
+              <LinearGradient
+                colors={item.gradient}
+                style={styles.menuItemIcon}
+                start={{x: 0, y: 0}}
+                end={{x: 1, y: 1}}>
+                <Icon name={item.icon} size={24} color="#FFF" />
+              </LinearGradient>
+              <View style={styles.menuItemContent}>
+                <Text style={styles.menuItemTitle}>{item.title}</Text>
+                <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+              </View>
+              {item.rightElement ? (
+                item.rightElement
+              ) : (
+                <View style={styles.menuItemArrow}>
+                  <Icon name="chevron-right" size={24} color={Colors.primary} />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Icon name="logout" size={24} color={Colors.background} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LinearGradient
+            colors={['#EF4444', '#DC2626']}
+            style={styles.logoutGradient}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 0}}>
+            <Icon name="logout" size={24} color={Colors.lightText} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
@@ -197,78 +230,81 @@ const styles = StyleSheet.create({
     padding: metrics.padding.lg,
     paddingBottom: metrics.padding.xl,
   },
-  header: {
-    marginBottom: metrics.margin.xl,
+  menuContainer: {
+    paddingTop: metrics.padding.lg,
+  },
+  menuItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  headerTitle: {
-    display: 'none',
-    fontSize: metrics.fontSize.xl,
-    fontWeight: 'bold',
-    color: Colors.lightText,
-  },
-  card: {
-    backgroundColor: Colors.cardBackground,
-    borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
-    marginBottom: metrics.margin.lg,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.lg,
+    marginBottom: metrics.margin.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  menuItemIcon: {
+    width: metrics.scale(48),
+    height: metrics.scale(48),
+    borderRadius: metrics.scale(16),
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
-  sectionTitle: {
+  menuItemContent: {
+    flex: 1,
+    marginLeft: metrics.margin.lg,
+  },
+  menuItemTitle: {
     fontSize: metrics.fontSize.lg,
+    color: Colors.lightText,
     fontWeight: '600',
+    marginBottom: metrics.margin.xxs,
+  },
+  menuItemSubtitle: {
+    fontSize: metrics.fontSize.sm,
     color: Colors.lightText,
-    marginBottom: metrics.margin.md,
+    opacity: 0.6,
   },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: metrics.padding.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingText: {
-    fontSize: metrics.fontSize.md,
-    color: Colors.lightText,
-    marginLeft: metrics.margin.md,
+  menuItemArrow: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: metrics.padding.xs,
+    borderRadius: metrics.borderRadius.circle,
   },
   languageSelector: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: metrics.padding.sm,
+    paddingVertical: metrics.padding.xs,
+    borderRadius: metrics.borderRadius.circle,
   },
   selectedLanguageText: {
     fontSize: metrics.fontSize.md,
-    color: Colors.primary,
+    color: Colors.lightText,
     marginRight: metrics.margin.sm,
   },
   logoutButton: {
+    marginTop: metrics.margin.xl,
+  },
+  logoutGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: metrics.padding.sm,
-    paddingHorizontal: metrics.padding.lg,
-    backgroundColor: Colors.error,
-    borderRadius: metrics.borderRadius.md,
-    marginTop: metrics.margin.xs,
-    alignSelf: 'center',
-    minWidth: 120,
+    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.lg,
+    gap: metrics.margin.sm,
   },
   logoutText: {
-    marginLeft: metrics.margin.sm,
-    fontSize: metrics.fontSize.md,
-    color: Colors.background,
+    fontSize: metrics.fontSize.lg,
+    color: Colors.lightText,
     fontWeight: '600',
   },
 });

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  ScrollView,
+  Animated,
   SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -23,6 +23,13 @@ type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 const ProfileScreen = () => {
   const {user} = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const scrollY = new Animated.Value(0);
+
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [metrics.scale(200), metrics.scale(150)],
+    extrapolate: 'clamp',
+  });
 
   const menuItems = [
     {
@@ -31,6 +38,7 @@ const ProfileScreen = () => {
       subtitle: 'Name, email and profile information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('UpdateProfile'),
+      gradient: ['#4F46E5', '#7C3AED'],
     },
     {
       icon: 'favorite-outline',
@@ -38,6 +46,7 @@ const ProfileScreen = () => {
       subtitle: 'Your favorite AI solutions',
       iconType: 'MaterialIcons',
       onPress: () => navigation.navigate('Favorites'),
+      gradient: ['#EC4899', '#D946EF'],
     },
     {
       icon: 'crown-outline',
@@ -45,6 +54,7 @@ const ProfileScreen = () => {
       subtitle: 'Plan and subscription information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('SubscriptionDetails'),
+      gradient: ['#F59E0B', '#EF4444'],
     },
     {
       icon: 'domain',
@@ -52,6 +62,7 @@ const ProfileScreen = () => {
       subtitle: 'Your company information',
       iconType: 'MaterialIcons',
       onPress: () => navigation.navigate('CompanyDetails'),
+      gradient: ['#10B981', '#3B82F6'],
     },
     {
       icon: 'view-grid-outline',
@@ -59,85 +70,98 @@ const ProfileScreen = () => {
       subtitle: 'AI product information',
       iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('ProductDetails'),
-    },
-    {
-      icon: 'settings',
-      title: 'Settings',
-      subtitle: 'App preferences',
-      iconType: 'MaterialIcons',
-      onPress: () => navigation.navigate('Settings'),
+      gradient: ['#6366F1', '#8B5CF6'],
     },
   ];
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
+      colors={['#0F172A', '#1E293B', '#3B82F620']}
+      locations={[0, 0.5, 1]}
       start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      end={{x: 1, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-          <View style={styles.card}>
-            <View style={styles.headerContent}>
-              <View style={styles.avatarContainer}>
-                {user?.photoURL ? (
-                  <Image source={{uri: user.photoURL}} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Icon name="person" size={metrics.scale(32)} color={Colors.lightText} />
-                  </View>
-                )}
-                <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => navigation.navigate('UpdateProfile')}>
-                  <Icon name="edit" size={14} color={Colors.background} />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{user?.name || 'Murat Tanrıyakul'}</Text>
-                <Text style={styles.userEmail}>{user?.email}</Text>
-                <View style={styles.roleContainer}>
-                  <MaterialCommunityIcons name="crown" size={16} color={Colors.primary} />
-                  <Text style={styles.roleText}>Startup Plan</Text>
-                </View>
-              </View>
+        <Animated.View style={[styles.header, {height: headerHeight}]}>
+          <View style={styles.headerContent}>
+            <View style={styles.avatarContainer}>
+              {user?.photoURL ? (
+                <Image source={{uri: user.photoURL}} style={styles.avatar} />
+              ) : (
+                <LinearGradient
+                  colors={['#3B82F6', '#2563EB']}
+                  style={styles.avatarPlaceholder}>
+                  <Icon
+                    name="person"
+                    size={metrics.scale(32)}
+                    color={Colors.lightText}
+                  />
+                </LinearGradient>
+              )}
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => navigation.navigate('UpdateProfile')}>
+                <Icon name="edit" size={14} color={Colors.background} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>
+                {user?.name || 'Murat Tanrıyakul'}
+              </Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+              <LinearGradient
+                colors={['#3B82F6', '#2563EB']}
+                start={{x: 0, y: 0}}
+                end={{x: 1, y: 0}}
+                style={styles.roleContainer}>
+                <MaterialCommunityIcons name="crown" size={16} color="#FFF" />
+                <Text style={styles.roleText}>Startup Plan</Text>
+              </LinearGradient>
             </View>
           </View>
+        </Animated.View>
 
+        <Animated.ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{nativeEvent: {contentOffset: {y: scrollY}}}],
+            {useNativeDriver: false},
+          )}
+          scrollEventThrottle={16}>
           <View style={styles.menuContainer}>
             {menuItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                style={[
-                  styles.menuItem,
-                  index === menuItems.length - 1 && styles.lastMenuItem,
-                ]}
-                onPress={item.onPress}>
-                <View style={styles.menuItemIcon}>
+                style={styles.menuItem}
+                onPress={item.onPress}
+                activeOpacity={0.7}>
+                <LinearGradient
+                  colors={item.gradient}
+                  style={styles.menuItemIcon}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 1}}>
                   {item.iconType === 'MaterialCommunityIcons' ? (
                     <MaterialCommunityIcons
                       name={item.icon}
                       size={24}
-                      color={Colors.primary}
+                      color="#FFF"
                     />
                   ) : (
-                    <Icon
-                      name={item.icon}
-                      size={24}
-                      color={Colors.primary}
-                    />
+                    <Icon name={item.icon} size={24} color="#FFF" />
                   )}
-                </View>
+                </LinearGradient>
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
                   <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
                 </View>
-                <Icon name="chevron-right" size={24} color={Colors.primary} />
+                <View style={styles.menuItemArrow}>
+                  <Icon name="chevron-right" size={24} color={Colors.primary} />
+                </View>
               </TouchableOpacity>
             ))}
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -150,25 +174,14 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  header: {
+    paddingHorizontal: metrics.padding.lg,
+    justifyContent: 'flex-end',
+    paddingBottom: metrics.padding.md,
+    marginTop: -metrics.padding.xxl * 1.2,
+  },
   container: {
     flex: 1,
-    padding: metrics.padding.lg,
-  },
-  card: {
-    backgroundColor: `${Colors.cardBackground}dd`,
-    borderRadius: metrics.borderRadius.lg,
-    padding: metrics.padding.lg,
-    marginBottom: metrics.margin.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
   headerContent: {
     flexDirection: 'row',
@@ -176,43 +189,50 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
-    width: metrics.scale(80),
-    height: metrics.scale(80),
-    borderRadius: metrics.scale(40),
-    borderWidth: 3,
+    width: metrics.scale(90),
+    height: metrics.scale(90),
+    borderRadius: metrics.scale(45),
+    borderWidth: 4,
     borderColor: Colors.primary,
   },
   avatarPlaceholder: {
     width: metrics.scale(80),
     height: metrics.scale(80),
     borderRadius: metrics.scale(40),
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: Colors.primary,
+    justifyContent: 'center',
   },
   editButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: Colors.primary,
-    width: metrics.scale(28),
-    height: metrics.scale(28),
-    borderRadius: metrics.scale(14),
+    width: metrics.scale(32),
+    height: metrics.scale(32),
+    borderRadius: metrics.scale(16),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: Colors.background,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   userInfo: {
-    flex: 1,
     marginLeft: metrics.margin.lg,
+    flex: 1,
   },
   userName: {
-    fontSize: metrics.fontSize.xl,
+    fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
     marginBottom: metrics.margin.xxs,
@@ -221,62 +241,58 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
     opacity: 0.7,
-    marginBottom: metrics.margin.xs,
+    marginBottom: metrics.margin.sm,
   },
   roleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    paddingHorizontal: metrics.padding.md,
+    paddingHorizontal: metrics.padding.sm,
     paddingVertical: metrics.padding.xs,
     borderRadius: metrics.borderRadius.circle,
+    marginTop: metrics.margin.xs,
     alignSelf: 'flex-start',
-    gap: metrics.margin.xs,
   },
   roleText: {
+    color: Colors.lightText,
+    marginLeft: metrics.margin.xs,
     fontSize: metrics.fontSize.sm,
-    color: Colors.primary,
     fontWeight: '600',
   },
   menuContainer: {
-    backgroundColor: `${Colors.cardBackground}dd`,
-    borderRadius: metrics.borderRadius.lg,
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: metrics.padding.lg,
+    paddingTop: metrics.padding.lg,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: metrics.padding.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border + '20',
-  },
-  lastMenuItem: {
-    borderBottomWidth: 0,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.lg,
+    marginBottom: metrics.margin.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   menuItemIcon: {
     width: metrics.scale(48),
     height: metrics.scale(48),
-    borderRadius: metrics.scale(24),
-    backgroundColor: Colors.background,
+    borderRadius: metrics.scale(16),
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   menuItemContent: {
     flex: 1,
     marginLeft: metrics.margin.lg,
   },
   menuItemTitle: {
-    fontSize: metrics.fontSize.md,
+    fontSize: metrics.fontSize.lg,
     color: Colors.lightText,
     fontWeight: '600',
     marginBottom: metrics.margin.xxs,
@@ -285,6 +301,11 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.sm,
     color: Colors.lightText,
     opacity: 0.6,
+  },
+  menuItemArrow: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: metrics.padding.xs,
+    borderRadius: metrics.borderRadius.circle,
   },
 });
 
