@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: metrics.borderRadius.circle,
     marginTop: metrics.margin.xs,
     alignSelf: 'flex-start',
+    display: 'none',
   },
   roleText: {
     color: Colors.lightText,
