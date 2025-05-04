@@ -1,226 +1,276 @@
 import React from 'react';
 import {
   View,
+  Text,
   StyleSheet,
-  ScrollView,
+  TouchableOpacity,
   Image,
-  StatusBar,
+  ScrollView,
   SafeAreaView,
 } from 'react-native';
-import { Text, Button, IconButton } from 'react-native-paper';
-import LinearGradient from 'react-native-linear-gradient';
-import { useProfile } from '../components/ProfileContext';
-import { Colors } from '../constants/colors';
-import { ProfileScreenProps } from '../types';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {Colors} from '../constants/colors';
+import metrics from '../constants/aikuMetric';
+import {useAuth} from '../contexts/AuthContext';
+import {useNavigation} from '@react-navigation/native';
+import type {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '../../App';
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { profile } = useProfile();
+type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
+const ProfileScreen = () => {
+  const {user} = useAuth();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
+
+  const menuItems = [
+    {
+      icon: 'account-outline',
+      title: 'Personal Details',
+      subtitle: 'Name, email and profile information',
+      iconType: 'MaterialCommunityIcons',
+      onPress: () => navigation.navigate('UpdateProfile'),
+    },
+    {
+      icon: 'favorite-outline',
+      title: 'Favorites',
+      subtitle: 'Your favorite AI solutions',
+      iconType: 'MaterialIcons',
+      onPress: () => navigation.navigate('Favorites'),
+    },
+    {
+      icon: 'crown-outline',
+      title: 'Subscription Details',
+      subtitle: 'Plan and subscription information',
+      iconType: 'MaterialCommunityIcons',
+      onPress: () => navigation.navigate('SubscriptionDetails'),
+    },
+    {
+      icon: 'domain',
+      title: 'Company Details',
+      subtitle: 'Your company information',
+      iconType: 'MaterialIcons',
+      onPress: () => navigation.navigate('CompanyDetails'),
+    },
+    {
+      icon: 'view-grid-outline',
+      title: 'Product Details',
+      subtitle: 'AI product information',
+      iconType: 'MaterialCommunityIcons',
+      onPress: () => navigation.navigate('ProductDetails'),
+    },
+    {
+      icon: 'settings',
+      title: 'Settings',
+      subtitle: 'App preferences',
+      iconType: 'MaterialIcons',
+      onPress: () => navigation.navigate('Settings'),
+    },
+  ];
 
   return (
-    <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
-      style={styles.gradientBackground}
-    >
-      <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <View style={styles.headerContent}>
+            <View style={styles.avatarContainer}>
+              {user?.photoURL ? (
+                <Image source={{uri: user.photoURL}} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Icon name="person" size={metrics.scale(32)} color={Colors.lightText} />
+                </View>
+              )}
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => navigation.navigate('UpdateProfile')}>
+                <Icon name="edit" size={14} color={Colors.background} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user?.name || 'Murat Tanrıyakul'}</Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+              <View style={styles.roleContainer}>
+                <MaterialCommunityIcons name="crown" size={16} color={Colors.primary} />
+                <Text style={styles.roleText}>Startup Plan</Text>
+              </View>
+            </View>
           </View>
-          <Text variant="headlineMedium" style={styles.title}>
-            Aiku
-          </Text>
-          <IconButton
-            icon="menu"
-            mode="contained"
-            containerColor={Colors.primary}
-            iconColor={Colors.lightText}
-            size={30}
-            onPress={() => navigation.toggleDrawer?.()}
-            style={styles.menuButton}
-          />
         </View>
 
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-          {/* Profile Card */}
-          <View style={styles.profileCard}>
-            <View style={styles.imageContainer}>
-              <Image
-                source={require('../assets/images/Alohaicon.png')}
-                style={styles.image}
-              />
-            </View>
-            <Text style={styles.welcome}>Welcome, {profile.firstName} 👋</Text>
-            <Text style={styles.subtitle}>{profile.title || 'Your Title'}</Text>
-            <Text style={styles.email}>{profile.email}</Text>
-
-            <Button
-              mode="outlined"
-              onPress={() =>
-                navigation.navigate('UpdateProfile', { presentation: 'modal' })
-              }
-              style={styles.editButton}
-              textColor={Colors.lightText}
-            >
-              Edit Profile
-            </Button>
-          </View>
-
-          {/* Info Cards */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-            <View style={styles.infoCard}>
-              <Text style={styles.cardTitle}>Personal Details</Text>
-              <Text style={styles.cardText}>First Name: {profile.firstName}</Text>
-              <Text style={styles.cardText}>Last Name: {profile.lastName}</Text>
-              <Text style={styles.cardText}>Phone: {profile.phone}</Text>
-              <Text style={styles.cardText}>Location: {profile.location}</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Text style={styles.cardTitle}>Profile Information</Text>
-              <Text style={styles.cardText}>{profile.profileInfo || 'No profile info yet.'}</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Text style={styles.cardTitle}>Social Media</Text>
-              <Text style={styles.cardText}>LinkedIn: {profile.social.linkedin}</Text>
-              <Text style={styles.cardText}>Instagram: {profile.social.instagram}</Text>
-              <Text style={styles.cardText}>Facebook: {profile.social.facebook}</Text>
-              <Text style={styles.cardText}>Twitter/X: {profile.social.twitter}</Text>
-            </View>
-          </ScrollView>
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+        <View style={styles.menuContainer}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.menuItem,
+                index === menuItems.length - 1 && styles.lastMenuItem,
+              ]}
+              onPress={item.onPress}>
+              <View style={styles.menuItemIcon}>
+                {item.iconType === 'MaterialCommunityIcons' ? (
+                  <MaterialCommunityIcons
+                    name={item.icon}
+                    size={24}
+                    color={Colors.primary}
+                  />
+                ) : (
+                  <Icon
+                    name={item.icon}
+                    size={24}
+                    color={Colors.primary}
+                  />
+                )}
+              </View>
+              <View style={styles.menuItemContent}>
+                <Text style={styles.menuItemTitle}>{item.title}</Text>
+                <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+              </View>
+              <Icon name="chevron-right" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  gradientBackground: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  logoContainer: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
-  },
-  title: {
-    fontWeight: '700',
-    color: Colors.lightText,
-  },
-  menuButton: {
-    margin: 0,
+    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
+    padding: metrics.padding.lg,
   },
-  profileCard: {
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: `${Colors.cardBackground}dd`, // Matches the muted tone of other screens
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)', // Matches other cards
-    shadowColor: '#000',
+  card: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: metrics.borderRadius.lg,
+    padding: metrics.padding.lg,
+    marginBottom: metrics.margin.lg,
+    shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 2,
     },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
-    elevation: 16,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  imageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    marginBottom: 16,
-    justifyContent: 'center',
+  headerContent: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  image: {
-    width: '80%',
-    height: '80%',
-    resizeMode: 'contain',
+  avatarContainer: {
+    position: 'relative',
   },
-  welcome: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.lightText, // Updated for readability on dark background
+  avatar: {
+    width: metrics.scale(80),
+    height: metrics.scale(80),
+    borderRadius: metrics.scale(40),
+    borderWidth: 3,
+    borderColor: Colors.primary,
+  },
+  avatarPlaceholder: {
+    width: metrics.scale(80),
+    height: metrics.scale(80),
+    borderRadius: metrics.scale(40),
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  subtitle: {
-    color: Colors.lightText,
-    marginBottom: 4,
-  },
-  email: {
-    color: Colors.lightText,
-    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: Colors.primary,
   },
   editButton: {
-    borderColor: Colors.lightText,
-    marginTop: 8,
-  },
-  horizontalScroll: {
-    marginTop: 8,
-  },
-  infoCard: {
-    height: 250,
-    width: 300,
-    padding: 16,
-    borderRadius: 12,
-    marginRight: 16,
-    marginTop: 25,
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: Colors.primary,
+    width: metrics.scale(28),
+    height: metrics.scale(28),
+    borderRadius: metrics.scale(14),
     justifyContent: 'center',
-    backgroundColor: `${Colors.cardBackground}dd`, // Matches the muted tone of other screens
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)', // Matches other cards
-    shadowColor: '#000',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: metrics.margin.lg,
+  },
+  userName: {
+    fontSize: metrics.fontSize.xl,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+    marginBottom: metrics.margin.xxs,
+  },
+  userEmail: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.lightText,
+    opacity: 0.7,
+    marginBottom: metrics.margin.xs,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.xs,
+    borderRadius: metrics.borderRadius.circle,
+    alignSelf: 'flex-start',
+    gap: metrics.margin.xs,
+  },
+  roleText: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  menuContainer: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: metrics.borderRadius.lg,
+    shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 2,
     },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
-    elevation: 16,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  cardTitle: {
-    color: Colors.lightText, // Updated for readability on dark background
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 8,
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: metrics.padding.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border + '20',
   },
-  cardText: {
-    color: Colors.lightText, // Added for consistency and readability
+  lastMenuItem: {
+    borderBottomWidth: 0,
+  },
+  menuItemIcon: {
+    width: metrics.scale(48),
+    height: metrics.scale(48),
+    borderRadius: metrics.scale(24),
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuItemContent: {
+    flex: 1,
+    marginLeft: metrics.margin.lg,
+  },
+  menuItemTitle: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.lightText,
+    fontWeight: '600',
+    marginBottom: metrics.margin.xxs,
+  },
+  menuItemSubtitle: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    opacity: 0.6,
   },
 });
 
