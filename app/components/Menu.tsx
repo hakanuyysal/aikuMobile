@@ -99,28 +99,24 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   };
 
   const handleMenuItemPress = (title: string) => {
-    if (title === 'Personal Details') {
-      navigation.navigate('UpdateProfile');
-      onClose();
-    } else if (title === 'Subscription Details') {
-      navigation.navigate('SubscriptionDetails');
-      onClose();
-    } else if (title === 'Favorites') {
-      navigation.navigate('Favorites');
-      onClose();
-    } else if (title === 'Company Details') {
-      navigation.navigate('CompanyDetails');
-      onClose();
-    } else if (title === 'Product Details') {
-      navigation.navigate('ProductDetails');
-      onClose();
-    } else if (title === 'Settings') {
-      navigation.navigate('Settings');
-      onClose();
-    } else {
-      console.log(`${title} pressed`);
-      onClose();
-    }
+    handleClose();
+    setTimeout(() => {
+      if (title === 'Personal Details') {
+        navigation.navigate('UpdateProfile');
+      } else if (title === 'Subscription Details') {
+        navigation.navigate('SubscriptionDetails');
+      } else if (title === 'Favorites') {
+        navigation.navigate('Favorites');
+      } else if (title === 'Company Details') {
+        navigation.navigate('CompanyDetails');
+      } else if (title === 'Product Details') {
+        navigation.navigate('ProductDetails');
+      } else if (title === 'Settings') {
+        navigation.navigate('Settings');
+      } else {
+        console.log(`${title} pressed`);
+      }
+    }, 300); // Animasyon süresi kadar bekle
   };
 
   const menuItems = [
@@ -256,7 +252,7 @@ const styles = StyleSheet.create({
     padding: metrics.padding.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    backgroundColor: Colors.border,
+    backgroundColor: 'transparent',
     paddingTop: metrics.padding.xxl * 1.5,
   },
   closeButton: {
