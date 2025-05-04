@@ -117,13 +117,7 @@ function AppContent(): React.JSX.Element {
                   name="SubscriptionDetails"
                   component={SubscriptionDetails}
                   options={{
-                    title: 'Subscription Details',
-                    headerTransparent: true,
-                    headerTintColor: Colors.lightText,
-                    headerBackTitle: undefined,
-                    headerStyle: {
-                      backgroundColor: 'transparent',
-                    },
+                    headerShown: false,
                   }}
                 />
                 <RootStack.Screen

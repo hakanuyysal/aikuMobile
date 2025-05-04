@@ -13,7 +13,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../App';
 
@@ -21,7 +21,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionDetails'>;
 
 const SubscriptionDetails = ({navigation}: Props) => {
   const [isAutoRenewalEnabled, setIsAutoRenewalEnabled] = useState(true);
-  
+
   const planFeatures = [
     'List AI solutions',
     'Get investor access',
@@ -72,6 +72,18 @@ const SubscriptionDetails = ({navigation}: Props) => {
       end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons
+              name="chevron-left"
+              size={30}
+              color={Colors.lightText}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Subscription Details</Text>
+        </View>
         <ScrollView style={styles.content}>
           {/* Plan Information Card */}
           <View style={styles.card}>
@@ -79,8 +91,14 @@ const SubscriptionDetails = ({navigation}: Props) => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Status:</Text>
               <View style={styles.statusContainer}>
-                <Icon name="check-circle" size={20} color="#4CAF50" />
-                <Text style={[styles.infoValue, styles.activeText]}>Active</Text>
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={20}
+                  color="#4CAF50"
+                />
+                <Text style={[styles.infoValue, styles.activeText]}>
+                  Active
+                </Text>
               </View>
             </View>
             <View style={styles.infoRow}>
@@ -130,7 +148,11 @@ const SubscriptionDetails = ({navigation}: Props) => {
             <Text style={styles.cardTitle}>Plan Features</Text>
             {planFeatures.map((feature, index) => (
               <View key={index} style={styles.featureRow}>
-                <Icon name="check" size={20} color={Colors.primary} />
+                <MaterialCommunityIcons
+                  name="check"
+                  size={20}
+                  color={Colors.primary}
+                />
                 <Text style={styles.featureText}>{feature}</Text>
               </View>
             ))}
@@ -154,6 +176,23 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  header: {
+    padding: metrics.padding.xs,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: metrics.margin.lg,
+    top: metrics.margin.xxs * 1.1,
+    zIndex: 1,
+  },
+  headerTitle: {
+    fontSize: metrics.fontSize.xl * 1.1,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+    marginBottom: -metrics.margin.xs,
   },
   content: {
     flex: 1,
@@ -226,4 +265,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SubscriptionDetails; 
+export default SubscriptionDetails;

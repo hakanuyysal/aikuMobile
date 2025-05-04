@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     left: metrics.margin.lg,
-    top: metrics.margin.lg,
+    top: metrics.margin.md * 1.1,
     zIndex: 1,
   },
   headerTitle: {
