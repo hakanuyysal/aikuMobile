@@ -5,15 +5,15 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Alert,
-  KeyboardAvoidingView,
+  Linking,
   Platform,
   SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import IoniconsIcon from 'react-native-vector-icons/Ionicons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -22,28 +22,60 @@ import {RootStackParamList} from '../../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'ContactUs'>;
 
 const ContactUs = ({navigation}: Props) => {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    message: '',
-  });
+  const [message, setMessage] = useState('');
 
   const handleSubmit = () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
-      Alert.alert('Hata', 'Lütfen zorunlu alanları doldurun.');
+    if (!message.trim()) {
+      Alert.alert('Hata', 'Lütfen mesajınızı yazın.');
       return;
     }
 
     Alert.alert('Başarılı', 'Mesajınız başarıyla gönderildi.');
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phoneNumber: '',
-      message: '',
-    });
+    setMessage('');
+  };
+
+  const handleInstagramPress = () => {
+    Linking.openURL('https://www.instagram.com/aikuai_platform/');
+  };
+
+  const handleLinkedinPress = () => {
+    Linking.openURL('https://www.linkedin.com/company/aiku-ai-platform/');
+  };
+
+  const handleEmailPress = async () => {
+    try {
+      const url = 'mailto:info@aikuaiplatform.com';
+      const canOpen = await Linking.canOpenURL(url);
+
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Mail app can not started');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Mail app can not started');
+    }
+  };
+
+  const handlePhonePress = async () => {
+    try {
+      const phoneNumber = Platform.select({
+        ios: 'telprompt:+908507579427',
+        android: 'tel:+908507579427',
+      });
+
+      if (phoneNumber) {
+        const canOpen = await Linking.canOpenURL(phoneNumber);
+
+        if (canOpen) {
+          await Linking.openURL(phoneNumber);
+        } else {
+          Alert.alert('Error', 'Telephone app cannot started');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Telephone app cannot started');
+    }
   };
 
   return (
@@ -58,114 +90,98 @@ const ContactUs = ({navigation}: Props) => {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}>
-            <IoniconsIcon name="chevron-back" size={24} color={Colors.lightText} />
+            <IoniconsIcon
+              name="chevron-back"
+              size={24}
+              color={Colors.lightText}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Contact Us</Text>
         </View>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.header}>
-              <Text style={styles.headerSubtitle}>
-                Elevate Your AI Startup Journey
-              </Text>
-            </View>
 
-            <View style={styles.formContainer}>
-              <View style={styles.row}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>First name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.firstName}
-                    onChangeText={text => setFormData({...formData, firstName: text})}
-                    placeholder="First name"
-                    placeholderTextColor={Colors.border}
-                  />
-                </View>
+        <View style={styles.content}>
+          <View style={styles.messageContainer}>
+            <TextInput
+              style={styles.messageInput}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Write your message here..."
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              multiline
+              textAlignVertical="top"
+              numberOfLines={6}
+            />
+          </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Last name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.lastName}
-                    onChangeText={text => setFormData({...formData, lastName: text})}
-                    placeholder="Last name"
-                    placeholderTextColor={Colors.border}
-                  />
-                </View>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            activeOpacity={0.7}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.secondary]}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}
+              style={styles.submitGradient}>
+              <IoniconsIcon
+                name="send"
+                size={24}
+                color={Colors.background}
+                style={styles.sendIcon}
+              />
+              <Text style={styles.submitButtonText}>SEND MESSAGE</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={styles.contactInfoContainer}>
+            <TouchableOpacity
+              style={styles.socialItemContainer}
+              onPress={handlePhonePress}
+              activeOpacity={0.7}>
+              <View style={styles.socialIconContainer}>
+                <MaterialIcons name="phone" size={24} color={Colors.primary} />
               </View>
+              <Text style={styles.socialText}>+90 850 757 94 27</Text>
+            </TouchableOpacity>
 
-              <View style={styles.row}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.email}
-                    onChangeText={text => setFormData({...formData, email: text})}
-                    placeholder="Email"
-                    placeholderTextColor={Colors.border}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Phone Number</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.phoneNumber}
-                    onChangeText={text => setFormData({...formData, phoneNumber: text})}
-                    placeholder="Phone Number"
-                    placeholderTextColor={Colors.border}
-                    keyboardType="phone-pad"
-                  />
-                </View>
+            <TouchableOpacity
+              style={styles.socialItemContainer}
+              onPress={handleEmailPress}
+              activeOpacity={0.7}>
+              <View style={styles.socialIconContainer}>
+                <MaterialIcons name="email" size={24} color={Colors.primary} />
               </View>
+              <Text style={styles.socialText}>info@aikuaiplatform.com</Text>
+            </TouchableOpacity>
 
-              <View style={styles.messageContainer}>
-                <Text style={styles.label}>Your Message</Text>
-                <TextInput
-                  style={[styles.input, styles.messageInput]}
-                  value={formData.message}
-                  onChangeText={text => setFormData({...formData, message: text})}
-                  placeholder="Your Message"
-                  placeholderTextColor={Colors.border}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
+            <TouchableOpacity
+              style={styles.socialItemContainer}
+              onPress={handleLinkedinPress}
+              activeOpacity={0.7}>
+              <View style={styles.socialIconContainer}>
+                <FontAwesome
+                  name="linkedin-square"
+                  size={24}
+                  color={Colors.primary}
                 />
               </View>
+              <Text style={styles.socialText}>aiku-ai-platform</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.submitButton} 
-                onPress={handleSubmit}
-                activeOpacity={0.8}>
-                <LinearGradient
-                  colors={[Colors.primary, Colors.secondary]}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 1}}
-                  style={styles.submitGradient}>
-                  <Text style={styles.submitButtonText}>SEND YOUR MESSAGE</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <View style={styles.contactInfo}>
-                <View style={styles.contactItem}>
-                  <Icon name="phone" size={24} color={Colors.primary} />
-                  <Text style={styles.contactText}>+90 850 757 94 27</Text>
-                </View>
-                <View style={styles.contactItem}>
-                  <Icon name="email" size={24} color={Colors.primary} />
-                  <Text style={styles.contactText}>info@aikuaiplatform.com</Text>
-                </View>
+            <TouchableOpacity
+              style={[styles.socialItemContainer, styles.noBorder]}
+              onPress={handleInstagramPress}
+              activeOpacity={0.7}>
+              <View style={styles.socialIconContainer}>
+                <FontAwesome
+                  name="instagram"
+                  size={24}
+                  color={Colors.primary}
+                />
               </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              <Text style={styles.socialText}>@aikuai_platform</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -176,9 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
     flex: 1,
   },
   header: {
@@ -198,21 +211,13 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     marginBottom: -metrics.margin.sm,
   },
-  headerSubtitle: {
-    fontSize: metrics.fontSize.lg,
-    color: Colors.lightText,
-    opacity: 0.7,
-    textAlign: 'center',
-    marginTop: metrics.margin.md,
-  },
-  scrollContent: {
-    flexGrow: 1,
+  content: {
     padding: metrics.padding.lg,
   },
-  formContainer: {
+  messageContainer: {
+    height: 150,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.lg,
-    padding: metrics.padding.lg,
     marginTop: metrics.margin.lg,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
@@ -225,38 +230,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  row: {
-    flexDirection: 'row',
-    marginBottom: metrics.margin.lg,
-    gap: metrics.margin.md,
-  },
-  inputGroup: {
-    flex: 1,
-  },
-  label: {
-    fontSize: metrics.fontSize.sm,
-    color: Colors.lightText,
-    marginBottom: metrics.margin.xs,
-    fontWeight: '500',
-    opacity: 0.8,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: metrics.borderRadius.sm,
-    padding: metrics.padding.md,
-    color: Colors.lightText,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  messageContainer: {
-    marginBottom: metrics.margin.lg,
-  },
   messageInput: {
-    height: 120,
+    flex: 1,
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    lineHeight: metrics.fontSize.md * 1.5,
     textAlignVertical: 'top',
+    padding: metrics.padding.lg,
   },
   submitButton: {
-    marginVertical: metrics.margin.lg,
+    marginTop: metrics.margin.xl,
     borderRadius: metrics.borderRadius.md,
     overflow: 'hidden',
     shadowColor: Colors.primary,
@@ -267,34 +250,57 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    alignSelf: 'stretch',
   },
   submitGradient: {
-    paddingVertical: metrics.padding.lg,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: metrics.padding.lg,
   },
   submitButtonText: {
     color: Colors.background,
-    fontSize: metrics.fontSize.md,
+    fontSize: metrics.fontSize.lg,
     fontWeight: '600',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
-  contactInfo: {
-    marginTop: metrics.margin.lg,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+  sendIcon: {
+    marginRight: metrics.margin.sm,
+  },
+  contactInfoContainer: {
+    marginTop: metrics.margin.xl * 1.5,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  contactItem: {
+  socialItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: metrics.margin.md,
+    paddingVertical: metrics.padding.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
-  contactText: {
+  noBorder: {
+    borderBottomWidth: 0,
+  },
+  socialIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: metrics.margin.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  socialText: {
     color: Colors.lightText,
-    marginLeft: metrics.margin.md,
     fontSize: metrics.fontSize.md,
-    opacity: 0.8,
+    opacity: 0.9,
   },
 });
 
-export default ContactUs; 
+export default ContactUs;
