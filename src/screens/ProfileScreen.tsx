@@ -16,6 +16,7 @@ import {useAuth} from '../contexts/AuthContext';
 import {useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
+import LinearGradient from 'react-native-linear-gradient';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -69,83 +70,92 @@ const ProfileScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <View style={styles.headerContent}>
-            <View style={styles.avatarContainer}>
-              {user?.photoURL ? (
-                <Image source={{uri: user.photoURL}} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Icon name="person" size={metrics.scale(32)} color={Colors.lightText} />
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
+      style={styles.gradientBackground}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            <View style={styles.headerContent}>
+              <View style={styles.avatarContainer}>
+                {user?.photoURL ? (
+                  <Image source={{uri: user.photoURL}} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Icon name="person" size={metrics.scale(32)} color={Colors.lightText} />
+                  </View>
+                )}
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => navigation.navigate('UpdateProfile')}>
+                  <Icon name="edit" size={14} color={Colors.background} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{user?.name || 'Murat Tanrıyakul'}</Text>
+                <Text style={styles.userEmail}>{user?.email}</Text>
+                <View style={styles.roleContainer}>
+                  <MaterialCommunityIcons name="crown" size={16} color={Colors.primary} />
+                  <Text style={styles.roleText}>Startup Plan</Text>
                 </View>
-              )}
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => navigation.navigate('UpdateProfile')}>
-                <Icon name="edit" size={14} color={Colors.background} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user?.name || 'Murat Tanrıyakul'}</Text>
-              <Text style={styles.userEmail}>{user?.email}</Text>
-              <View style={styles.roleContainer}>
-                <MaterialCommunityIcons name="crown" size={16} color={Colors.primary} />
-                <Text style={styles.roleText}>Startup Plan</Text>
               </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.menuItem,
-                index === menuItems.length - 1 && styles.lastMenuItem,
-              ]}
-              onPress={item.onPress}>
-              <View style={styles.menuItemIcon}>
-                {item.iconType === 'MaterialCommunityIcons' ? (
-                  <MaterialCommunityIcons
-                    name={item.icon}
-                    size={24}
-                    color={Colors.primary}
-                  />
-                ) : (
-                  <Icon
-                    name={item.icon}
-                    size={24}
-                    color={Colors.primary}
-                  />
-                )}
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>{item.title}</Text>
-                <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={Colors.primary} />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.menuContainer}>
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.menuItem,
+                  index === menuItems.length - 1 && styles.lastMenuItem,
+                ]}
+                onPress={item.onPress}>
+                <View style={styles.menuItemIcon}>
+                  {item.iconType === 'MaterialCommunityIcons' ? (
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={24}
+                      color={Colors.primary}
+                    />
+                  ) : (
+                    <Icon
+                      name={item.icon}
+                      size={24}
+                      color={Colors.primary}
+                    />
+                  )}
+                </View>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                  <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+                </View>
+                <Icon name="chevron-right" size={24} color={Colors.primary} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientBackground: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
     padding: metrics.padding.lg,
   },
   card: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: `${Colors.cardBackground}dd`,
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.lg,
@@ -157,6 +167,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   headerContent: {
     flexDirection: 'row',
@@ -227,7 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   menuContainer: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: `${Colors.cardBackground}dd`,
     borderRadius: metrics.borderRadius.lg,
     shadowColor: Colors.primary,
     shadowOffset: {
@@ -238,6 +250,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   menuItem: {
     flexDirection: 'row',
