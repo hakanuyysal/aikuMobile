@@ -124,39 +124,35 @@ function AppContent(): React.JSX.Element {
                   name="Favorites"
                   component={Favorites}
                   options={{
-                    headerShown: false
+                    headerShown: false,
                   }}
                 />
                 <RootStack.Screen
                   name="CompanyDetails"
                   component={CompanyDetails}
                   options={{
-                    headerShown: false
+                    headerShown: false,
                   }}
                 />
                 <RootStack.Screen
                   name="ProductDetails"
                   component={ProductDetails}
                   options={{
-                    headerShown: false
+                    headerShown: false,
                   }}
                 />
                 <RootStack.Screen
                   name="Settings"
                   component={Settings}
                   options={{
-                    headerShown: false
+                    headerShown: false,
                   }}
                 />
                 <RootStack.Screen
                   name="ContactUs"
                   component={ContactUs}
                   options={{
-                    title: 'Contact Us',
-                    headerStyle: {
-                      backgroundColor: Colors.background,
-                    },
-                    headerTintColor: Colors.lightText,
+                    headerShown: false,
                   }}
                 />
               </>
