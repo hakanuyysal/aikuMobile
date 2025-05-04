@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../src/constants/colors';
 import metrics from '../../src/constants/aikuMetric';
 import AuthService from '../../src/services/AuthService';
@@ -20,7 +21,10 @@ import {useAuth} from '../../src/contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {AppStackParamList} from '../navigation/AppNavigator';
 
-type SettingsScreenNavigationProp = StackNavigationProp<AppStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = StackNavigationProp<
+  AppStackParamList,
+  'Settings'
+>;
 
 interface SettingsProps {
   navigation: SettingsScreenNavigationProp;
@@ -108,98 +112,164 @@ const Settings: React.FC<SettingsProps> = ({navigation: _navigation}) => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <View style={styles.settingItem}>
-          <Text style={styles.settingText}>Dark Theme</Text>
-          <Switch
-            value={isDarkMode}
-            onValueChange={setIsDarkMode}
-            trackColor={{false: Colors.border, true: Colors.primary}}
-          />
+    <LinearGradient
+      colors={[Colors.background, Colors.cardBackground]}
+      style={styles.container}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
-        <View style={styles.settingItem}>
-          <Text style={styles.settingText}>Enable Notifications</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-            trackColor={{false: Colors.border, true: Colors.primary}}
-          />
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Icon name="dark-mode" size={24} color={Colors.primary} />
+              <Text style={styles.settingText}>Dark Theme</Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={setIsDarkMode}
+              trackColor={{false: Colors.border, true: Colors.primary}}
+              ios_backgroundColor={Colors.border}
+            />
+          </View>
         </View>
-      </View>
 
-      <TouchableOpacity 
-        style={styles.settingItem} 
-        onPress={handleLanguageSelect}>
-        <Text style={styles.settingText}>Language</Text>
-        <View style={styles.languageSelector}>
-          <Text style={styles.selectedLanguageText}>
-            {languages.find(lang => lang.code === selectedLanguage)?.name}
-          </Text>
-          <Icon name="arrow-forward-ios" size={16} color={Colors.lightText} />
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <Icon name="notifications" size={24} color={Colors.primary} />
+              <Text style={styles.settingText}>Enable Notifications</Text>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={setNotificationsEnabled}
+              trackColor={{false: Colors.border, true: Colors.primary}}
+              ios_backgroundColor={Colors.border}
+            />
+          </View>
         </View>
-      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleFeedback}>
-        <Icon name="feedback" size={24} color={Colors.primary} />
-        <Text style={styles.buttonText}>Send Feedback</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleContactUs}>
-        <Icon name="contact-support" size={24} color={Colors.primary} />
-        <Text style={styles.buttonText}>Contact Us</Text>
-      </TouchableOpacity>
-
-      <View style={styles.socialSection}>
-        <Text style={styles.sectionTitle}>Social Media</Text>
-        <View style={styles.socialButtons}>
+        <View style={styles.card}>
           <TouchableOpacity
-            style={styles.socialButton}
-            onPress={() =>
-              openSocialMedia('https://www.instagram.com/aikuai_platform/')
-            }>
-            <FontAwesome name="instagram" size={24} color={Colors.primary} />
-            <Text style={styles.socialText}>Instagram</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={() =>
-              openSocialMedia('https://www.linkedin.com/company/aiku-ai-platform/')
-            }>
-            <FontAwesome name="linkedin-square" size={24} color={Colors.primary} />
-            <Text style={styles.socialText}>LinkedIn</Text>
+            style={styles.settingItem}
+            onPress={handleLanguageSelect}>
+            <View style={styles.settingLeft}>
+              <Icon name="language" size={24} color={Colors.primary} />
+              <Text style={styles.settingText}>Language</Text>
+            </View>
+            <View style={styles.languageSelector}>
+              <Text style={styles.selectedLanguageText}>
+                {languages.find(lang => lang.code === selectedLanguage)?.name}
+              </Text>
+              <Icon name="arrow-forward-ios" size={16} color={Colors.primary} />
+            </View>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Icon name="logout" size={24} color={Colors.lightText} />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleFeedback}>
+            <View style={styles.settingLeft}>
+              <Icon name="feedback" size={24} color={Colors.primary} />
+              <Text style={styles.settingText}>Send Feedback</Text>
+            </View>
+            <Icon name="chevron-right" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handleContactUs}>
+            <View style={styles.settingLeft}>
+              <Icon name="contact-support" size={24} color={Colors.primary} />
+              <Text style={styles.settingText}>Contact Us</Text>
+            </View>
+            <Icon name="chevron-right" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Social Media</Text>
+          <View style={styles.socialButtons}>
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={() =>
+                openSocialMedia('https://www.instagram.com/aikuai_platform/')
+              }>
+              <View style={styles.socialIconContainer}>
+                <FontAwesome
+                  name="instagram"
+                  size={32}
+                  color={Colors.primary}
+                />
+              </View>
+              <Text style={styles.socialText}>Instagram</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={() =>
+                openSocialMedia(
+                  'https://www.linkedin.com/company/aiku-ai-platform/',
+                )
+              }>
+              <View style={styles.socialIconContainer}>
+                <FontAwesome
+                  name="linkedin"
+                  size={32}
+                  color={Colors.primary}
+                />
+              </View>
+              <Text style={styles.socialText}>LinkedIn</Text>
+            </TouchableOpacity>
+          </View>
+        </View> */}
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Icon name="logout" size={24} color={Colors.background} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   contentContainer: {
     padding: metrics.padding.lg,
     paddingBottom: metrics.padding.xl,
   },
-  section: {
+  header: {
     marginBottom: metrics.margin.xl,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    display: 'none',
+    fontSize: metrics.fontSize.xl,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+  },
+  card: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: metrics.borderRadius.lg,
+    padding: metrics.padding.lg,
+    marginBottom: metrics.margin.lg,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: metrics.fontSize.lg,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: Colors.lightText,
     marginBottom: metrics.margin.md,
   },
@@ -211,9 +281,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   settingText: {
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
+    marginLeft: metrics.margin.md,
   },
   languageSelector: {
     flexDirection: 'row',
@@ -224,52 +299,44 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginRight: metrics.margin.sm,
   },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: metrics.padding.lg,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
-  },
-  buttonText: {
-    marginLeft: metrics.margin.md,
-    fontSize: metrics.fontSize.md,
-    color: Colors.lightText,
-  },
-  socialSection: {
-    marginTop: metrics.margin.xl,
-  },
   socialButtons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: metrics.margin.xl,
+    marginTop: metrics.margin.xl,
+    paddingHorizontal: metrics.padding.xl,
   },
   socialButton: {
     alignItems: 'center',
-    padding: metrics.padding.md,
+    minWidth: 80,
+  },
+  socialIconContainer: {
+    marginBottom: metrics.margin.sm,
+    padding: metrics.padding.sm,
   },
   socialText: {
+    fontSize: metrics.fontSize.md,
+    color: Colors.primary,
     marginTop: metrics.margin.xs,
-    fontSize: metrics.fontSize.sm,
-    color: Colors.lightText,
+    fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: metrics.padding.lg,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.lg,
     backgroundColor: Colors.error,
     borderRadius: metrics.borderRadius.md,
-    marginTop: 'auto',
-    marginBottom: metrics.margin.xl,
+    marginTop: metrics.margin.xs,
+    alignSelf: 'center',
+    minWidth: 120,
   },
   logoutText: {
-    marginLeft: metrics.margin.md,
+    marginLeft: metrics.margin.sm,
     fontSize: metrics.fontSize.md,
-    color: Colors.lightText,
+    color: Colors.background,
     fontWeight: '600',
   },
 });
 
-export default Settings; 
+export default Settings;
