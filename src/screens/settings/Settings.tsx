@@ -17,10 +17,10 @@ import metrics from '../../constants/aikuMetric';
 import AuthService from '../../services/AuthService';
 import {useAuth} from '../../contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {AppStackParamList} from '../../../app/navigation/AppNavigator';
+import {RootStackParamList} from '../../../App';
 
 type SettingsScreenNavigationProp = StackNavigationProp<
-  AppStackParamList,
+  RootStackParamList,
   'Settings'
 >;
 

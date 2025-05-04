@@ -15,6 +15,7 @@ import Favorites from './src/screens/Favorites';
 import CompanyDetails from './src/screens/CompanyDetails';
 import ProductDetails from './src/screens/ProductDetails';
 import Settings from './src/screens/settings/Settings';
+import ContactUs from './src/screens/settings/ContactUs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   CompanyDetails: undefined;
   ProductDetails: undefined;
   Settings: undefined;
+  ContactUs: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -168,6 +170,17 @@ function AppContent(): React.JSX.Element {
                   component={Settings}
                   options={{
                     title: 'Settings',
+                    headerStyle: {
+                      backgroundColor: Colors.background,
+                    },
+                    headerTintColor: Colors.lightText,
+                  }}
+                />
+                <RootStack.Screen
+                  name="ContactUs"
+                  component={ContactUs}
+                  options={{
+                    title: 'Contact Us',
                     headerStyle: {
                       backgroundColor: Colors.background,
                     },
