@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {StatusBar, View, StyleSheet, Animated} from 'react-native';
@@ -65,10 +65,20 @@ const navigationTheme = {
 function AppContent(): React.JSX.Element {
   const {user, loading} = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 9000); 
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  if (loading || showSplash) {
     return <SplashScreen />;
   }
 
