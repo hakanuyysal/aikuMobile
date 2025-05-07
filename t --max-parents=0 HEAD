@@ -1,0 +1,10 @@
+[33m531a605[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add PaymentSuccess and PaymentError screens; update PaymentScreen navigation
+[33mca593fe[m Add legal screens and navigation in App component; update PaymentScreen for legal links
+[33m45bbba7[m Update PaymentScreen to replace credit card display library and clean up code
+[33m1c6ae6e[m Enhance PaymentScreen with credit card form integration and coupon functionality
+[33m40db7c5[m Add Cart navigation and integrate Billing and Payment screens
+[33m9d924ff[m Add country picker modal to UpdateProfileScreen and enhance user profile editing experience
+[33m4898364[m Implement ProfileDetail screen: add navigation to ProfileDetail from Menu and ProfileScreen, and update App component to include ProfileDetail route. Refactor UpdateProfileScreen for improved layout and user experience with new styling and structure.
+[33m914fc2b[m Refactor AuthContext: remove redundant navigation reset effect on user load, streamline logout process by integrating navigation reset directly within the logout function, and enhance error handling during user data loading.
+[33mce72853[m Refactor Auth functionality: implement navigation reset on user logout, streamline logout process in Settings screen, and enhance AuthService to ensure proper token management.
+[33mfb6fee7[m Enhance App and Auth functionality: add effect to close menu when user logs out, update navigation route on logout to 'Auth', and modify logout API endpoint for consistency.

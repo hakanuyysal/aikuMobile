@@ -219,7 +219,7 @@ const HomeScreen = (props: HomeScreenProps) => {
                     onPress={() => handleSubcategoryPress(subcategory)}
                   >
                     <PaperText style={styles.subcategoryText}>
-                      {subcategories[subcategory as keyof typeof subcategories] || subcategory}
+                      {subcategory}
                     </PaperText>
                   </TouchableOpacity>
                 ))}
@@ -245,21 +245,19 @@ const HomeScreen = (props: HomeScreenProps) => {
                   <Text style={styles.ourCommunityText}>Our Community</Text>
                 </View>
                 
-                {/* Tooltip */}
+                {/* Robot eli görseli ve yazı */}
                 <View style={styles.tooltipContainer}>
-                  <View style={styles.tooltipContentRow}>
-                    <View style={styles.tooltipImageContainer}>
-                      <Image 
-                        source={require('../assets/images/Tooltipaihands.png')}
-                        style={styles.tooltipImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                    <View style={styles.tooltipTextContent}>
-                      <Text style={styles.tooltipDescription}>
-                      You can look at startups, investors and businesses here
-                      </Text>
-                    </View>
+                  <View style={styles.tooltipImageContainer}>
+                    <Image 
+                      source={require('../assets/images/Tooltipaihands.png')}
+                      style={styles.tooltipImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.tooltipTextContent}>
+                    <Text style={styles.tooltipText}>
+                      You can look at startups, investors and businesses here.
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -509,63 +507,50 @@ const styles = StyleSheet.create({
   },
   tooltipOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
   },
   ourCommunityButton: {
     position: 'absolute',
-    top: 350,
+    top: 375,
     left: 30,
     zIndex: 1001,
-    backgroundColor: 'transparent',
   },
   ourCommunityText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+    marginTop:-28
   },
   tooltipContainer: {
     position: 'absolute',
-    top: 360,
-    left: 150,
-    width: 200,
-    zIndex: 1000,
-    borderRadius: 8,
-    padding: 16,
-  },
-  tooltipTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  tooltipContentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    width: '100%',
+    height: '100%',
   },
   tooltipImageContainer: {
     position: 'absolute',
-    left: -290,
-    top: -90,
+    left: -110,
+    top: 360,
   },
   tooltipImage: {
     width: 500,
     height: 500,
-    marginLeft:0,
-    marginTop:65,
   },
   tooltipTextContent: {
-    flex: 1,
+    position: 'absolute',
+    top: 400,
+    left: 130,
   },
-  tooltipDescription: {
+  tooltipText: {
     color: '#fff',
-    fontSize: 20,
-    marginBottom: 8,
-    marginLeft:-50,
-  },
-  tooltipList: {
-    marginTop: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    width: 200,
   },
 });
 
