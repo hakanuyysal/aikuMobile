@@ -1,14 +1,15 @@
-import React, {useState, useRef, useEffect} from 'react';
-import {NavigationContainer, DarkTheme} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar, View, StyleSheet, Animated} from 'react-native';
-import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'react-native';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
-import {Colors} from './src/constants/colors';
+import { Colors } from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import SplashScreen from './src/screens/splash/SplashScreen';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import Menu from './src/components/Menu';
 import SubscriptionDetails from './src/screens/settings/SubscriptionDetails';
 import Favorites from './src/screens/Favorites';
@@ -16,18 +17,35 @@ import CompanyDetails from './src/screens/CompanyDetails';
 import ProductDetails from './src/screens/ProductDetails';
 import Settings from './src/screens/settings/Settings';
 import ContactUs from './src/screens/settings/ContactUs';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import TermsOfService from './src/screens/legal/TermsOfService';
+import PrivacyPolicy from './src/screens/legal/PrivacyPolicy';
+import PersonalDataProtection from './src/screens/legal/PersonalDataProtection';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import InvestmentScreen from 'screens/InvestmentDetailsScreen';
+import OnboardingScreen from 'screens/onboarding';
+import TalentPoolScreen from 'components/TalentPool';
+import TrainingDetailScreen from 'components/TrainingDetailScreen';
 
 export type RootStackParamList = {
   Main: undefined;
   Auth: undefined;
   UpdateProfile: undefined;
+  ProfileDetail: undefined;
   SubscriptionDetails: undefined;
   Favorites: undefined;
   CompanyDetails: undefined;
   ProductDetails: undefined;
   Settings: undefined;
   ContactUs: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+  PersonalDataProtection: undefined;
+  PaymentSuccess: undefined;
+  PaymentError: undefined;
+  InvestmentDetails: undefined;
+  Onboarding: undefined;
+  TalentPool: undefined;
+  TrainingDetail: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -63,20 +81,34 @@ const navigationTheme = {
 };
 
 function AppContent(): React.JSX.Element {
-  const {user, loading} = useAuth();
+  const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(true); // New state for onboarding
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Handle Splash screen timeout
   useEffect(() => {
     if (!loading) {
       const timer = setTimeout(() => {
         setShowSplash(false);
-      }, 9000); 
+      }, 9000); // 9 seconds for Splash
       return () => clearTimeout(timer);
     }
   }, [loading]);
+
+  // Close menu if user logs out
+  useEffect(() => {
+    if (!loading && !user) {
+      setIsMenuOpen(false);
+    }
+  }, [user, loading]);
+
+  // Function to handle onboarding completion
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
 
   if (loading || showSplash) {
     return <SplashScreen />;
@@ -87,126 +119,133 @@ function AppContent(): React.JSX.Element {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <View style={styles.mainContainer}>
-        <Animated.View
-          style={[
-            styles.mainContent,
-            {
-              transform: [
-                {
-                  translateX: slideAnim,
-                },
-                {
-                  scale: scaleAnim,
-                },
-              ],
-            },
-          ]}>
-          <RootStack.Navigator initialRouteName={user ? 'Main' : 'Auth'}>
-            {user ? (
-              <>
-                <RootStack.Screen
-                  name="Main"
-                  component={(props: Props) => (
-                    <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
-                  )}
-                  options={{headerShown: false}}
-                />
-                <RootStack.Screen
-                  name="UpdateProfile"
-                  component={UpdateProfileScreen}
-                  options={{
-                    presentation: 'modal',
-                    title: 'Edit Profile',
-                    headerStyle: {backgroundColor: Colors.cardBackground},
-                    headerTintColor: Colors.lightText,
-                  }}
-                />
-                <RootStack.Screen
-                  name="SubscriptionDetails"
-                  component={SubscriptionDetails}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <RootStack.Screen
-                  name="Favorites"
-                  component={Favorites}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <RootStack.Screen
-                  name="CompanyDetails"
-                  component={CompanyDetails}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <RootStack.Screen
-                  name="ProductDetails"
-                  component={ProductDetails}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <RootStack.Screen
-                  name="Settings"
-                  component={Settings}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <RootStack.Screen
-                  name="ContactUs"
-                  component={ContactUs}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-              </>
-            ) : (
-              <RootStack.Screen
-                name="Auth"
-                component={AuthNavigator}
-                options={{headerShown: false}}
-              />
+    <View style={styles.mainContainer}>
+      <Animated.View
+        style={[
+          styles.mainContent,
+          {
+            transform: [
+              { translateX: slideAnim },
+              { scale: scaleAnim },
+            ],
+          },
+        ]}>
+        <RootStack.Navigator initialRouteName={showOnboarding ? 'Onboarding' : user ? 'Main' : 'Auth'}>
+          <RootStack.Screen
+            name="Onboarding"
+            options={{ headerShown: false }}
+          >
+            {(props) => (
+              <OnboardingScreen {...props} onComplete={handleOnboardingComplete} />
             )}
-          </RootStack.Navigator>
-        </Animated.View>
-
-        {isMenuOpen && user && (
-          <Menu
-            user={{
-              name: user.name || user.email,
-              email: user.email,
-              avatar: user.photoURL,
-              role: user.role || 'Member',
-            }}
-            onClose={() => setIsMenuOpen(false)}
-            mainViewRef={slideAnim}
-            scaleRef={scaleAnim}
+          </RootStack.Screen>
+          <RootStack.Screen
+            name="Auth"
+            component={AuthNavigator}
+            options={{ headerShown: false }}
           />
-        )}
-      </View>
-    </NavigationContainer>
+          <RootStack.Screen
+            name="Main"
+            component={(props: Props) => (
+              <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
+            )}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="UpdateProfile"
+            component={UpdateProfileScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="SubscriptionDetails"
+            component={SubscriptionDetails}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="Favorites"
+            component={Favorites}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="CompanyDetails"
+            component={CompanyDetails}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="ProductDetails"
+            component={ProductDetails}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="Settings"
+            component={Settings}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="ContactUs"
+            component={ContactUs}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="TermsOfService"
+            component={TermsOfService}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="PrivacyPolicy"
+            component={PrivacyPolicy}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="PersonalDataProtection"
+            component={PersonalDataProtection}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="InvestmentDetails"
+            component={InvestmentScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="TalentPool"
+            component={TalentPoolScreen}
+            options={{ headerShown: false }}
+          />
+          <RootStack.Screen
+            name="TrainingDetail"
+            component={TrainingDetailScreen}
+            options={{ headerShown: false }}
+          />
+        </RootStack.Navigator>
+      </Animated.View>
+
+      {isMenuOpen && user && (
+        <Menu
+          user={{
+            name: user.name || user.email,
+            email: user.email,
+            avatar: user.photoURL,
+            role: user.role || 'Member',
+          }}
+          onClose={() => setIsMenuOpen(false)}
+          mainViewRef={slideAnim}
+          scaleRef={scaleAnim}
+        />
+      )}
+    </View>
   );
 }
 
 function App(): React.JSX.Element {
   return (
-    <AuthProvider>
+    <NavigationContainer theme={navigationTheme}>
       <PaperProvider theme={materialTheme}>
-        <View style={styles.container}>
-          <StatusBar
-            barStyle="light-content"
-            backgroundColor={Colors.statusBarBackground}
-          />
+        <AuthProvider>
+          <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
           <AppContent />
-        </View>
+        </AuthProvider>
       </PaperProvider>
-    </AuthProvider>
+    </NavigationContainer>
   );
 }
 

@@ -111,6 +111,8 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
         navigation.navigate('CompanyDetails');
       } else if (title === 'Product Details') {
         navigation.navigate('ProductDetails');
+      } else if (title === 'Investment Details') {
+        navigation.navigate('InvestmentDetails');
       } else if (title === 'Settings') {
         navigation.navigate('Settings');
       } else {

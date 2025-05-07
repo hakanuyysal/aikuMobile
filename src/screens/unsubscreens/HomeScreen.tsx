@@ -3,6 +3,7 @@ import { View, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-nat
 import { Surface, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
 import { Product } from '../types';
 import { Colors } from '../constants/colors';
 
@@ -22,6 +23,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <Surface style={styles.cardContainer} elevation={4}>
+        {/* Add BlurView as overlay */}
+        <BlurView
+          style={styles.blurOverlay}
+          blurType="dark"
+          blurAmount={10}
+          reducedTransparencyFallbackColor="transparent"
+        />
+        
+        {/* Add lock icon */}
+        <View style={styles.lockContainer}>
+          <Icon name="lock-closed" size={24} color={Colors.lightText} />
+          <Text style={styles.lockText}>Subscribe For FREE </Text>
+        </View>
+
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={onFavoritePress}
@@ -34,7 +49,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           />
         </TouchableOpacity>
 
-        <View style={styles.contentContainer}>
+        {/* Existing content with reduced opacity */}
+        <View style={[styles.contentContainer, { opacity: 0.3 }]}>
           <View style={styles.imageContainer}>
             {/* PROFESYONEL SPOTLIGHT EFEKTİ */}
                       <LinearGradient
@@ -168,7 +184,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(26, 30, 41, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
+    zIndex: 5, // Make sure it's above the blur
+  },
+  blurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 3,
+    backgroundColor: 'rgba(26, 30, 41, 0.7)',
+  },
+
+  lockContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 4,
+  },
+
+  lockText: {
+    color: Colors.lightText,
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+    opacity: 0.9,
+  },
+
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    position: 'relative',
+    zIndex: 1,
   },
 });
 

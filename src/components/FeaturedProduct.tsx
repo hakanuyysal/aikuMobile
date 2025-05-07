@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,13 +7,15 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Modal,
-  Linking,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/Ionicons'; // Added for the arrow icon
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Product } from '../types';
 import { Colors } from '../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
+import Nophoto from '../assets/images/Nophoto.png';
 
 type FeaturedProductProps = {
   product: Product;
@@ -22,7 +24,7 @@ type FeaturedProductProps = {
 };
 
 const { width } = Dimensions.get('window');
-const NEWS_API_KEY = '81b6219d7f444a7b9c5525187d1059db'; // Replace with a valid NewsAPI key from https://newsapi.org
+const NEWS_API_KEY = '81b6219d7f444a7b9c5525187d1059db';
 const query = 'artificial intelligence';
 
 interface Article {
@@ -32,6 +34,8 @@ interface Article {
   abstract?: string;
   pub_date?: string;
   web_url?: string;
+  urlToImage?: string;
+  fullContent?: string;
 }
 
 const FeaturedProduct: React.FC<FeaturedProductProps> = ({
@@ -44,6 +48,25 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(true);
+
+  const listRef = useRef<FlatList>(null);
+  const scrollOffset = useRef(0);
+  const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
+
+  const itemWidth = width - 90; // Width of each news card
+  const scrollSpeed = 1.2; // Pixels per frame
+
+  // Decode HTML entities
+  const decodeHtmlEntities = (text: string) => {
+    return text
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"')
+      .replace(/'/g, "'")
+      .replace(/ /g, ' ');
+  };
 
   const fetchNews = async (retryCount = 0, maxRetries = 3) => {
     try {
@@ -51,9 +74,7 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
       const res = await fetch(
         `https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&language=en&apiKey=${NEWS_API_KEY}`,
         {
-          headers: {
-            'Cache-Control': 'no-cache',
-          },
+          headers: { 'Cache-Control': 'no-cache' },
         }
       );
       if (!res.ok) {
@@ -63,17 +84,11 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
           return fetchNews(retryCount + 1, maxRetries);
         }
         if (res.status === 401 || errorData.code === 'apiKeyInvalid') {
-          throw new Error('Invalid API key. Please check your NewsAPI key at https://newsapi.org.');
-        }
-        if (res.status === 429 || errorData.code === 'rateLimited') {
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new Error('Invalid API key.');
         }
         throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
       }
       const json = await res.json();
-      if (!json.articles) {
-        throw new Error('No articles found in the API response.');
-      }
       const aiKeywords = ['artificial intelligence', 'AI', 'machine learning'];
       const validArticles = json.articles.filter((article: any) => {
         if (!article.title) return false;
@@ -84,22 +99,41 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
       });
       const mappedArticles = validArticles.map((article: any, index: number) => ({
         _id: `${index}-${article.publishedAt}`,
+        url: article.url,
         headline: { main: article.title },
         abstract: article.description,
         pub_date: article.publishedAt,
         web_url: article.url,
+        urlToImage: article.urlToImage,
+        fullContent: '',
       }));
-      console.log('Filtered Articles:', mappedArticles.map((a: Article) => a.headline?.main));
       setArticles(mappedArticles);
     } catch (err: any) {
-      console.error('NewsAPI error details:', {
-        message: err.message,
-        response: err.response || 'No response data',
-        stack: err.stack || 'No stack trace available',
-      });
-      setError(err.message || 'Failed to fetch AI articles. Please try again.');
+      setError(err.message || 'Failed to fetch AI articles.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFullContent = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+      // Enhanced regex to capture content from various tags
+      const contentMatch = html.match(
+        /<p[^>]*>([\s\S]*?)<\/p>|<div[^>]*>([\s\S]*?)<\/div>|<article[^>]*>([\s\S]*?)<\/article>|<section[^>]*>([\s\S]*?)<\/section>/gi
+      );
+      if (contentMatch) {
+        const cleanedContent = contentMatch
+          .map((tag) => tag.replace(/<[^>]+>/g, '').trim())
+          .filter((text) => text.length > 30 && !text.match(/^\s*(Advertisement|Subscribe|Sign\s*Up|Login|Footer|Nav|Menu)\s*$/i)) // Filter out noise
+          .join('\n\n');
+        return decodeHtmlEntities(cleanedContent || 'Full content unavailable.');
+      }
+      return 'Full content unavailable. Please try another article.';
+    } catch (err) {
+      console.log('Error Morphology full content:', err);
+      return 'Error fetching full content. Please try another article.';
     }
   };
 
@@ -107,26 +141,88 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
     fetchNews();
   }, []);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Unknown Date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const openModalWithContent = async (article: Article) => {
+    if (!article.fullContent) {
+      const fullContent = await fetchFullContent(article.url);
+      setArticles((prev) =>
+        prev.map((a) => (a._id === article._id ? { ...a, fullContent } : a))
+      );
+      setSelectedArticle({ ...article, fullContent });
+    } else {
+      setSelectedArticle(article);
+    }
+    setModalVisible(true);
+  };
+
+  // Smooth auto-scroll effect with seamless loop
+  useEffect(() => {
+    if (articles.length === 0 || !isScrolling) return;
+
+    const animateScroll = () => {
+      scrollOffset.current += scrollSpeed;
+
+      if (scrollOffset.current >= itemWidth * articles.length) {
+        scrollOffset.current = 0;
+        if (listRef.current) {
+          listRef.current.scrollToOffset({ offset: 0, animated: false });
+        }
+      }
+
+      if (listRef.current) {
+        listRef.current.scrollToOffset({
+          offset: scrollOffset.current,
+          animated: true,
+        });
+      }
+
+      scrollAnimation.current = setTimeout(animateScroll, 16); // ~60fps
+    };
+
+    scrollAnimation.current = setTimeout(animateScroll, 16);
+
+    return () => {
+      if (scrollAnimation.current) {
+        clearTimeout(scrollAnimation.current);
+      }
+    };
+  }, [articles, isScrolling, itemWidth]);
+
+  const handleTouchStart = () => {
+    setIsScrolling(false);
+    if (scrollAnimation.current) {
+      clearTimeout(scrollAnimation.current);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsScrolling(true);
   };
 
   return (
     <View style={styles.container}>
       <Surface style={styles.cardContainer} elevation={4}>
         <View style={styles.gradientContainer}>
-          <View style={styles.discountContainer}>
-            <Text variant="displaySmall" style={styles.discountText}>
-              {discount}
-            </Text>
+          {/* Discount Section */}
+          <View style={styles.discountRow}>
+            <View style={styles.discountContainer}>
+              <Text variant="displaySmall" style={styles.discountText}>
+                {discount}
+              </Text>
+            </View>
+            <View style={styles.iconAndBadgeContainer}>
+              <Icon
+                name="newspaper-outline"
+                size={24}
+                color={Colors.primary}
+                style={styles.newArticlesIcon}
+              />
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>New</Text>
+              </View>
+            </View>
           </View>
 
+          {/* News Section */}
           <View style={styles.newsSection}>
             {loading ? (
               <ActivityIndicator size="small" color={Colors.lightText} />
@@ -142,32 +238,65 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
             ) : (
               <>
                 <FlatList
+                  ref={listRef}
                   data={articles.slice(0, 5)}
                   keyExtractor={(item) => item._id}
                   horizontal
-                  pagingEnabled
+                  snapToInterval={itemWidth}
                   snapToAlignment="start"
                   decelerationRate="fast"
                   showsHorizontalScrollIndicator={false}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
                   renderItem={({ item }) => (
                     <TouchableOpacity
-                      style={styles.newsCard}
-                      onPress={() => {
-                        setSelectedArticle(item);
-                        setModalVisible(true);
-                      }}
+                      style={[styles.newsCard, { width: itemWidth }]}
+                      onPress={() => openModalWithContent(item)}
                     >
-                      <Text
-                        style={styles.newsText}
-                        numberOfLines={3} // Changed from 4 to 3 to limit to 3 lines
-                        ellipsizeMode="tail"
-                      >
-                        {item.headline?.main || 'No Title Available'}
-                      </Text>
+                      <View style={styles.newsCardContent}>
+                        {/* Image on the Left */}
+                        <View style={styles.imageContainer}>
+                          <Image
+                            source={
+                              item.urlToImage
+                                ? { uri: item.urlToImage }
+                                : Nophoto
+                            }
+                            style={styles.newsImage}
+                            resizeMode="cover"
+                            defaultSource={Nophoto}
+                            onError={() => console.log('Image failed to load')}
+                          />
+                        </View>
+                        {/* Text Content on the Right */}
+                        <View style={styles.textContainer}>
+                          <View style={styles.newsHeader}>
+                            <Icon
+                              name="logo-electron"
+                              size={20}
+                              color={Colors.primary}
+                              style={{ marginRight: 8 }}
+                            />
+                            <Text
+                              style={styles.newsTitle}
+                              numberOfLines={2}
+                              ellipsizeMode="tail"
+                            >
+                              {item.headline?.main || 'No Title'}
+                            </Text>
+                          </View>
+                          <Text
+                            style={styles.newsSubtitle}
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
+                          >
+                            {item.abstract || ''}
+                          </Text>
+                        </View>
+                      </View>
                     </TouchableOpacity>
                   )}
                 />
-                {/* Added Arrow Icon to Indicate Scrolling */}
                 <View style={styles.arrowContainer}>
                   <Icon
                     name="chevron-forward"
@@ -182,6 +311,7 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
         </View>
       </Surface>
 
+      {/* Modal for Full Article Content */}
       <Modal
         transparent
         visible={modalVisible}
@@ -203,23 +333,37 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
             {selectedArticle ? (
-              <>
-                <Text style={styles.modalTitle}>
-                  {selectedArticle.headline?.main || 'No Title Available'}
-                </Text>
-                <Text style={styles.modalAbstract}>
-                  {selectedArticle.abstract || 'No abstract available.'}
-                </Text>
-                {selectedArticle.web_url ? (
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(selectedArticle.web_url)}
-                  >
-                    <Text style={styles.modalLink}>Read Full Article</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={styles.modalLink}>No link available.</Text>
-                )}
-              </>
+              <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalContentContainer}>
+                <View style={styles.modalContent}>
+                  {/* Image at the Top */}
+                  <View style={styles.modalImageContainer}>
+                    <Image
+                      source={
+                        selectedArticle.urlToImage
+                          ? { uri: selectedArticle.urlToImage }
+                          : Nophoto
+                      }
+                      style={styles.modalImage}
+                      resizeMode="cover"
+                      defaultSource={Nophoto}
+                      onError={() => console.log('Modal image failed to load')}
+                    />
+                  </View>
+                  {/* Text Content Below */}
+                  <View style={styles.modalTextContainer}>
+                    <Text style={styles.modalTitle}>
+                      {selectedArticle.headline?.main || 'No Title Available'}
+                    </Text>
+                    <Text style={styles.modalAbstract}>
+                      {decodeHtmlEntities(
+                        selectedArticle.fullContent ||
+                          selectedArticle.abstract ||
+                          'No content available.'
+                      )}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
             ) : (
               <Text style={styles.modalText}>No article selected.</Text>
             )}
@@ -232,8 +376,8 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '92%',
-    height: 200,
+    width: '100%',
+    height: '30%',
     marginVertical: 10,
     position: 'relative',
     alignSelf: 'center',
@@ -246,10 +390,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.44,
     shadowRadius: 10.32,
     elevation: 16,
@@ -257,6 +398,11 @@ const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
     padding: 16,
+  },
+  discountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   discountContainer: {
     marginLeft: 8,
@@ -267,8 +413,25 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: 28,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 10,
+    textShadowOffset: { width: 1, height: 10 },
+  },
+  iconAndBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  newArticlesIcon: {
+    marginRight: 8,
+  },
+  newBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  newBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   newsSection: {
     flex: 1,
@@ -277,18 +440,53 @@ const styles = StyleSheet.create({
     width: width - 90,
     padding: 16,
     marginRight: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
   },
-  newsText: {
+  newsCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  imageContainer: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  newsImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    marginBottom: -28,
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  newsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  newsTitle: {
     color: Colors.lightText,
     fontSize: 16,
     fontWeight: '600',
-    lineHeight: 22,
+    flexShrink: 1,
+    marginTop: 20,
+  },
+  newsSubtitle: {
+    color: Colors.lightText,
+    fontSize: 15,
+    opacity: 0.8,
+    flexShrink: 1,
   },
   arrowContainer: {
     position: 'absolute',
-    top: 0,
+    top: 50,
     bottom: 0,
-    right: 20,
+    right: 10,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
@@ -296,7 +494,7 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 20,
     color: Colors.lightText,
-    opacity: 0.7, // Subtle opacity for the arrow
+    opacity: 0.7,
     marginTop: 80,
   },
   modalOverlay: {
@@ -314,17 +512,21 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 24,
     width: '90%',
+    maxHeight: '80%',
     backgroundColor: 'rgba(26, 30, 41, 0.95)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.44,
     shadowRadius: 10.32,
     elevation: 16,
+  },
+  modalScrollView: {
+    flexGrow: 1,
+  },
+  modalContentContainer: {
+    paddingBottom: 20,
   },
   closeIconContainer: {
     position: 'absolute',
@@ -336,29 +538,44 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: Colors.lightText,
   },
+  modalContent: {
+    flexDirection: 'column',
+    marginTop: 20,
+  },
+  modalImageContainer: {
+    width: '100%',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  modalTextContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.lightText,
-    marginBottom: 10,
-    marginTop: 20,
+    marginBottom: 12,
   },
   modalAbstract: {
     fontSize: 14,
     color: Colors.lightText,
-    marginBottom: 10,
+    lineHeight: 24,
     opacity: 0.8,
-  },
-  modalLink: {
-    fontSize: 14,
-    color: Colors.primary,
-    marginBottom: 20,
-    textDecorationLine: 'underline',
   },
   modalText: {
     fontSize: 16,
     color: Colors.lightText,
     marginBottom: 10,
+    marginTop: 20,
+    textAlign: 'center',
   },
   errorContainer: {
     alignItems: 'center',
@@ -367,6 +584,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primary,
     marginTop: 10,
+  },
+  newsText: {
+    color: Colors.lightText,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

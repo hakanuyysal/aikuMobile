@@ -1,0 +1,230 @@
+import React from 'react';
+import { View, ScrollView, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native';
+import { Text as PaperText } from 'react-native-paper';
+import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Colors } from '../constants/colors';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const TrainingDetailScreen = () => {
+  const navigation = useNavigation();
+
+  return (
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back" size={24} color={Colors.primary} />
+          </TouchableOpacity>
+          <View style={styles.imageContainer}>
+            <LinearGradient
+              colors={['rgb(255, 255, 255)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']}
+              style={styles.spotlight}
+              start={{ x: 0.4, y: 1 }}
+              end={{ x: 0, y: 0.2 }}
+            />
+            <Image
+              source={require('../assets/images/aidevedu.png')}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        <View style={[styles.cardContainer, styles.firstCard]}>
+          <View style={styles.contentContainer}>
+            <View style={styles.textContainer}>
+              <PaperText style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                AI Developer Training
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Duration of Training
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+                200 Hours (120 hours Basic + 80 hours Advanced)
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Training Days
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+                Monday - Wednesday - Friday - Saturday
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Training Hours
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={2} ellipsizeMode="tail">
+                10.00 – 14.00 (weekends) (5 lessons per day) {"\n"}
+                19.30 – 22.00 (weekdays) (3 lessons per day)
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Place of Education
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+                Online
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Certificate
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+                Certificate of Achievement, Certificate of Participation
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Employment
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
+                Internship supported
+              </PaperText>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.cardContainer, styles.secondCard]}>
+          <View style={styles.contentContainer}>
+            <View style={styles.textContainer}>
+              <PaperText style={styles.sectionTitle}>
+                Description
+              </PaperText>
+              <PaperText style={styles.text}>
+                Aloha Digital Academy’s comprehensive 200-hour AI Developer Training lets you step into tomorrow’s technology today! Starting April 2, our live online program carries you from Python fundamentals and data science basics through Machine Learning, Deep Learning and Large Language Models, combining 120 hours of foundational coursework with 80 hours of advanced study. Through hands-on projects drawn from real industry scenarios, you’ll master RESTful API development with FastAPI, database management, automation and web scraping, TensorFlow and PyTorch model building, NLP, CNNs, RNNs, GANs and Transformer architectures. Certified upon completion—and backed by guaranteed internship and job placement opportunities—this training is designed to give you a true competitive edge in the AI landscape.
+              </PaperText>
+              <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Schedule
+              </PaperText>
+              <PaperText style={styles.subSectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                120-Hour Foundation & AI Training
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={10} ellipsizeMode="tail">
+                • Python Fundamentals{"\n"}
+                • Data Structures & Algorithms{"\n"}
+                • Database Management & SQL{"\n"}
+                • RESTful API Development with FastAPI{"\n"}
+                • Automation & Web Scraping{"\n"}
+                • Mathematics & Statistics{"\n"}
+                • NumPy, Pandas & Data Analysis{"\n"}
+                • Introduction to Machine Learning{"\n"}
+                • Core ML Algorithms with Scikit-Learn{"\n"}
+                • NLP & Transformer Models
+              </PaperText>
+              <PaperText style={styles.subSectionTitle} numberOfLines={1} ellipsizeMode="tail">
+                80-Hour Advanced AI Training
+              </PaperText>
+              <PaperText style={styles.text} numberOfLines={5} ellipsizeMode="tail">
+                • TensorFlow & PyTorch{"\n"}
+                • Deep Learning{"\n"}
+                • Transformers & Large Language Models{"\n"}
+                • Optimization & Advanced Techniques{"\n"}
+                • LLM Development & Deployment
+              </PaperText>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </LinearGradient>
+  );
+};
+
+export default TrainingDetailScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  scrollContainer: {
+    padding: 20,
+    paddingBottom: 60,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  backButton: {
+    marginRight: 10,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  spotlight: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    top: -5,
+    left: -5,
+    zIndex: 0,
+    opacity: 0.8,
+  },
+  image: {
+    width: 44,
+    height: 50,
+    zIndex: 1,
+  },
+  cardContainer: {
+    width: SCREEN_WIDTH - 40,
+    height: 'auto',
+    marginBottom: 15,
+    alignSelf: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.cardBackground,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    padding: 10,
+  },
+  firstCard: {
+    minHeight: 300, // Adjusted height for the first card
+  },
+  secondCard: {
+    minHeight: 400, // Adjusted height for the second card with Description and Schedule
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  textContainer: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  subSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#aad4ff',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  text: {
+    fontSize: 14,
+    color: '#eee',
+    lineHeight: 22,
+  },
+});

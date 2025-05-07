@@ -20,7 +20,8 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
           style={[
             styles.text,
             { 
-              color: isActive ? Colors.lightText : Colors.lightText,
+              color: isActive ? Colors.lightText : 'rgba(255,255,255,0.7)',
+              fontWeight: isActive ? '700' : '600',
             },
           ]}
         >
@@ -34,17 +35,20 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
 const styles = StyleSheet.create({
   buttonWrapper: {
     // No margin, spacing handled by parent
+    minWidth: 100,
   },
   container: {
     paddingVertical: 8, // Reduced vertical padding
-    paddingHorizontal: 8, // Reduced horizontal padding to fit better
+    paddingHorizontal: 12, // More horizontal padding
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
   },
   activeContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)', // Subtle background for active state
+    backgroundColor: 'rgba(59, 130, 247, 0.2)', // Daha belirgin mavi tonu
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 247, 0.3)',
   },
   text: {
     fontSize: 14,
