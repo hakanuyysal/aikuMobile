@@ -19,13 +19,14 @@ import { Text, IconButton, Surface } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Colors } from 'constants/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.9;
 
 const searchData = [
   { id: 1, type: 'Startup', name: 'Startup A', latitude: 37.7749, longitude: -122.4194, description: 'Innovative tech solutions', icon: 'https://via.placeholder.com/40' },
-  { id: 2, type: 'Event', name: 'Tech Meetup', latitude: 37.7840, longitude: -122.4094, description: 'Networking for developers', icon: 'https://via.placeholder.com/40' },
+  { id: 2, type: 'Investment Opportunity', name: 'Investment Opportunities', latitude: 37.7840, longitude: -122.4094, description: 'PDI', icon: 'https://via.placeholder.com/40' },
   { id: 3, type: 'User', name: 'John Doe', latitude: 37.7640, longitude: -122.4294, description: 'Full-stack developer', icon: 'https://via.placeholder.com/40' },
 ];
 
@@ -37,6 +38,7 @@ const MapScreen = () => {
   const [filteredResults, setFilteredResults] = useState(searchData);
   const [selectedItem, setSelectedItem] = useState(null);
   const webViewRef = useRef(null);
+  const [searchWidth] = useState(new Animated.Value(SCREEN_WIDTH * 0.85));
 
   const toggleMapVisibility = () => {
     Animated.timing(mapHeight, {
@@ -83,11 +85,17 @@ const MapScreen = () => {
       item.description.toLowerCase().includes(text.toLowerCase())
     );
     setFilteredResults(filtered);
+    Animated.timing(searchWidth, {
+      toValue: text.length > 0 ? SCREEN_WIDTH * 0.95 : SCREEN_WIDTH * 0.85,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
   };
 
   const handleItemPress = (item) => {
-    setSelectedItem(item.id === selectedItem?.id ? null : item);
-    if (webViewRef.current && isMapVisible) {
+    const isSelected = item.id === selectedItem?.id;
+    setSelectedItem(isSelected ? null : item);
+    if (webViewRef.current && isMapVisible && !isSelected) {
       webViewRef.current.injectJavaScript(`
         map.setView([${item.latitude}, ${item.longitude}], 15);
         true;
@@ -115,57 +123,59 @@ const MapScreen = () => {
         <div id="map"></div>
         <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
         <script>
-          try {
-            var map = L.map('map').setView([${userLocation.latitude}, ${userLocation.longitude}], 13);
-            L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=3c597e7fa8ef40f994c4f70a149bd798', {
-              attribution: '© OpenMapTiles © OpenStreetMap contributors',
-              maxZoom: 20
-            }).addTo(map);
+          var map = L.map('map').setView([${userLocation.latitude}, ${userLocation.longitude}], 13);
+          L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=3c597e7fa8ef40f994c4f70a149bd798', {
+            attribution: '© OpenMapTiles © OpenStreetMap contributors',
+            maxZoom: 20
+          }).addTo(map);
 
-            L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
-              icon: L.divIcon({ html: "", className: "invisible-marker", iconSize: [0, 0] })
-            }).addTo(map).bindPopup('Your Location');
+          L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
+            icon: L.divIcon({ html: "", className: "invisible-marker", iconSize: [0, 0] })
+          }).addTo(map).bindPopup('Your Location');
 
-            const items = ${JSON.stringify(filteredResults)};
-            items.forEach((item) => {
-              const customIcon = L.icon({
-                iconUrl: item.icon,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40],
-                popupAnchor: [0, -40],
-              });
-              L.marker([item.latitude, item.longitude], { icon: customIcon })
-                .addTo(map)
-                .bindPopup(item.name);
+          const items = ${JSON.stringify(filteredResults)};
+          items.forEach((item) => {
+            const customIcon = L.icon({
+              iconUrl: item.icon,
+              iconSize: [40, 40],
+              iconAnchor: [20, 40],
+              popupAnchor: [0, -40],
             });
-          } catch (error) {
-            console.error('Map loading error:', error);
-            document.getElementById('map').innerHTML = 'Error loading map';
-          }
+            L.marker([item.latitude, item.longitude], { icon: customIcon })
+              .addTo(map)
+              .bindPopup(item.name);
+          });
         </script>
       </body>
     </html>
   `;
 
-  const renderItemCard = ({ item }) => (
-    <TouchableOpacity onPress={() => handleItemPress(item)}>
-      <Surface style={styles.card}>
-        <Image source={{ uri: item.icon }} style={styles.cardImage} />
-        <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{item.name}</Text>
-          <Text style={styles.cardSubtitle}>{item.type}</Text>
-          <Text style={styles.cardDescription} numberOfLines={2}>{item.description}</Text>
-          <TouchableOpacity
-            style={styles.mapButton}
-            onPress={() => openInGoogleMaps(item.latitude, item.longitude)}
-          >
-            <Icon name="google-maps" size={20} color="#3B82F6" />
-            <Text style={styles.mapButtonText}>View on Map</Text>
-          </TouchableOpacity>
-        </View>
-      </Surface>
-    </TouchableOpacity>
-  );
+  const renderItemCard = ({ item }) => {
+    const isSelected = item.id === selectedItem?.id;
+    return (
+      <TouchableOpacity onPress={() => handleItemPress(item)}>
+        <Surface style={[styles.card, isSelected && styles.selectedCard]}>
+          <Image source={{ uri: item.icon }} style={styles.cardImage} />
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Text style={styles.cardSubtitle}>{item.type}</Text>
+            {isSelected && (
+              <>
+                <Text style={styles.cardDescription}>{item.description}</Text>
+                <TouchableOpacity
+                  style={styles.mapButton}
+                  onPress={() => openInGoogleMaps(item.latitude, item.longitude)}
+                >
+                  <Icon name="google-maps" size={20} color="#FFFFFF" />
+                  <Text style={styles.mapButtonText}>View on Map</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </Surface>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -179,7 +189,7 @@ const MapScreen = () => {
           onPress={() => console.log('Menu pressed')}
         />
       </View>
-      <View style={styles.searchContainer}>
+      <Animated.View style={[styles.searchContainer, { width: searchWidth }]}>
         <Ionicons name="search" size={24} color="#9CA3AF" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
@@ -188,14 +198,10 @@ const MapScreen = () => {
           value={searchQuery}
           onChangeText={handleSearch}
         />
-      </View>
+      </Animated.View>
       <TouchableOpacity style={styles.toggleMapButton} onPress={toggleMapVisibility}>
         <Text style={styles.toggleMapText}>{isMapVisible ? 'Hide Map' : 'Show Map'}</Text>
-        <Icon
-          name={isMapVisible ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color="#3B82F6"
-        />
+        <Icon name={isMapVisible ? 'chevron-up' : 'chevron-down'} size={20} color="#3B82F6" />
       </TouchableOpacity>
       {isMapVisible && (
         <Animated.View style={[styles.mapContainer, { height: mapHeight }]}>
@@ -241,11 +247,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    alignSelf: 'center',
     backgroundColor: '#2D3748',
     borderRadius: 12,
     paddingHorizontal: 12,
+    marginBottom: 10,
   },
   searchIcon: {
     marginRight: 8,
@@ -264,6 +270,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2D3748',
     marginHorizontal: 16,
     borderRadius: 8,
+    marginBottom: 16,
+    paddingTop: 16,
   },
   toggleMapText: {
     color: '#FFFFFF',
@@ -282,14 +290,19 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+    paddingTop: 2,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#2D3748',
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     marginVertical: 8,
     padding: 16,
     elevation: 3,
+  },
+  selectedCard: {
+    borderColor: '#3B82F6',
+    borderWidth: 2,
   },
   cardImage: {
     width: 48,

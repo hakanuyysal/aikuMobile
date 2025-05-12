@@ -31,8 +31,6 @@ const subcategories = {
   'Resources': ['Talent Pool', 'Investment Opportunities', 'How It Works'],
 };
 
-
-
 const HomeScreen = (props: HomeScreenProps) => {
   const navigation = useNavigation<any>();
   const [activeCategory, setActiveCategory] = useState('');
@@ -67,9 +65,13 @@ const HomeScreen = (props: HomeScreenProps) => {
   };
 
   const handleSubcategoryPress = (subcategory: string) => {
-    setActiveCategory(subcategory);
     setDropdownVisible(false);
     setSelectedCategory(null);
+    if (subcategory === 'How It Works') {
+      navigation.navigate('HowItWorksScreen');
+    } else {
+      setActiveCategory(subcategory);
+    }
   };
 
   const handleMenuOpen = () => {
@@ -355,7 +357,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 0,
-    zIndex: 2, // Ensure categories are above the tooltip overlay
+    zIndex: 2,
   },
   categoryButtonWrapper: {
     flexDirection: 'row',
@@ -522,7 +524,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
-    marginTop:-28
+    marginTop: -28,
   },
   tooltipContainer: {
     position: 'absolute',

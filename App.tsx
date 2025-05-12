@@ -27,7 +27,7 @@ import TalentPoolScreen from 'components/TalentPool';
 import TrainingDetailScreen from 'components/TrainingDetailScreen';
 import PaymentSuccess from 'screens/subscriptions/PaymentSuccess';
 import PaymentError from 'screens/subscriptions/PaymentError';
-
+import HowItWorksScreen from 'components/Faq'
 export type RootStackParamList = {
   Main: undefined;
   Auth: undefined;
@@ -230,6 +230,11 @@ function AppContent(): React.JSX.Element {
               <RootStack.Screen
                 name="PaymentError"
                 component={PaymentError}
+                options={{ headerShown: false }}
+              />
+               <RootStack.Screen
+                name="HowItWorksScreen"
+                component={HowItWorksScreen}
                 options={{ headerShown: false }}
               />
             </>

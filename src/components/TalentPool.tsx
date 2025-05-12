@@ -82,7 +82,7 @@ const TalentPoolScreen = () => {
               </View>
               <View style={styles.priceContainer}>
                 <PaperText style={styles.price} numberOfLines={1} ellipsizeMode="tail">
-                  details
+                  Details
                 </PaperText>
               </View>
             </View>

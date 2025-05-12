@@ -3,14 +3,13 @@ import {
   StyleSheet,
   Text,
   View,
-  Image,
-  Dimensions,
   FlatList,
   TouchableOpacity,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Animated,
   Easing,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -33,25 +32,16 @@ const slides = [
     key: '1',
     title: 'Unleash the potential of your AI startup.',
     description: '',
-    button: 'Start Your Journey',
   },
   {
     key: '2',
-    title: 'How It Works?',
+    title: 'Provides access to key tools, mentorship, and collaboration opportunities to support innovation and growth.',
     description: '',
-    button: 'Next',
   },
   {
     key: '3',
     title: 'Elevate Your AI Startup\'s Visibility and Growth Potential',
     description: '',
-    button: 'Next',
-  },
-  {
-    key: '4',
-    title: 'Why Choose Aiku AI Startup Platform?',
-    description: '',
-    button: 'Get Started',
   },
 ];
 
@@ -67,10 +57,10 @@ const OnboardingScreen = () => {
   const portalScale = useRef(new Animated.Value(0.2)).current;
   const [animationCompleted, setAnimationCompleted] = useState(false);
   const ringAnimations = useRef(
-    Array(5).fill(0).map(() => new Animated.Value(0))
+    Array(3).fill(0).map(() => new Animated.Value(0))
   ).current;
-  const ringRotations = useRef(
-    Array(5).fill(0).map(() => new Animated.Value(0))
+  const ringGlowAnimations = useRef(
+    Array(3).fill(0).map(() => new Animated.Value(0.3))
   ).current;
 
   const startHologramAnimation = useCallback(() => {
@@ -80,27 +70,16 @@ const OnboardingScreen = () => {
     scanlinePosition.setValue(0);
     portalScale.setValue(0.2);
     ringAnimations.forEach((anim) => anim.setValue(0));
-    ringRotations.forEach((anim) => anim.setValue(0));
+    ringGlowAnimations.forEach((anim) => anim.setValue(0.3));
 
-    const ringTranslationSequence = ringAnimations.map((anim, index) =>
+    const ringSequence = ringAnimations.map((anim, index) =>
       Animated.timing(anim, {
         toValue: 1,
         duration: 1000,
-        delay: index * 400,
+        delay: index * 300,
         useNativeDriver: true,
         easing: Easing.out(Easing.quad),
       })
-    );
-
-    const ringRotationSequence = ringRotations.map((anim, index) =>
-      Animated.loop(
-        Animated.timing(anim, {
-          toValue: 2 * Math.PI,
-          duration: 5000 + index * 1000,
-          useNativeDriver: true,
-          easing: Easing.linear,
-        })
-      )
     );
 
     Animated.parallel([
@@ -134,32 +113,13 @@ const OnboardingScreen = () => {
         useNativeDriver: true,
         easing: Easing.out(Easing.back(1.5)),
       }),
-      ...ringTranslationSequence,
+      ...ringSequence,
     ]).start(({ finished }) => {
       if (finished) {
         requestAnimationFrame(() => {
           setAnimationCompleted(true);
         });
       }
-
-      ringRotationSequence.forEach((anim) => anim.start());
-
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(ringAnimations[0], {
-            toValue: 0.8,
-            duration: 1500,
-            useNativeDriver: true,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          }),
-          Animated.timing(ringAnimations[0], {
-            toValue: 1,
-            duration: 1500,
-            useNativeDriver: true,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          }),
-        ])
-      ).start();
     });
 
     Animated.loop(
@@ -178,6 +138,25 @@ const OnboardingScreen = () => {
         }),
       ])
     ).start();
+
+    ringGlowAnimations.forEach((anim) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            useNativeDriver: false,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.3,
+            duration: 1500,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    });
   }, [
     hologramOpacity,
     hologramScale,
@@ -186,7 +165,7 @@ const OnboardingScreen = () => {
     scanlinePosition,
     portalScale,
     ringAnimations,
-    ringRotations,
+    ringGlowAnimations,
     setAnimationCompleted,
   ]);
 
@@ -244,76 +223,155 @@ const OnboardingScreen = () => {
               styles.portalContainer,
               {
                 opacity: ringAnimations[0],
-                transform: [{ scale: portalScale }, { rotateX: '70deg' }],
               },
             ]}
           >
-            {ringAnimations.map((ringAnim, ringIndex) => (
-              <Animated.View
-                key={`ring-${ringIndex}`}
-                style={[
-                  styles.portalRing,
-                  {
-                    transform: [
-                      { scale: 1 - ringIndex * 0.1 },
-                      { scaleY: 0.35 },
-                      {
-                        translateY: ringAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [width * 0.4, -ringIndex * 30],
-                        }),
-                      },
-                      {
-                        rotateY: ringRotations[ringIndex].interpolate({
-                          inputRange: [0, 2 * Math.PI],
-                          outputRange: ['0deg', '360deg'],
-                        }),
-                      },
-                    ],
-                    opacity: ringAnim.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [0, 0.9, 1],
-                    }),
-                    borderWidth: 12 - ringIndex * 2,
-                  },
-                ]}
-              />
-            ))}
+            {/* Bottom portal (smallest) */}
             <Animated.View
               style={[
-                styles.portalCenter,
+                styles.portalRing,
                 {
-                  opacity: Animated.add(
-                    0.5,
-                    Animated.multiply(glowAnimation, 0.5)
-                  ),
+                  transform: [
+                    { scale: 0.7 },
+                    { scaleY: 0.1 },
+                    {
+                      translateY: ringAnimations[0].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -height * 0.15],
+                      }),
+                    },
+                  ],
                 },
               ]}
-            />
-            {[...Array(10)].map((_, i) => (
+            >
               <Animated.View
-                key={`particle-${i}`}
                 style={[
-                  styles.portalParticle,
+                  StyleSheet.absoluteFillObject,
                   {
-                    left: `${35 + Math.sin(i * 36) * 15}%`,
-                    top: `${35 + Math.cos(i * 36) * 15}%`,
+                    borderRadius: width * 0.5,
+                    borderWidth: 8,
+                    borderColor: ringGlowAnimations[0].interpolate({
+                      inputRange: [0.3, 1],
+                      outputRange: ['rgba(0, 200, 255, 0.6)', 'rgba(0, 200, 255, 0.8)'],
+                    }),
+                    opacity: ringGlowAnimations[0],
                     transform: [
                       {
-                        scale: Animated.multiply(
-                          glowAnimation,
-                          0.5 + Math.sin(i) * 0.5
-                        ),
+                        scale: ringGlowAnimations[0].interpolate({
+                          inputRange: [0.3, 1],
+                          outputRange: [0.98, 1.02],
+                        }),
                       },
                     ],
-                    opacity: Animated.multiply(
-                      glowAnimation,
-                      0.4 + Math.sin(i * 0.8) * 0.6
-                    ),
                   },
                 ]}
               />
-            ))}
+              <View style={styles.portalCenter} />
+            </Animated.View>
+
+            {/* Middle portal */}
+            <Animated.View
+              style={[
+                styles.portalRing,
+                {
+                  transform: [
+                    { scale: 0.85 },
+                    { scaleY: 0.1 },
+                    {
+                      translateY: ringAnimations[1].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -height * 0.40],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    borderRadius: width * 0.5,
+                    borderWidth: 10,
+                    borderColor: ringGlowAnimations[1].interpolate({
+                      inputRange: [0.3, 1],
+                      outputRange: ['rgba(0, 220, 255, 0.7)', 'rgba(0, 220, 255, 0.9)'],
+                    }),
+                    opacity: ringGlowAnimations[1],
+                    transform: [
+                      {
+                        scale: ringGlowAnimations[1].interpolate({
+                          inputRange: [0.3, 1],
+                          outputRange: [0.98, 1.02],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View style={styles.portalCenter} />
+            </Animated.View>
+
+            {/* Top portal (largest) */}
+            <Animated.View
+              style={[
+                styles.portalRing,
+                {
+                  transform: [
+                    { scale: 1 },
+                    { scaleY: 0.1 },
+                    {
+                      translateY: ringAnimations[2].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -height * 0.65],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    borderRadius: width * 0.5,
+                    borderWidth: 12,
+                    borderColor: ringGlowAnimations[2].interpolate({
+                      inputRange: [0.3, 1],
+                      outputRange: ['rgba(0, 240, 255, 0.8)', 'rgba(0, 240, 255, 1)'],
+                    }),
+                    opacity: ringGlowAnimations[2],
+                    transform: [
+                      {
+                        scale: ringGlowAnimations[2].interpolate({
+                          inputRange: [0.3, 1],
+                          outputRange: [0.98, 1.02],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View style={styles.portalCenter} />
+            </Animated.View>
+          </Animated.View>
+
+          {/* Blue light effect from bottom to portal */}
+          <Animated.View
+            style={[
+              styles.blueLightEffect,
+              {
+                opacity: glowAnimation,
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(0, 145, 255, 0.5)', 'rgba(0, 145, 255, 0)']}
+              locations={[0, 1]}
+              start={{ x: 0.5, y: 1 }}
+              end={{ x: 0.5, y: 0 }}
+              style={styles.blueLightGradient}
+            />
           </Animated.View>
 
           <Animated.View
@@ -397,13 +455,7 @@ const OnboardingScreen = () => {
                   ],
                 }}
               />
-              {item.button !== 'Get Started' && (
-                <Image
-                  source={require('../../assets/images/hands.png')}
-                  style={styles.handsImage}
-                  resizeMode="contain"
-                />
-              )}
+              {item.button !== 'Get Started'}
               <Text style={[styles.title, styles.hologramText]}>
                 {item.title}
               </Text>
@@ -440,11 +492,6 @@ const OnboardingScreen = () => {
       end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}
     >
-      <Image
-        source={require('../../assets/images/onboardinghand.png')}
-        style={styles.phoneImage}
-        resizeMode="cover"
-      />
       <View style={styles.screenOverlay}>
         <TouchableOpacity style={styles.skipContainer} onPress={onSkip}>
           <Text style={styles.skipText}>Skip</Text>
@@ -474,54 +521,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  phoneImage: {
-    width: width,
-    height: height,
-    position: 'absolute',
-    marginTop: 100,
+  gradientBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   screenOverlay: {
-    position: 'absolute',
-    top: height * 0.1,
-    left: width * 0.10,
-    width: width * 0.80,
-    height: height * 0.80,
+    width: width,
+    height: height,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   slideContainer: {
-    width: width * 0.79,
-    height: height * 0.65,
-    overflow: 'hidden',
-    borderBottomRightRadius: 0,
-    borderTopRightRadius: 0,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-    marginTop: 0.5,
-    paddingRight: 5.5,
+    width: width,
+    height: height,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  slide: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
   },
   title: {
-    fontSize: 24,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
     marginBottom: 26,
-  },
-  description: {
-    fontSize: 14,
-    color: '#CCC',
-    textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 20,
   },
   button: {
     backgroundColor: '#0057ff',
@@ -529,38 +551,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 24,
   },
-  gradientBackground: {
-    flex: 1,
-  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
   },
-  logo: {
-    position: 'absolute',
-    bottom: height * 0.13,
-    alignSelf: 'center',
-    width: width * 0.3,
-    height: height * 0.1,
-    transform: [{ rotateZ: '-3deg' }],
-  },
-  handsImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 20,
-    marginTop: 100,
-  },
   contentHologramContainer: {
     position: 'absolute',
     width: width * 0.70,
-    height: height * 0.45,
+    height: height * 0.55,
     alignSelf: 'center',
     zIndex: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    bottom: height * 0.2,
-    marginRight: -40,
+    top: height * 0.15,
   },
   hologramOuterBorder: {
     position: 'absolute',
@@ -606,8 +610,8 @@ const styles = StyleSheet.create({
   },
   swipeContainer: {
     position: 'absolute',
-    bottom: 80,
-    right: 20,
+    bottom: 180,
+    right: 70,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -628,12 +632,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
-    zIndex: 10,
+    zIndex: 6,
   },
   skipContainer: {
     position: 'absolute',
-    top: -50,
-    right: -20,
+    top: 50,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 10,
@@ -655,7 +659,7 @@ const styles = StyleSheet.create({
     width: width * 0.70,
     height: 10,
     alignSelf: 'center',
-    zIndex: 6,
+    zIndex: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -674,18 +678,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: width * 0.5,
     height: width * 0.5,
-    zIndex: 3,
+    zIndex: 15,
     alignSelf: 'center',
-    bottom: -60,
+    top: height * 0.67,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: -40,
   },
   portalRing: {
-    width: '110%',
-    height: '110%',
-    borderRadius: width * 3,
-    borderColor: 'rgba(0, 220, 255, 1)',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: width * 0.5,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#00e5ff',
@@ -694,7 +697,6 @@ const styles = StyleSheet.create({
     elevation: 25,
   },
   portalCenter: {
-    position: 'absolute',
     width: '60%',
     height: '60%',
     borderRadius: width * 0.5,
@@ -704,18 +706,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 20,
     elevation: 10,
-    transform: [{ scaleY: 0.35 }],
+    transform: [{ scaleY: 0.1 }],
   },
-  portalParticle: {
+  blueLightEffect: {
     position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#00e5ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 5,
+    width: width,
+    height: height * 0.20,
+    bottom: 0,
+    zIndex: 1,
+    alignItems: 'center',
+  },
+  blueLightGradient: {
+    width: '10%',
+    height: '100%',
   },
 });

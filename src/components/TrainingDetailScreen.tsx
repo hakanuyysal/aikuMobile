@@ -27,30 +27,36 @@ const TrainingDetailScreen = () => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Icon name="chevron-back" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-          <View style={styles.imageContainer}>
-            <LinearGradient
-              colors={['rgb(255, 255, 255)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']}
-              style={styles.spotlight}
-              start={{ x: 0.4, y: 1 }}
-              end={{ x: 0, y: 0.2 }}
-            />
-            <Image
-              source={require('../assets/images/aidevedu.png')}
-              style={styles.image}
-              resizeMode="contain"
-            />
+          <View style={styles.backButtonContainer}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Icon name="chevron-back" size={24} color={Colors.primary} />
+            </TouchableOpacity>
           </View>
+          <PaperText style={styles.headerTitle}>Training Details</PaperText>
         </View>
 
         <View style={[styles.cardContainer, styles.firstCard]}>
+          <View style={styles.titleImageContainer}>
+            <View style={styles.imageContainer}>
+              <LinearGradient
+                colors={['rgb(255, 255, 255)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']}
+                style={styles.spotlight}
+                start={{ x: 0.4, y: 1 }}
+                end={{ x: 0, y: 0.2 }}
+              />
+              <Image
+                source={require('../assets/images/aidevedu.png')}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            </View>
+            <PaperText style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              AI Developer Training
+            </PaperText>
+          </View>
+
           <View style={styles.contentContainer}>
             <View style={styles.textContainer}>
-              <PaperText style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-                AI Developer Training
-              </PaperText>
               <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
                 Duration of Training
               </PaperText>
@@ -103,7 +109,6 @@ const TrainingDetailScreen = () => {
             <PaperText style={styles.contactButtonText}>Contact Us</PaperText>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
     </LinearGradient>
   );
@@ -115,37 +120,27 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContainer: {
     padding: 20,
+    paddingTop: 40,
     paddingBottom: 60,
   },
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButton: {
-    marginRight: 10,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: 50,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
   },
-  spotlight: {
+  backButtonContainer: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 50,
-    top: -5,
-    left: -5,
-    zIndex: 0,
-    opacity: 0.8,
+    left: 0,
   },
-  image: {
-    width: 44,
-    height: 50,
-    zIndex: 1,
+  backButton: {
+    padding: 5,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
   },
   cardContainer: {
     width: SCREEN_WIDTH - 40,
@@ -165,11 +160,36 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   firstCard: {
-    minHeight: 320, // Slightly increased to accommodate button
+    minHeight: 340,
     position: 'relative',
   },
-  secondCard: {
-    minHeight: 300, // Adjusted height for second card with only Schedule
+  titleImageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  spotlight: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    top: -5,
+    left: -5,
+    zIndex: 0,
+    opacity: 0.8,
+  },
+  image: {
+    width: 44,
+    height: 50,
+    zIndex: 1,
   },
   contentContainer: {
     flexDirection: 'row',
@@ -185,7 +205,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 10,
+    flex: 1,
+    marginLeft:10,
   },
   sectionTitle: {
     fontSize: 18,
