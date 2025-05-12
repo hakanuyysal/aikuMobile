@@ -25,6 +25,8 @@ import InvestmentScreen from 'screens/InvestmentDetailsScreen';
 import OnboardingScreen from 'screens/onboarding';
 import TalentPoolScreen from 'components/TalentPool';
 import TrainingDetailScreen from 'components/TrainingDetailScreen';
+import PaymentSuccess from 'screens/subscriptions/PaymentSuccess';
+import PaymentError from 'screens/subscriptions/PaymentError';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -79,12 +81,11 @@ const navigationTheme = {
     notification: Colors.primary,
   },
 };
-
 function AppContent(): React.JSX.Element {
   const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(true); // New state for onboarding
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -118,6 +119,9 @@ function AppContent(): React.JSX.Element {
     setIsMenuOpen(true);
   };
 
+  // Determine initial route based on state
+  const initialRouteName = showOnboarding ? 'Onboarding' : user ? 'Main' : 'Auth';
+
   return (
     <View style={styles.mainContainer}>
       <Animated.View
@@ -130,7 +134,7 @@ function AppContent(): React.JSX.Element {
             ],
           },
         ]}>
-        <RootStack.Navigator initialRouteName={showOnboarding ? 'Onboarding' : user ? 'Main' : 'Auth'}>
+        <RootStack.Navigator initialRouteName={initialRouteName}>
           <RootStack.Screen
             name="Onboarding"
             options={{ headerShown: false }}
@@ -144,80 +148,95 @@ function AppContent(): React.JSX.Element {
             component={AuthNavigator}
             options={{ headerShown: false }}
           />
-          <RootStack.Screen
-            name="Main"
-            component={(props: Props) => (
-              <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
-            )}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="UpdateProfile"
-            component={UpdateProfileScreen}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="SubscriptionDetails"
-            component={SubscriptionDetails}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="Favorites"
-            component={Favorites}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="CompanyDetails"
-            component={CompanyDetails}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="ProductDetails"
-            component={ProductDetails}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="Settings"
-            component={Settings}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="ContactUs"
-            component={ContactUs}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="TermsOfService"
-            component={TermsOfService}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="PrivacyPolicy"
-            component={PrivacyPolicy}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="PersonalDataProtection"
-            component={PersonalDataProtection}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="InvestmentDetails"
-            component={InvestmentScreen}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="TalentPool"
-            component={TalentPoolScreen}
-            options={{ headerShown: false }}
-          />
-          <RootStack.Screen
-            name="TrainingDetail"
-            component={TrainingDetailScreen}
-            options={{ headerShown: false }}
-          />
+          {user && (
+            <>
+              <RootStack.Screen
+                name="Main"
+                component={(props: Props) => (
+                  <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
+                )}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="UpdateProfile"
+                component={UpdateProfileScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="SubscriptionDetails"
+                component={SubscriptionDetails}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="Favorites"
+                component={Favorites}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="CompanyDetails"
+                component={CompanyDetails}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="ProductDetails"
+                component={ProductDetails}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="Settings"
+                component={Settings}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="ContactUs"
+                component={ContactUs}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="TermsOfService"
+                component={TermsOfService}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="PrivacyPolicy"
+                component={PrivacyPolicy}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="PersonalDataProtection"
+                component={PersonalDataProtection}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="InvestmentDetails"
+                component={InvestmentScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="TalentPool"
+                component={TalentPoolScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="TrainingDetail"
+                component={TrainingDetailScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="PaymentSuccess"
+                component={PaymentSuccess}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="PaymentError"
+                component={PaymentError}
+                options={{ headerShown: false }}
+              />
+            </>
+          )}
         </RootStack.Navigator>
       </Animated.View>
+
 
       {isMenuOpen && user && (
         <Menu

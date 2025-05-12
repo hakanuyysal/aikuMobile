@@ -213,16 +213,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 2,
+    marginLeft:20,
   },
   brandName: {
     color: Colors.lightText,
     fontSize: 16,
     marginBottom: 2,
+    marginLeft:20,
   },
   priceContainer: {
     justifyContent: 'center',
     alignItems: 'flex-end',
-    marginLeft: 10,
+    marginLeft:20,
     marginTop: 35,
   },
   price: {

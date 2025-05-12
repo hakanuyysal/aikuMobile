@@ -28,6 +28,7 @@ const Login = ({navigation}: Props) => {
   const handleLogin = async () => {
     try {
       await login(email, password);
+      navigation.navigate('Main')
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
     }

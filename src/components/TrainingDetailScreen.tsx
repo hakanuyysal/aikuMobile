@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions, Image, TouchableOpacity, Linking } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +10,12 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const TrainingDetailScreen = () => {
   const navigation = useNavigation();
+
+  const handleContactUs = () => {
+    Linking.openURL('https://www.aikuaiplatform.com/trainings/ai-developer').catch((err) =>
+      console.error('Error opening URL:', err)
+    );
+  };
 
   return (
     <LinearGradient
@@ -82,50 +88,22 @@ const TrainingDetailScreen = () => {
               <PaperText style={styles.text} numberOfLines={1} ellipsizeMode="tail">
                 Internship supported
               </PaperText>
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.cardContainer, styles.secondCard]}>
-          <View style={styles.contentContainer}>
-            <View style={styles.textContainer}>
-              <PaperText style={styles.sectionTitle}>
-                Description
-              </PaperText>
-              <PaperText style={styles.text}>
-                Aloha Digital Academy’s comprehensive 200-hour AI Developer Training lets you step into tomorrow’s technology today! Starting April 2, our live online program carries you from Python fundamentals and data science basics through Machine Learning, Deep Learning and Large Language Models, combining 120 hours of foundational coursework with 80 hours of advanced study. Through hands-on projects drawn from real industry scenarios, you’ll master RESTful API development with FastAPI, database management, automation and web scraping, TensorFlow and PyTorch model building, NLP, CNNs, RNNs, GANs and Transformer architectures. Certified upon completion—and backed by guaranteed internship and job placement opportunities—this training is designed to give you a true competitive edge in the AI landscape.
-              </PaperText>
               <PaperText style={styles.sectionTitle} numberOfLines={1} ellipsizeMode="tail">
                 Schedule
               </PaperText>
               <PaperText style={styles.subSectionTitle} numberOfLines={1} ellipsizeMode="tail">
                 120-Hour Foundation & AI Training
               </PaperText>
-              <PaperText style={styles.text} numberOfLines={10} ellipsizeMode="tail">
-                • Python Fundamentals{"\n"}
-                • Data Structures & Algorithms{"\n"}
-                • Database Management & SQL{"\n"}
-                • RESTful API Development with FastAPI{"\n"}
-                • Automation & Web Scraping{"\n"}
-                • Mathematics & Statistics{"\n"}
-                • NumPy, Pandas & Data Analysis{"\n"}
-                • Introduction to Machine Learning{"\n"}
-                • Core ML Algorithms with Scikit-Learn{"\n"}
-                • NLP & Transformer Models
-              </PaperText>
               <PaperText style={styles.subSectionTitle} numberOfLines={1} ellipsizeMode="tail">
                 80-Hour Advanced AI Training
               </PaperText>
-              <PaperText style={styles.text} numberOfLines={5} ellipsizeMode="tail">
-                • TensorFlow & PyTorch{"\n"}
-                • Deep Learning{"\n"}
-                • Transformers & Large Language Models{"\n"}
-                • Optimization & Advanced Techniques{"\n"}
-                • LLM Development & Deployment
-              </PaperText>
             </View>
           </View>
+          <TouchableOpacity style={styles.contactButton} onPress={handleContactUs}>
+            <PaperText style={styles.contactButtonText}>Contact Us</PaperText>
+          </TouchableOpacity>
         </View>
+
       </ScrollView>
     </LinearGradient>
   );
@@ -187,10 +165,11 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   firstCard: {
-    minHeight: 300, // Adjusted height for the first card
+    minHeight: 320, // Slightly increased to accommodate button
+    position: 'relative',
   },
   secondCard: {
-    minHeight: 400, // Adjusted height for the second card with Description and Schedule
+    minHeight: 300, // Adjusted height for second card with only Schedule
   },
   contentContainer: {
     flexDirection: 'row',
@@ -226,5 +205,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#eee',
     lineHeight: 22,
+  },
+  contactButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#0057ff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  contactButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
