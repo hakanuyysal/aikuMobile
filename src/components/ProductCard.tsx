@@ -3,6 +3,7 @@ import { View, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-nat
 import { Surface, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
 import { Product } from '../types';
 import { Colors } from '../constants/colors';
 
@@ -12,16 +13,30 @@ type ProductCardProps = {
   product: Product;
   onPress: () => void;
   onFavoritePress: () => void;
+  isUnlocked: boolean;
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onPress,
   onFavoritePress,
+  isUnlocked,
 }) => {
+  const isLocked = !isUnlocked;
+
+  const contentStyle = [
+    styles.contentContainer,
+    isLocked && styles.lockedContentContainer,
+  ];
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      disabled={isLocked} // Disable clicking when locked
+    >
       <Surface style={styles.cardContainer} elevation={4}>
+        {/* Favorite Button */}
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={onFavoritePress}
@@ -34,27 +49,37 @@ const ProductCard: React.FC<ProductCardProps> = ({
           />
         </TouchableOpacity>
 
-        <View style={styles.contentContainer}>
-          <View style={styles.imageContainer}>
-            {/* PROFESYONEL SPOTLIGHT EFEKTİ */}
-                      <LinearGradient
-            colors={[
-              'rgb(255, 255, 255)', // Ortada daha yoğun beyaz
-              'rgb(255, 255, 255)', // Kenara doğru beyazlığı biraz azalt
-              'rgb(255, 255, 255)'     // Sonunda tamamen şeffaf
-            ]}
-            style={styles.spotlight}
-            start={{ x: 0.4, y: 1 }}
-            end={{ x: 0, y: 0.2 }}
-          />
+        {/* 🔒 Locked Overlay */}
+        {isLocked && (
+          <>
+            <BlurView
+              style={styles.blurOverlay}
+              blurType="dark"
+              blurAmount={10}
+              reducedTransparencyFallbackColor="transparent"
+            />
+            <View style={styles.lockContainer}>
+              <Icon name="lock-closed" size={24} color={Colors.lightText} />
+              <Text style={styles.lockText}>Subscribe For FREE</Text>
+            </View>
+          </>
+        )}
 
+        {/* 🟢 Content (Locked or Unlocked) */}
+        <View style={contentStyle}>
+          <View style={styles.imageContainer}>
+            <LinearGradient
+              colors={['rgb(255, 255, 255)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']}
+              style={styles.spotlight}
+              start={{ x: 0.4, y: 1 }}
+              end={{ x: 0, y: 0.2 }}
+            />
             <Image
               source={product.imageUri}
               style={styles.image}
               resizeMode="contain"
             />
           </View>
-
           <View style={styles.infoContainer}>
             <View style={styles.textContainer}>
               <Text style={styles.type} numberOfLines={1} ellipsizeMode="tail">
@@ -76,6 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_WIDTH - 40,
@@ -102,6 +128,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
   },
+  lockedContentContainer: {
+    opacity: 0.3,
+  },
   imageContainer: {
     position: 'relative',
     width: 50,
@@ -112,18 +141,17 @@ const styles = StyleSheet.create({
   },
   spotlight: {
     position: 'absolute',
-    width: 60, // Geniş alan kaplasın
+    width: 60,
     height: 60,
     borderRadius: 50,
     top: -5,
     left: -5,
-    zIndex: 0,
-    opacity: 0.8,
+    zIndex: 1,
   },
   image: {
     width: 44,
     height: 50,
-    zIndex: 1, // Spotlight altında kalacak
+    zIndex: 2,
   },
   infoContainer: {
     flex: 1,
@@ -168,7 +196,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(26, 30, 41, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 2,
+    zIndex: 5,
+  },
+  blurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 3,
+    backgroundColor: Colors.cardBackground,
+  },
+  lockContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 4,
+  },
+  lockText: {
+    color: Colors.lightText,
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+    opacity: 0.9,
   },
 });
 

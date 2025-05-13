@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Animated,
   SafeAreaView,
   StatusBar,
   PermissionsAndroid,
@@ -13,15 +12,15 @@ import {
   FlatList,
   Image,
   Linking,
+  Animated, // Re-import Animated
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import { Text, IconButton, Surface } from 'react-native-paper';
-import { WebView } from 'react-native-webview';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from 'constants/colors';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.9;
 
 const searchData = [
@@ -31,23 +30,11 @@ const searchData = [
 ];
 
 const MapScreen = () => {
-  const [isMapVisible, setIsMapVisible] = useState(false);
-  const [mapHeight] = useState(new Animated.Value(SCREEN_HEIGHT * 0.3));
   const [userLocation, setUserLocation] = useState({ latitude: 37.7749, longitude: -122.4194 });
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredResults, setFilteredResults] = useState(searchData);
   const [selectedItem, setSelectedItem] = useState(null);
-  const webViewRef = useRef(null);
   const [searchWidth] = useState(new Animated.Value(SCREEN_WIDTH * 0.85));
-
-  const toggleMapVisibility = () => {
-    Animated.timing(mapHeight, {
-      toValue: isMapVisible ? SCREEN_HEIGHT * 0.3 : SCREEN_HEIGHT * 0.5,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-    setIsMapVisible(!isMapVisible);
-  };
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -95,60 +82,12 @@ const MapScreen = () => {
   const handleItemPress = (item) => {
     const isSelected = item.id === selectedItem?.id;
     setSelectedItem(isSelected ? null : item);
-    if (webViewRef.current && isMapVisible && !isSelected) {
-      webViewRef.current.injectJavaScript(`
-        map.setView([${item.latitude}, ${item.longitude}], 15);
-        true;
-      `);
-    }
   };
 
   const openInGoogleMaps = (latitude, longitude) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     Linking.openURL(url).catch((err) => console.error('Google Maps error:', err));
   };
-
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-        <style>
-          html, body, #map { height: 100%; margin: 0; padding: 0; }
-          .invisible-marker { display: none; }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-        <script>
-          var map = L.map('map').setView([${userLocation.latitude}, ${userLocation.longitude}], 13);
-          L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=3c597e7fa8ef40f994c4f70a149bd798', {
-            attribution: '© OpenMapTiles © OpenStreetMap contributors',
-            maxZoom: 20
-          }).addTo(map);
-
-          L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
-            icon: L.divIcon({ html: "", className: "invisible-marker", iconSize: [0, 0] })
-          }).addTo(map).bindPopup('Your Location');
-
-          const items = ${JSON.stringify(filteredResults)};
-          items.forEach((item) => {
-            const customIcon = L.icon({
-              iconUrl: item.icon,
-              iconSize: [40, 40],
-              iconAnchor: [20, 40],
-              popupAnchor: [0, -40],
-            });
-            L.marker([item.latitude, item.longitude], { icon: customIcon })
-              .addTo(map)
-              .bindPopup(item.name);
-          });
-        </script>
-      </body>
-    </html>
-  `;
 
   const renderItemCard = ({ item }) => {
     const isSelected = item.id === selectedItem?.id;
@@ -181,7 +120,7 @@ const MapScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search Everything</Text>
+        <Text style={styles.headerTitle}>Search in Aiku</Text>
         <IconButton
           icon="menu"
           iconColor="#FFFFFF"
@@ -199,23 +138,6 @@ const MapScreen = () => {
           onChangeText={handleSearch}
         />
       </Animated.View>
-      <TouchableOpacity style={styles.toggleMapButton} onPress={toggleMapVisibility}>
-        <Text style={styles.toggleMapText}>{isMapVisible ? 'Hide Map' : 'Show Map'}</Text>
-        <Icon name={isMapVisible ? 'chevron-up' : 'chevron-down'} size={20} color="#3B82F6" />
-      </TouchableOpacity>
-      {isMapVisible && (
-        <Animated.View style={[styles.mapContainer, { height: mapHeight }]}>
-          <WebView
-            ref={webViewRef}
-            originWhitelist={['*']}
-            source={{ html: htmlContent }}
-            style={styles.webView}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            onError={(event) => console.error('WebView error:', event.nativeEvent)}
-          />
-        </Animated.View>
-      )}
       <FlatList
         data={filteredResults}
         renderItem={renderItemCard}
@@ -251,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2D3748',
     borderRadius: 12,
     paddingHorizontal: 12,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   searchIcon: {
     marginRight: 8,
@@ -262,35 +184,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-  toggleMapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    backgroundColor: '#2D3748',
-    marginHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    paddingTop: 16,
-  },
-  toggleMapText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginRight: 8,
-  },
-  mapContainer: {
-    marginHorizontal: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  webView: {
-    flex: 1,
-  },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    paddingTop: 2,
   },
   card: {
     flexDirection: 'row',

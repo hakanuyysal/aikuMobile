@@ -12,6 +12,7 @@ import {
   Text,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text as PaperText, IconButton, Surface } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -22,22 +23,34 @@ import FeaturedProduct from '../components/FeaturedProduct';
 import CategoryButton from '../components/CategoryButton';
 import { Product } from '../types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// Define navigation stack param list
+type RootStackParamList = {
+  HomeScreen: undefined;
+  MarketPlace: undefined;
+  HowItWorksScreen: undefined;
+  InvestmentDetails: undefined;
+  TalentPool: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const categories = ['Our Community', 'Resources', 'Marketplace'];
 
 const subcategories = {
   'Our Community': ['Startups', 'Investor', 'Business'],
-  'Resources': ['Talent Pool', 'Investment Opportunities', 'How It Works'],
+  'Resources': ['Talent Pool', 'Investment Opportunities', 'How It Works ?'],
 };
 
 const HomeScreen = (props: HomeScreenProps) => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NavigationProp>();
   const [activeCategory, setActiveCategory] = useState('');
   const [products, setProducts] = useState(PRODUCTS);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isTooltipVisible, setIsTooltipVisible] = useState(true);
+  const [tooltipCategory, setTooltipCategory] = useState('Our Community');
   const { onMenuOpen } = props;
 
   useEffect(() => {
@@ -45,7 +58,16 @@ const HomeScreen = (props: HomeScreenProps) => {
   }, []);
 
   const closeTooltip = () => {
-    setIsTooltipVisible(false);
+    if (tooltipCategory === 'Our Community') {
+      setTooltipCategory('Resources');
+      setIsTooltipVisible(true);
+    } else if (tooltipCategory === 'Resources') {
+      setTooltipCategory('Marketplace');
+      setIsTooltipVisible(true);
+    } else {
+      setIsTooltipVisible(false);
+      setTooltipCategory('');
+    }
   };
 
   const handleCategoryPress = (category: string) => {
@@ -57,6 +79,8 @@ const HomeScreen = (props: HomeScreenProps) => {
         setSelectedCategory(category);
         setDropdownVisible(true);
       }
+    } else if (category === 'Marketplace') {
+      navigation.navigate('MarketPlace');
     } else {
       setActiveCategory(category);
       setDropdownVisible(false);
@@ -67,8 +91,10 @@ const HomeScreen = (props: HomeScreenProps) => {
   const handleSubcategoryPress = (subcategory: string) => {
     setDropdownVisible(false);
     setSelectedCategory(null);
-    if (subcategory === 'How It Works') {
+    if (subcategory === 'How It Works ?') {
       navigation.navigate('HowItWorksScreen');
+    } else if (subcategory === 'Investment Opportunities') {
+      navigation.navigate('InvestmentDetails');
     } else {
       setActiveCategory(subcategory);
     }
@@ -142,6 +168,45 @@ const HomeScreen = (props: HomeScreenProps) => {
     </TouchableOpacity>
   );
 
+  const getTooltipContent = () => {
+    switch (tooltipCategory) {
+      case 'Our Community':
+        return {
+          text: 'You can look at startups, investors and businesses here.',
+          buttonLeft: SCREEN_WIDTH * 0.083, // 30/360
+          textLeft: SCREEN_WIDTH * 0.361, // 130/360
+          imageLeft: SCREEN_WIDTH * -0.306, // -110/360
+          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+        };
+      case 'Resources':
+        return {
+          text: 'Explore talent pools, investment opportunities, and how it works.',
+          buttonLeft: SCREEN_WIDTH * 0.38, // 170/360
+          textLeft: SCREEN_WIDTH * 0.495, // 200/360
+          imageLeft: SCREEN_WIDTH * -0.075, // -30/360
+          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+        };
+      case 'Marketplace':
+        return {
+          text: 'Discover products and services in the marketplace.',
+          buttonLeft: SCREEN_WIDTH * 0.67, // 270/360
+          textLeft: SCREEN_WIDTH * 0.417, // 150/360
+          imageLeft: SCREEN_WIDTH * 0.361, // 130/360
+          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+        };
+      default:
+        return {
+          text: '',
+          buttonLeft: SCREEN_WIDTH * 0.083,
+          textLeft: SCREEN_WIDTH * 0.361,
+          imageLeft: SCREEN_WIDTH * -0.306,
+          marginTop: SCREEN_HEIGHT * -0.16,
+        };
+    }
+  };
+
+  const tooltipContent = getTooltipContent();
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -157,18 +222,10 @@ const HomeScreen = (props: HomeScreenProps) => {
             <View style={styles.logoAndTitleContainer}>
               <View style={styles.logoContainer}>
                 <Image
-                  source={require('../assets/images/logo.png')}
+                  source={require('../assets/images/aistartupplatform.png')}
                   style={styles.logo}
                   resizeMode="contain"
                 />
-              </View>
-              <View style={styles.titleContainer}>
-                <PaperText variant="titleLarge" style={styles.title}>
-                  Aiku
-                </PaperText>
-                <PaperText variant="bodySmall" style={styles.subtitle}>
-                  ai startup platform
-                </PaperText>
               </View>
             </View>
             <IconButton
@@ -230,7 +287,7 @@ const HomeScreen = (props: HomeScreenProps) => {
           </View>
 
           {/* Tooltip Modal */}
-          {isTooltipVisible && (
+          {isTooltipVisible && tooltipCategory && (
             <Modal
               transparent={true}
               visible={isTooltipVisible}
@@ -242,23 +299,25 @@ const HomeScreen = (props: HomeScreenProps) => {
                 activeOpacity={1}
                 onPress={closeTooltip}
               >
-                {/* Our Community yazısı */}
-                <View style={styles.ourCommunityButton}>
-                  <Text style={styles.ourCommunityText}>Our Community</Text>
+                {/* Category button text */}
+                <View style={[styles.ourCommunityButton, { left: tooltipContent.buttonLeft }]}>
+                  <Text style={[styles.ourCommunityText, { marginTop: tooltipContent.marginTop }]}>
+                    {tooltipCategory}
+                  </Text>
                 </View>
                 
-                {/* Robot eli görseli ve yazı */}
+                {/* Robot hand image and tooltip text */}
                 <View style={styles.tooltipContainer}>
-                  <View style={styles.tooltipImageContainer}>
+                  <View style={[styles.tooltipImageContainer, { left: tooltipContent.imageLeft }]}>
                     <Image 
                       source={require('../assets/images/Tooltipaihands.png')}
                       style={styles.tooltipImage}
                       resizeMode="contain"
                     />
                   </View>
-                  <View style={styles.tooltipTextContent}>
+                  <View style={[styles.tooltipTextContent, { left: tooltipContent.textLeft }]}>
                     <Text style={styles.tooltipText}>
-                      You can look at startups, investors and businesses here.
+                      {tooltipContent.text}
                     </Text>
                   </View>
                 </View>
@@ -317,8 +376,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoContainer: {
-    width: 40,
-    height: 40,
+    width: 80,
+    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -513,8 +572,7 @@ const styles = StyleSheet.create({
   },
   ourCommunityButton: {
     position: 'absolute',
-    top: 375,
-    left: 30,
+    top: SCREEN_HEIGHT * 0.498, // Adjusted from 0.63 - 0.132
     zIndex: 1001,
   },
   ourCommunityText: {
@@ -524,7 +582,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
-    marginTop: -28,
   },
   tooltipContainer: {
     position: 'absolute',
@@ -533,8 +590,7 @@ const styles = StyleSheet.create({
   },
   tooltipImageContainer: {
     position: 'absolute',
-    left: -110,
-    top: 360,
+    top: SCREEN_HEIGHT * 0.478, // Adjusted from 0.61 - 0.132
   },
   tooltipImage: {
     width: 500,
@@ -542,8 +598,7 @@ const styles = StyleSheet.create({
   },
   tooltipTextContent: {
     position: 'absolute',
-    top: 400,
-    left: 130,
+    top: SCREEN_HEIGHT * 0.538, // Adjusted from 0.67 - 0.132
   },
   tooltipText: {
     color: '#fff',

@@ -27,7 +27,10 @@ import TalentPoolScreen from 'components/TalentPool';
 import TrainingDetailScreen from 'components/TrainingDetailScreen';
 import PaymentSuccess from 'screens/subscriptions/PaymentSuccess';
 import PaymentError from 'screens/subscriptions/PaymentError';
-import HowItWorksScreen from 'components/Faq'
+import HowItWorksScreen from 'components/Faq';
+import MarketPlaceScreen from 'screens/MarketPlaceScreen';
+import ProductDetailsScreen from 'screens/MarketPlaceProductDetails';
+
 export type RootStackParamList = {
   Main: undefined;
   Auth: undefined;
@@ -48,6 +51,8 @@ export type RootStackParamList = {
   Onboarding: undefined;
   TalentPool: undefined;
   TrainingDetail: undefined;
+  MarketPlace: undefined;
+  MarketPlaceProductDetails: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -235,6 +240,16 @@ function AppContent(): React.JSX.Element {
                <RootStack.Screen
                 name="HowItWorksScreen"
                 component={HowItWorksScreen}
+                options={{ headerShown: false }}
+              />
+               <RootStack.Screen
+                name="MarketPlace"
+                component={MarketPlaceScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="MarketPlaceProductDetails"
+                component={ProductDetailsScreen}
                 options={{ headerShown: false }}
               />
             </>
