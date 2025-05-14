@@ -30,6 +30,9 @@ import PaymentError from 'screens/subscriptions/PaymentError';
 import HowItWorksScreen from 'components/Faq';
 import MarketPlaceScreen from 'screens/MarketPlaceScreen';
 import ProductDetailsScreen from 'screens/MarketPlaceProductDetails';
+import Startups from 'screens/ourcommunity/Startups';
+import Investor from 'screens/ourcommunity/Investor';
+import Business from 'screens/ourcommunity/Business';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -53,6 +56,9 @@ export type RootStackParamList = {
   TrainingDetail: undefined;
   MarketPlace: undefined;
   MarketPlaceProductDetails: undefined;
+  StartupsDetails: undefined;
+  InvestorDetails: undefined;
+  BusinessDetails: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -250,6 +256,21 @@ function AppContent(): React.JSX.Element {
               <RootStack.Screen
                 name="MarketPlaceProductDetails"
                 component={ProductDetailsScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="StartupsDetails"
+                component={Startups}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="InvestorDetails"
+                component={Investor}
+                options={{ headerShown: false }}
+              />
+               <RootStack.Screen
+                name="BusinessDetails"
+                component={Business}
                 options={{ headerShown: false }}
               />
             </>

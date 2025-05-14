@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   StyleSheet,
@@ -30,6 +31,9 @@ type RootStackParamList = {
   HowItWorksScreen: undefined;
   InvestmentDetails: undefined;
   TalentPool: undefined;
+  StartupsDetails: undefined; // Added for Startups
+  InvestorDetails: undefined; // Added for Investor
+  BusinessDetails: undefined; // Added for Business
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -49,15 +53,41 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [products, setProducts] = useState(PRODUCTS);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isTooltipVisible, setIsTooltipVisible] = useState(true);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [tooltipCategory, setTooltipCategory] = useState('Our Community');
+  const [hasSeenTooltips, setHasSeenTooltips] = useState(false);
   const { onMenuOpen } = props;
 
   useEffect(() => {
-    setActiveCategory('Startups');
+    const initializeState = async () => {
+      try {
+        // Check if tooltips have been seen
+        const hasSeenTooltipsValue = await AsyncStorage.getItem('hasSeenTooltips');
+        if (hasSeenTooltipsValue !== null) {
+          setHasSeenTooltips(true);
+          setIsTooltipVisible(false);
+        } else {
+          setIsTooltipVisible(true);
+          setTooltipCategory('Our Community');
+        }
+
+        // Check for saved activeCategory
+        const savedCategory = await AsyncStorage.getItem('activeCategory');
+        if (savedCategory !== null) {
+          setActiveCategory(savedCategory);
+        } else {
+          setActiveCategory('Startups'); // Default to Startups
+        }
+      } catch (error) {
+        console.error('Error reading AsyncStorage:', error);
+        setActiveCategory('Startups'); // Fallback to Startups on error
+      }
+    };
+
+    initializeState();
   }, []);
 
-  const closeTooltip = () => {
+  const closeTooltip = async () => {
     if (tooltipCategory === 'Our Community') {
       setTooltipCategory('Resources');
       setIsTooltipVisible(true);
@@ -67,10 +97,16 @@ const HomeScreen = (props: HomeScreenProps) => {
     } else {
       setIsTooltipVisible(false);
       setTooltipCategory('');
+      try {
+        await AsyncStorage.setItem('hasSeenTooltips', 'true');
+        setHasSeenTooltips(true);
+      } catch (error) {
+        console.error('Error saving to AsyncStorage:', error);
+      }
     }
   };
 
-  const handleCategoryPress = (category: string) => {
+  const handleCategoryPress = async (category: string) => {
     if (category === 'Our Community' || category === 'Resources') {
       if (selectedCategory === category && dropdownVisible) {
         setDropdownVisible(false);
@@ -85,18 +121,38 @@ const HomeScreen = (props: HomeScreenProps) => {
       setActiveCategory(category);
       setDropdownVisible(false);
       setSelectedCategory(null);
+      try {
+        await AsyncStorage.setItem('activeCategory', category);
+      } catch (error) {
+        console.error('Error saving activeCategory to AsyncStorage:', error);
+      }
     }
   };
 
-  const handleSubcategoryPress = (subcategory: string) => {
+  const handleSubcategoryPress = async (subcategory: string) => {
     setDropdownVisible(false);
     setSelectedCategory(null);
-    if (subcategory === 'How It Works ?') {
+    
+    // Navigate to specific detail screens based on subcategory
+    if (subcategory === 'Startups') {
+      navigation.navigate('StartupsDetails');
+    } else if (subcategory === 'Investor') {
+      navigation.navigate('InvestorDetails');
+    } else if (subcategory === 'Business') {
+      navigation.navigate('BusinessDetails');
+    } else if (subcategory === 'How It Works ?') {
       navigation.navigate('HowItWorksScreen');
     } else if (subcategory === 'Investment Opportunities') {
       navigation.navigate('InvestmentDetails');
+    } else if (subcategory === 'Talent Pool') {
+      navigation.navigate('TalentPool');
     } else {
       setActiveCategory(subcategory);
+      try {
+        await AsyncStorage.setItem('activeCategory', subcategory);
+      } catch (error) {
+        console.error('Error saving activeCategory to AsyncStorage:', error);
+      }
     }
   };
 
@@ -130,7 +186,7 @@ const HomeScreen = (props: HomeScreenProps) => {
 
   const filteredProducts = products
     .filter(
-      (product: Product) => 
+      (product: Product) =>
         product.type === activeCategory || activeCategory === 'Startups'
     )
     .slice(0, 3);
@@ -173,26 +229,26 @@ const HomeScreen = (props: HomeScreenProps) => {
       case 'Our Community':
         return {
           text: 'You can look at startups, investors and businesses here.',
-          buttonLeft: SCREEN_WIDTH * 0.083, // 30/360
-          textLeft: SCREEN_WIDTH * 0.361, // 130/360
-          imageLeft: SCREEN_WIDTH * -0.306, // -110/360
-          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+          buttonLeft: SCREEN_WIDTH * 0.083,
+          textLeft: SCREEN_WIDTH * 0.361,
+          imageLeft: SCREEN_WIDTH * -0.306,
+          marginTop: SCREEN_HEIGHT * -0.03,
         };
       case 'Resources':
         return {
           text: 'Explore talent pools, investment opportunities, and how it works.',
-          buttonLeft: SCREEN_WIDTH * 0.38, // 170/360
-          textLeft: SCREEN_WIDTH * 0.495, // 200/360
-          imageLeft: SCREEN_WIDTH * -0.075, // -30/360
-          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+          buttonLeft: SCREEN_WIDTH * 0.38,
+          textLeft: SCREEN_WIDTH * 0.495,
+          imageLeft: SCREEN_WIDTH * -0.075,
+          marginTop: SCREEN_HEIGHT * -0.03,
         };
       case 'Marketplace':
         return {
           text: 'Discover products and services in the marketplace.',
-          buttonLeft: SCREEN_WIDTH * 0.67, // 270/360
-          textLeft: SCREEN_WIDTH * 0.417, // 150/360
-          imageLeft: SCREEN_WIDTH * 0.361, // 130/360
-          marginTop: SCREEN_HEIGHT * -0.03, // User-adjusted
+          buttonLeft: SCREEN_WIDTH * 0.67,
+          textLeft: SCREEN_WIDTH * 0.417,
+          imageLeft: SCREEN_WIDTH * 0.361,
+          marginTop: SCREEN_HEIGHT * -0.03,
         };
       default:
         return {
@@ -286,8 +342,7 @@ const HomeScreen = (props: HomeScreenProps) => {
             )}
           </View>
 
-          {/* Tooltip Modal */}
-          {isTooltipVisible && tooltipCategory && (
+          {isTooltipVisible && tooltipCategory && !hasSeenTooltips && (
             <Modal
               transparent={true}
               visible={isTooltipVisible}
@@ -299,17 +354,14 @@ const HomeScreen = (props: HomeScreenProps) => {
                 activeOpacity={1}
                 onPress={closeTooltip}
               >
-                {/* Category button text */}
                 <View style={[styles.ourCommunityButton, { left: tooltipContent.buttonLeft }]}>
                   <Text style={[styles.ourCommunityText, { marginTop: tooltipContent.marginTop }]}>
                     {tooltipCategory}
                   </Text>
                 </View>
-                
-                {/* Robot hand image and tooltip text */}
                 <View style={styles.tooltipContainer}>
                   <View style={[styles.tooltipImageContainer, { left: tooltipContent.imageLeft }]}>
-                    <Image 
+                    <Image
                       source={require('../assets/images/Tooltipaihands.png')}
                       style={styles.tooltipImage}
                       resizeMode="contain"
@@ -572,7 +624,7 @@ const styles = StyleSheet.create({
   },
   ourCommunityButton: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.498, // Adjusted from 0.63 - 0.132
+    top: SCREEN_HEIGHT * 0.498,
     zIndex: 1001,
   },
   ourCommunityText: {
@@ -590,7 +642,7 @@ const styles = StyleSheet.create({
   },
   tooltipImageContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.478, // Adjusted from 0.61 - 0.132
+    top: SCREEN_HEIGHT * 0.478,
   },
   tooltipImage: {
     width: 500,
@@ -598,7 +650,7 @@ const styles = StyleSheet.create({
   },
   tooltipTextContent: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.538, // Adjusted from 0.67 - 0.132
+    top: SCREEN_HEIGHT * 0.538,
   },
   tooltipText: {
     color: '#fff',

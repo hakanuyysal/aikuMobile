@@ -137,9 +137,10 @@ const MarketplaceScreen: React.FC = () => {
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#3B82F740']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+    locations={[0, 0.3, 0.6, 0.9]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: Colors.cardBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgb(255, 255, 255)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.35,
@@ -274,17 +275,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   companyName: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgb(255, 255, 255)',
     fontSize: 14,
     marginBottom: 8,
   },
   type: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgb(255, 255, 255)',
     fontSize: 16,
     marginBottom: 4,
   },
   tags: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgb(255, 255, 255)',
     fontSize: 14,
     marginBottom: 8,
   },
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgb(255, 255, 255)',
     marginBottom: 4,
   },
   detailValue: {
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   },
   noResults: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgb(255, 255, 255)',
     textAlign: 'center',
     marginTop: 20,
   },

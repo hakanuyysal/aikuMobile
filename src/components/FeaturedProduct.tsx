@@ -115,25 +115,48 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
     }
   };
 
-  const fetchFullContent = async (url: string) => {
+  const fetchFullContent = async (url: string, abstract: string | undefined) => {
     try {
       const response = await fetch(url);
       const html = await response.text();
-      // Enhanced regex to capture content from various tags
-      const contentMatch = html.match(
-        /<p[^>]*>([\s\S]*?)<\/p>|<div[^>]*>([\s\S]*?)<\/div>|<article[^>]*>([\s\S]*?)<\/article>|<section[^>]*>([\s\S]*?)<\/section>/gi
+
+      // Remove scripts, styles, and code blocks
+      const cleanedHtml = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/<pre\b[^<]*(?:(?!<\/pre>)<[^<]*)*<\/pre>/gi, '')
+        .replace(/<code\b[^<]*(?:(?!<\/code>)<[^<]*)*<\/code>/gi, '');
+
+      // Target article content with stricter selectors
+      const contentMatch = cleanedHtml.match(
+        /<article[^>]*>([\s\S]*?)<\/article>|<div[^>]*class=["'](?:article|story|content|post|main-content)[^"']*["']>([\s\S]*?)<\/div>|<p[^>]*>([\s\S]*?)<\/p>/gi
       );
+
       if (contentMatch) {
         const cleanedContent = contentMatch
-          .map((tag) => tag.replace(/<[^>]+>/g, '').trim())
-          .filter((text) => text.length > 30 && !text.match(/^\s*(Advertisement|Subscribe|Sign\s*Up|Login|Footer|Nav|Menu)\s*$/i)) // Filter out noise
+          .map((tag) => tag.replace(/<[^>]+>/g, '').trim()) // Remove HTML tags
+          .filter((text) => {
+            // Enhanced filtering: exclude short, irrelevant, or noisy content
+            return (
+              text.length > 50 && // Minimum length for meaningful content
+              !text.match(/^\s*(Advertisement|Subscribe|Sign\s*Up|Login|Footer|Nav|Menu|Comment|Share|Related\s*Articles)\s*$/i) && // Exclude non-article text
+              !text.match(/^\s*[\[\]\{\}\(\)]*\s*$/) && // Exclude code-like patterns
+              !text.match(/^\s*(<[^>]+>|\{.*?\}|\[.*?\]|\(.*?\))\s*$/) // Exclude residual HTML or code
+            );
+          })
           .join('\n\n');
-        return decodeHtmlEntities(cleanedContent || 'Full content unavailable.');
+
+        // Validate content quality
+        if (cleanedContent.length > 100) {
+          return decodeHtmlEntities(cleanedContent);
+        }
       }
-      return 'Full content unavailable. Please try another article.';
+
+      // Fallback to abstract if content is too short or missing
+      return decodeHtmlEntities(abstract || 'Full content unavailable.');
     } catch (err) {
-      console.log('Error Morphology full content:', err);
-      return 'Error fetching full content. Please try another article.';
+      console.log('Error fetching full content:', err);
+      return decodeHtmlEntities(abstract || 'Error fetching full content. Please try another article.');
     }
   };
 
@@ -143,7 +166,7 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({
 
   const openModalWithContent = async (article: Article) => {
     if (!article.fullContent) {
-      const fullContent = await fetchFullContent(article.url);
+      const fullContent = await fetchFullContent(article.url, article.abstract);
       setArticles((prev) =>
         prev.map((a) => (a._id === article._id ? { ...a, fullContent } : a))
       );
