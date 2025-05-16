@@ -295,7 +295,7 @@ const HomeScreen = (props: HomeScreenProps) => {
 
           <FeaturedProduct
             product={products[0]}
-            discount="Ai News"
+            discount="AI Pulse"
             onPress={() => handleProductPress(products[0].id)}
           />
 
@@ -315,12 +315,6 @@ const HomeScreen = (props: HomeScreenProps) => {
                     title={item}
                     isActive={activeCategory === item || selectedCategory === item}
                     onPress={() => handleCategoryPress(item)}
-                  />
-                  <MaterialCommunityIcons
-                    name="chevron-double-down"
-                    size={18}
-                    color={Colors.lightText}
-                    style={styles.divider}
                   />
                 </View>
               ))}
@@ -485,12 +479,7 @@ const styles = StyleSheet.create({
   lastCategory: {
     marginLeft: 'auto',
   },
-  divider: {
-    marginTop: 5,
-    marginHorizontal: 8,
-    marginLeft: -3,
-    opacity: 0.7,
-  },
+
   dropdownContainer: {
     position: 'absolute',
     top: 40,

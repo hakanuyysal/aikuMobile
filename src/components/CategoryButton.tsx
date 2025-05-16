@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../constants/colors';
-
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 type CategoryButtonProps = {
   title: string;
   isActive?: boolean;
@@ -15,18 +15,24 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
 }) => {
   return (
     <TouchableOpacity onPress={onPress} style={styles.buttonWrapper}>
-      <View style={[styles.container, isActive && styles.activeContainer]}>
+      <View style={styles.container}>
         <Text
           style={[
             styles.text,
             { 
-              color: isActive ? Colors.lightText : 'rgba(255,255,255,0.7)',
+              color:  Colors.lightText ,
               fontWeight: isActive ? '700' : '600',
             },
+            
           ]}
         >
           {title}
         </Text>
+         <MaterialCommunityIcons
+                            name="chevron-double-down"
+                            size={18}
+                            color={Colors.lightText}
+                            style={styles.divider} />
       </View>
     </TouchableOpacity>
   );
@@ -43,16 +49,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-  },
-  activeContainer: {
-    backgroundColor: 'rgba(59, 130, 247, 0.2)', // Daha belirgin mavi tonu
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 247, 0.3)',
+    marginBottom: 13,
   },
   text: {
     fontSize: 14,
     fontWeight: '600',
+    color: 'white',
+  },
+    divider: {
+    marginTop: 5,
+    marginHorizontal: 8,
+    marginLeft: -3,
+    opacity: 0.7,
   },
 });
 

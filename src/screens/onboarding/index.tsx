@@ -40,7 +40,7 @@ const slides = [
   },
   {
     key: '3',
-    title: 'Elevate Your AI Startup\'s Visibility and Growth Potential',
+    title: "Elevate Your AI Startup's Visibility and Growth Potential",
     description: '',
   },
 ];
@@ -49,6 +49,8 @@ const OnboardingScreen = () => {
   const navigation = useNavigation<OnboardingNavigationProp>();
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const hologramOpacity = useRef(new Animated.Value(0)).current;
   const hologramScale = useRef(new Animated.Value(0.7)).current;
   const gradientPosition = useRef(new Animated.Value(1)).current;
@@ -62,6 +64,37 @@ const OnboardingScreen = () => {
   const ringGlowAnimations = useRef(
     Array(3).fill(0).map(() => new Animated.Value(0.3))
   ).current;
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startTypewriterEffect = useCallback((text: string) => {
+    // Validate text input
+    if (!text || typeof text !== 'string') {
+      setDisplayedText('');
+      setIsTypingComplete(true);
+      return;
+    }
+
+    // Clear any existing interval
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+    }
+
+    setDisplayedText('');
+    setIsTypingComplete(false);
+    let index = 0;
+
+    typingIntervalRef.current = setInterval(() => {
+      if (index < text.length) {
+        setDisplayedText(text.substring(0, index + 1));
+        index++;
+      } else {
+        setIsTypingComplete(true);
+        if (typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current);
+        }
+      }
+    }, 50);
+  }, []);
 
   const startHologramAnimation = useCallback(() => {
     hologramOpacity.setValue(0);
@@ -173,12 +206,20 @@ const OnboardingScreen = () => {
     if (currentIndex >= 0) {
       setAnimationCompleted(false);
       startHologramAnimation();
+      startTypewriterEffect(slides[currentIndex].title);
     }
-  }, [currentIndex, startHologramAnimation]);
+  }, [currentIndex, startHologramAnimation, startTypewriterEffect]);
 
   useEffect(() => {
     startHologramAnimation();
-  }, [startHologramAnimation]);
+    startTypewriterEffect(slides[0].title);
+
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+    };
+  }, [startHologramAnimation, startTypewriterEffect]);
 
   const onNext = (buttonText: string) => {
     if (buttonText === 'Get Started') {
@@ -455,9 +496,8 @@ const OnboardingScreen = () => {
                   ],
                 }}
               />
-              {item.button !== 'Get Started'}
               <Text style={[styles.title, styles.hologramText]}>
-                {item.title}
+                {displayedText}
               </Text>
             </Animated.View>
           </Animated.View>
@@ -539,11 +579,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontFamily: 'Orbitron-Regular',
+    fontWeight: '600',
     color: '#FFF',
     textAlign: 'center',
-    marginBottom: 26,
+    lineHeight: 28,
   },
   button: {
     backgroundColor: '#0057ff',
@@ -553,7 +594,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontFamily: 'Orbitron-Regular',
+    fontWeight: '600',
     fontSize: 14,
   },
   contentHologramContainer: {
@@ -603,30 +645,30 @@ const styles = StyleSheet.create({
   },
   hologramText: {
     color: '#FFF',
+    fontFamily: 'Orbitron-Regular',
     textShadowColor: 'rgba(59, 210, 247, 0.9)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-    marginBottom: 100,
+    textShadowRadius: 12,
   },
   swipeContainer: {
     position: 'absolute',
-    bottom: 180,
+    bottom: 250,
     right: 70,
     flexDirection: 'row',
     alignItems: 'center',
   },
   swipeText: {
     color: '#CCC',
+    fontFamily: 'Orbitron-Regular',
     fontSize: 14,
     marginRight: 8,
-    marginBottom: 80,
     fontWeight: '600',
   },
   arrow: {
     color: '#CCC',
+    fontFamily: 'Orbitron-Regular',
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 80,
   },
   controlsContainer: {
     position: 'absolute',
@@ -644,6 +686,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     color: '#CCC',
+    fontFamily: 'Orbitron-Regular',
     fontSize: 14,
     marginRight: 8,
     fontWeight: '600',

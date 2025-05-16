@@ -6,6 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
 import { Product } from '../types';
 import { Colors } from '../constants/colors';
+import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,12 +23,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onFavoritePress,
   isUnlocked,
 }) => {
+  const navigation = useNavigation();
   const isLocked = !isUnlocked;
 
   const contentStyle = [
     styles.contentContainer,
     isLocked && styles.lockedContentContainer,
   ];
+
+  const handleLockPress = () => {
+    navigation.navigate('Cart');
+  };
 
   return (
     <TouchableOpacity
@@ -58,10 +64,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
               blurAmount={10}
               reducedTransparencyFallbackColor="transparent"
             />
-            <View style={styles.lockContainer}>
+            <TouchableOpacity 
+              style={styles.lockContainer}
+              onPress={handleLockPress}
+            >
               <Icon name="lock-closed" size={24} color={Colors.lightText} />
               <Text style={styles.lockText}>Subscribe For FREE</Text>
-            </View>
+            </TouchableOpacity>
           </>
         )}
 
