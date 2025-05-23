@@ -8,9 +8,11 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import baseService from '../services/BaseService';
+import authService from '../services/AuthService';
 import {
   GoogleSignin,
   statusCodes,
@@ -81,6 +83,24 @@ const Login = () => {
           error.message || 'Google ile giriş yapılırken bir hata oluştu',
         );
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkedInLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await authService.signInWithLinkedIn();
+
+      if (response && response.url) {
+        Linking.openURL(response.url);
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Hata',
+        error.message || 'LinkedIn ile giriş yapılırken bir hata oluştu',
+      );
     } finally {
       setLoading(false);
     }
@@ -157,6 +177,14 @@ const Login = () => {
             style={styles.googleIcon}
           />
           <Text style={styles.googleButtonText}>Google ile Giriş Yap</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.socialButton, styles.linkedinButton]}
+          onPress={handleLinkedInLogin}
+          disabled={loading}>
+          <Icon name="linkedin" size={24} color="#fff" style={styles.socialIcon} />
+          <Text style={styles.linkedinButtonText}>LinkedIn ile Giriş Yap</Text>
         </TouchableOpacity>
 
         <View style={styles.signupContainer}>
@@ -265,6 +293,25 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 8,
+  },
+  linkedinButton: {
+    backgroundColor: '#0077B5',
+  },
+  socialIcon: {
+    marginRight: 10,
+  },
+  linkedinButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
