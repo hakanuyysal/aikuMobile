@@ -15,6 +15,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
+import { Colors } from 'constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,6 +44,7 @@ const slides = [
     key: '3',
     title: "Elevate Your AI Startup's Visibility and Growth Potential",
     description: '',
+    button: 'Get Started' // Son karta button özelliği ekle
   },
 ];
 
@@ -549,12 +551,12 @@ const OnboardingScreen = () => {
 
       {animationCompleted && currentIndex === index && (
         <View style={styles.controlsContainer}>
-          {item.button === 'Get Started' ? (
+          {index === slides.length - 1 ? (
             <TouchableOpacity
               style={styles.button}
-              onPress={() => onNext(item.button)}
+              onPress={onSkip} // Skip ile aynı fonksiyonu kullan
             >
-              <Text style={styles.buttonText}>{item.button}</Text>
+              <Text style={styles.buttonText}>Get Started</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.swipeContainer}>
@@ -630,7 +632,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   button: {
-    backgroundColor: '#0057ff',
+    backgroundColor: Colors.cardBackground,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 24,
