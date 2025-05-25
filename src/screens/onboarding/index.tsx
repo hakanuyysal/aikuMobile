@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -65,6 +66,7 @@ const OnboardingScreen = () => {
     Array(3).fill(0).map(() => new Animated.Value(0.3))
   ).current;
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const logoScale = useRef(new Animated.Value(0.8)).current;
 
   const startTypewriterEffect = useCallback((text: string) => {
     // Validate text input
@@ -190,6 +192,24 @@ const OnboardingScreen = () => {
         ])
       ).start();
     });
+
+    // Logo animasyonu için
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoScale, {
+          toValue: 1.3,
+          duration: 2000,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoScale, {
+          toValue: 0.8,
+          duration: 2000,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, [
     hologramOpacity,
     hologramScale,
@@ -245,14 +265,15 @@ const OnboardingScreen = () => {
     }
   };
 
+  // Gradient renk geçişlerini güncelle
   const gradientColor1 = glowAnimation.interpolate({
     inputRange: [0.3, 1],
-    outputRange: ['rgba(0, 145, 255, 0.2)', 'rgba(0, 183, 255, 0.3)'],
+    outputRange: ['rgba(26, 115, 232, 0.1)', 'rgba(26, 115, 232, 0.4)'],
   });
 
   const gradientColor2 = glowAnimation.interpolate({
     inputRange: [0.3, 1],
-    outputRange: ['rgba(40, 90, 140, 0.5)', 'rgba(0, 215, 255, 0.6)'],
+    outputRange: ['rgba(26, 115, 232, 0)', 'rgba(26, 115, 232, 0.2)'],
   });
 
   const renderItem = ({ item, index }: any) => (
@@ -293,7 +314,7 @@ const OnboardingScreen = () => {
                     borderWidth: 8,
                     borderColor: ringGlowAnimations[0].interpolate({
                       inputRange: [0.3, 1],
-                      outputRange: ['rgba(0, 200, 255, 0.6)', 'rgba(0, 200, 255, 0.8)'],
+                      outputRange: ['rgba(26, 115, 232, 0.2)', 'rgba(26, 115, 232, 0.7)'],
                     }),
                     opacity: ringGlowAnimations[0],
                     transform: [
@@ -336,7 +357,7 @@ const OnboardingScreen = () => {
                     borderWidth: 10,
                     borderColor: ringGlowAnimations[1].interpolate({
                       inputRange: [0.3, 1],
-                      outputRange: ['rgba(0, 220, 255, 0.7)', 'rgba(0, 220, 255, 0.9)'],
+                      outputRange: ['rgba(26, 115, 232, 0.2)', 'rgba(26, 115, 232, 0.7)'],
                     }),
                     opacity: ringGlowAnimations[1],
                     transform: [
@@ -379,7 +400,7 @@ const OnboardingScreen = () => {
                     borderWidth: 12,
                     borderColor: ringGlowAnimations[2].interpolate({
                       inputRange: [0.3, 1],
-                      outputRange: ['rgba(0, 240, 255, 0.8)', 'rgba(0, 240, 255, 1)'],
+                      outputRange: ['rgba(26, 115, 232, 0.2)', 'rgba(26, 115, 232, 0.7)'],
                     }),
                     opacity: ringGlowAnimations[2],
                     transform: [
@@ -407,7 +428,7 @@ const OnboardingScreen = () => {
             ]}
           >
             <LinearGradient
-              colors={['rgba(0, 145, 255, 0.5)', 'rgba(0, 145, 255, 0)']}
+              colors={['rgba(26, 115, 232, 0.7)', 'rgba(26, 115, 232, 0)']}
               locations={[0, 1]}
               start={{ x: 0.5, y: 1 }}
               end={{ x: 0.5, y: 0 }}
@@ -475,26 +496,48 @@ const OnboardingScreen = () => {
             </Animated.View>
             <Animated.View style={styles.hologramContent}>
               <Animated.View
+                style={{
+                  transform: [{ scale: logoScale }],
+                  opacity: 0.9,
+                }}
+              >
+                <Image
+                  source={require('../../assets/images/logo.png')}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    marginBottom: 20,
+                  }}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+              <Animated.View
                 style={[
                   StyleSheet.absoluteFillObject,
                   {
                     backgroundColor: gradientColor1,
                     opacity: glowAnimation,
-                    transform: [
-                      { translateY: Animated.multiply(gradientPosition, 100) },
-                    ],
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    position: 'absolute',
                   },
                 ]}
               />
               <Animated.View
-                style={{
-                  ...styles.gradientOverlay,
-                  backgroundColor: gradientColor2,
-                  opacity: glowAnimation,
-                  transform: [
-                    { translateY: Animated.multiply(gradientPosition, 150) },
-                  ],
-                }}
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    backgroundColor: gradientColor2,
+                    opacity: glowAnimation,
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    position: 'absolute',
+                  },
+                ]}
               />
               <Text style={[styles.title, styles.hologramText]}>
                 {displayedText}
@@ -612,8 +655,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 235, 255, 0.5)',
+    borderWidth: 0,
     backgroundColor: 'transparent',
     borderRadius: 5,
     zIndex: 1,
@@ -623,9 +665,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '200%',
     height: 2,
-    backgroundColor: 'rgba(0, 235, 255, 0.7)',
+    backgroundColor: 'rgba(26, 115, 232, 0.7)',
     left: '-50%',
-    shadowColor: '#00e5ff',
+    shadowColor: '#1A73E8',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 10,
@@ -634,21 +676,27 @@ const styles = StyleSheet.create({
   hologramContent: {
     width: '100%',
     height: '100%',
-    borderRadius: 0,
+    borderRadius: 0, // Köşe yuvarlaklığını kaldır
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 0, // Padding'i kaldır
     position: 'relative',
-    backgroundColor: 'rgba(0, 60, 120, 0.1)',
-    borderWidth: 0,
+    backgroundColor: 'transparent', // Arka plan rengini şeffaf yap
+    borderWidth: 1,
+    borderColor: 'rgba(26, 115, 232, 0.2)',
+    backdropFilter: 'blur(8px)',
+    paddingLeft: 20,
   },
   hologramText: {
     color: '#FFF',
     fontFamily: 'Orbitron-Regular',
-    textShadowColor: 'rgba(59, 210, 247, 0.9)',
+    textShadowColor: 'rgba(26, 115, 232, 0.7)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontSize: 18,
   },
   swipeContainer: {
     position: 'absolute',
@@ -709,9 +757,9 @@ const styles = StyleSheet.create({
   outerScanline: {
     width: '100%',
     height: 10,
-    backgroundColor: 'rgba(0, 235, 255, 0.6)',
+    backgroundColor: 'rgba(26, 115, 232, 0.7)',
     borderRadius: 5,
-    shadowColor: '#00e5ff',
+    shadowColor: '#1A73E8',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 15,
@@ -734,7 +782,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00e5ff',
+    shadowColor: '#40E0D0',
     shadowOpacity: 1,
     shadowRadius: 20,
     elevation: 25,
@@ -743,8 +791,8 @@ const styles = StyleSheet.create({
     width: '60%',
     height: '60%',
     borderRadius: width * 0.5,
-    backgroundColor: 'rgba(0, 150, 255, 0.4)',
-    shadowColor: '#00e5ff',
+    backgroundColor: 'rgba(26, 115, 232, 0.7)',
+    shadowColor: '#1A73E8',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 20,
