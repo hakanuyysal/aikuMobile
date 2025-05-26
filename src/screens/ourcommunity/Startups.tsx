@@ -1,107 +1,77 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput } from 'react-native';
-import { Text as PaperText } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert } from 'react-native';
+import { Text as PaperText, Button, Portal, Modal, TextInput as PaperTextInput } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { companyService, Company } from '../../services/companyService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const startupsData = [
-  {
-    id: '1',
-    name: 'Turkau Mining',
-    location: 'Uzbekistan',
-    sector: 'Energy, Technology',
-    description: 'Turkau Mining specializes in gold and mineral exploration, extraction, and processing within Uzbekistan. The company focuses on sustainability and technological advancement in its operations. Turkau Mining is committed to responsible resource management and contributing to the economic development.',
-    link: 'https://turkaumining.uz'
-  },
-  {
-    id: '2',
-    name: 'Aloha Dijital',
-    location: 'Marmara Üniversitesi Teknopark, İstanbul',
-    sector: 'AI & Machine Learning, Technology, Education',
-    description: 'Aloha Dijital is a software company located in Teknopark. It focuses on strengthening the digital presence of businesses and providing them with a competitive advantage. The company leverages its experience and expert team to deliver these services.',
-    link: 'https://alohadijital.com'
-  },
-  {
-    id: '3',
-    name: 'Merge Turk Gold',
-    location: 'Ghana',
-    sector: 'Energy',
-    description: 'Merge Turk Gold is a nature-friendly gold mining company operating in Ghana. The company specializes in alluvion and rock mining, emphasizing the preservation of the environment. Merge Turk Gold strives to balance efficient mining practices with ecological responsibility.',
-    link: 'https://mergeturkgold.com'
-  },
-  {
-    id: '4',
-    name: 'beSirius',
-    location: 'Amsterdam, Noord-Holland, The Netherlands',
-    sector: 'AI & Machine Learning, Manufacturing',
-    description: 'beSirius provides an AI-driven platform for managing sustainability data in industries.',
-    link: 'https://besirius.com'
-  },
-  {
-    id: '5',
-    name: 'Ember',
-    location: 'London, England, United Kingdom',
-    sector: 'AI & Machine Learning, Finance',
-    description: 'Ember is a software platform to automate the accounting process for SMEs.',
-    link: 'https://ember.co'
-  },
-  {
-    id: '6',
-    name: 'pyannoteAI',
-    location: 'Paris, France',
-    sector: 'AI & Machine Learning',
-    description: 'pyannoteAI offers a speaker intelligence and diarization platform for developers. It specializes in detecting segment labels and separating speakers across various languages. The company provides tools for advanced audio analysis and speaker identification.',
-    link: 'https://pyannote.ai'
-  },
-  {
-    id: '7',
-    name: 'Qevlar AI',
-    location: 'Paris, Ile-de-France, France',
-    sector: 'Cybersecurity, AI & Machine Learning',
-    description: "Qevlar specializes in autonomous security operations center solutions to enrich, investigate, contextualize, and triage security alerts, enhancing defense mechanisms and overall SOC performance. Qevlar AI's platform integrates seamlessly with existing security infrastructures, automating Level 1 analyst tasks without manual intervention, thereby enhancing efficiency and accuracy in threat analysis.",
-    link: 'https://qevlar.ai'
-  },
-  {
-    id: '8',
-    name: 'Etiq AI',
-    location: 'London, England, United Kingdom',
-    sector: 'AI & Machine Learning',
-    description: 'Etiq AI assists data scientists by providing debugging across the full ML pipeline. It offers real-time testing as users code and learns how they work. Etiq AI aims to reduce pressure on data scientists.',
-    link: 'https://etiq.ai'
-  },
-  {
-    id: '9',
-    name: 'Auquan',
-    location: 'London, England, United Kingdom',
-    sector: 'AI & Machine Learning, Finance',
-    description: 'Auquan is a fintech company that uses AI and machine learning to help investment professionals make better decisions by turning unstructured data into actionable financial insights.',
-    link: 'https://auquan.com'
-  },
-  {
-    id: '10',
-    name: 'TON Provider',
-    location: 'Dufourstrasee 43, 8008 Zürich',
-    sector: 'AI & Machine Learning, Blockchain & Cryptocurrency',
-    description: 'TON DC is an internet company that operates as a decentralized network data center, supporting the dynamic development of the TON ecosystem.',
-    link: 'https://tonprovider.com'
-  }
-];
 
 const Startups = () => {
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
+  const [startups, setStartups] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newStartup, setNewStartup] = useState<Partial<Company>>({
+    companyName: '',
+    companyInfo: '',
+    companyWebsite: '',
+    companyAddress: '',
+    companySector: [],
+    businessModel: '',
+    companySize: '',
+    businessScale: '',
+    openForInvestments: false
+  });
 
-  const filteredStartups = startupsData.filter(
+  useEffect(() => {
+    fetchStartups();
+  }, []);
+
+  const fetchStartups = async () => {
+    try {
+      setLoading(true);
+      const data = await companyService.getStartups();
+      const fixedData = (Array.isArray(data) ? data : []).map(item => {
+        let id: any = item._id;
+        if (id && typeof id === 'object' && '$oid' in id) {
+          id = id.$oid;
+        }
+        return {
+          ...item,
+          _id: id
+        };
+      });
+      setStartups(fixedData);
+    } catch (error) {
+      Alert.alert('Hata', 'Startup\'lar yüklenirken bir hata oluştu.');
+      setStartups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStartup = async () => {
+    try {
+      await companyService.addStartup(newStartup);
+      setModalVisible(false);
+      fetchStartups();
+      Alert.alert('Başarılı', 'Startup başarıyla eklendi.');
+    } catch (error) {
+      Alert.alert('Hata', 'Startup eklenirken bir hata oluştu.');
+    }
+  };
+
+  const filteredStartups = (startups || []).filter(
     item =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase())
+      item.companyName.toLowerCase().includes(search.toLowerCase()) ||
+      item.companyInfo.toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: Company }) => (
     <TouchableOpacity style={styles.cardContainer}>
       <LinearGradient
         colors={['#2A2F3D', '#3B82F720']}
@@ -110,32 +80,41 @@ const Startups = () => {
         style={styles.cardGradient}
       >
         <View style={styles.contentContainer}>
-          <PaperText style={styles.companyName}>
-            {item.name}
-          </PaperText>
+          <View style={styles.companyHeader}>
+            {item.companyLogo && (
+              <Image
+                source={{ uri: item.companyLogo }}
+                style={styles.companyLogo}
+                resizeMode="contain"
+              />
+            )}
+            <PaperText style={styles.companyName}>
+              {item.companyName}
+            </PaperText>
+          </View>
           <View style={styles.detailsContainer}>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Location</PaperText>
               <PaperText style={styles.detailValue}>
-                {item.location}
+                {item.companyAddress}
               </PaperText>
             </View>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Sector</PaperText>
               <PaperText style={styles.detailValue}>
-                {item.sector}
+                {item.companySector.join(', ')}
               </PaperText>
             </View>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Description</PaperText>
               <PaperText style={styles.description}>
-                {item.description}
+                {item.companyInfo}
               </PaperText>
             </View>
           </View>
           <TouchableOpacity
             style={styles.visitButton}
-            onPress={() => Linking.openURL(item.link)}
+            onPress={() => Linking.openURL(item.companyWebsite)}
           >
             <PaperText style={styles.visitButtonText}>Visit</PaperText>
           </TouchableOpacity>
@@ -156,7 +135,11 @@ const Startups = () => {
           <Icon name="chevron-back" size={24} color="#3B82F7" />
         </TouchableOpacity>
         <PaperText style={styles.header}>Startups</PaperText>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
+          <Icon name="add-circle-outline" size={24} color="#3B82F7" />
+        </TouchableOpacity>
       </View>
+
       <View style={styles.searchContainer}>
         <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
         <TextInput
@@ -167,18 +150,62 @@ const Startups = () => {
           onChangeText={setSearch}
         />
       </View>
+
       <FlatList
         data={filteredStartups}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item._id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={fetchStartups}
       />
+
+      <Portal>
+        <Modal
+          visible={modalVisible}
+          onDismiss={() => setModalVisible(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <PaperText style={styles.modalTitle}>Add New Startup</PaperText>
+          <PaperTextInput
+            label="Company Name"
+            value={newStartup.companyName}
+            onChangeText={(text) => setNewStartup({ ...newStartup, companyName: text })}
+            style={styles.input}
+          />
+          <PaperTextInput
+            label="Description"
+            value={newStartup.companyInfo}
+            onChangeText={(text) => setNewStartup({ ...newStartup, companyInfo: text })}
+            multiline
+            style={styles.input}
+          />
+          <PaperTextInput
+            label="Website"
+            value={newStartup.companyWebsite}
+            onChangeText={(text) => setNewStartup({ ...newStartup, companyWebsite: text })}
+            style={styles.input}
+          />
+          <PaperTextInput
+            label="Address"
+            value={newStartup.companyAddress}
+            onChangeText={(text) => setNewStartup({ ...newStartup, companyAddress: text })}
+            style={styles.input}
+          />
+          <View style={styles.modalButtons}>
+            <Button mode="outlined" onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              Cancel
+            </Button>
+            <Button mode="contained" onPress={handleAddStartup} style={styles.modalButton}>
+              Add Startup
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
     </LinearGradient>
   );
 };
-
-export default Startups;
 
 const styles = StyleSheet.create({
   container: {
@@ -246,6 +273,17 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
+  companyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  companyLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+  },
   companyName: {
     color: '#fff',
     fontSize: 18,
@@ -286,4 +324,33 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  addButton: {
+    marginLeft: 10,
+  },
+  modalContainer: {
+    backgroundColor: '#2A2F3D',
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  input: {
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+  },
+  modalButton: {
+    marginLeft: 10,
+  },
 });
+
+export default Startups;
