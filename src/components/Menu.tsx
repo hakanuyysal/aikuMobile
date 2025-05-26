@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -45,6 +45,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   useEffect(() => {
     Animated.parallel([
@@ -99,6 +100,11 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   };
 
   const handleMenuItemPress = (title: string) => {
+    if (title === 'Resources') {
+      setExpandedSection(expandedSection === 'Resources' ? null : 'Resources');
+      return;
+    }
+
     handleClose();
     setTimeout(() => {
       if (title === 'Personal Details') {
@@ -115,10 +121,16 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
         navigation.navigate('InvestorMenuDetails');
       } else if (title === 'Settings') {
         navigation.navigate('Settings');
+      } else if (title === 'Talent Pool') {
+        navigation.navigate('TalentPool');
+      } else if (title === 'Investment Opportunities') {
+        navigation.navigate('InvestmentDetails');
+      } else if (title === 'How It Works') {
+        navigation.navigate('HowItWorksScreen');
       } else {
         console.log(`${title} pressed`);
       }
-    }, 300); // Animasyon süresi kadar bekle
+    }, 300);
   };
 
   const menuItems = [
@@ -128,7 +140,14 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
     {title: 'Company Details', icon: 'business'},
     {title: 'Product Details', icon: 'inventory'},
     {title: 'Investment Details', icon: 'attach-money'},
+    {title: 'Resources', icon: 'folder', isSection: true},
     {title: 'Settings', icon: 'settings'},
+  ];
+
+  const resourceItems = [
+    {title: 'Talent Pool', icon: 'people'},
+    {title: 'Investment Opportunities', icon: 'trending-up'},
+    {title: 'How It Works', icon: 'help-outline'},
   ];
 
   const openSocialMedia = (url: string) => {
@@ -193,17 +212,51 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
 
             <ScrollView style={styles.menuItems}>
               {menuItems.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={() => handleMenuItemPress(item.title)}>
-                  <Icon
-                    name={item.icon}
-                    size={metrics.scale(24)}
-                    color={Colors.primary}
-                  />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
-                </TouchableOpacity>
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={[
+                      styles.menuItem,
+                      item.title === 'Resources' && styles.sectionHeader,
+                      item.title === 'Settings' && styles.settingsItem
+                    ]}
+                    onPress={() => handleMenuItemPress(item.title)}>
+                    <Icon
+                      name={item.icon}
+                      size={metrics.scale(24)}
+                      color={Colors.primary}
+                    />
+                    <Text style={[
+                      styles.menuItemText,
+                      item.title === 'Resources' && styles.sectionHeaderText
+                    ]}>{item.title}</Text>
+                    {item.title === 'Resources' && (
+                      <Icon
+                        name={expandedSection === 'Resources' ? 'expand-less' : 'expand-more'}
+                        size={metrics.scale(24)}
+                        color={Colors.primary}
+                        style={styles.expandIcon}
+                      />
+                    )}
+                  </TouchableOpacity>
+                  
+                  {item.title === 'Resources' && expandedSection === 'Resources' && (
+                    <View style={styles.subMenuContainer}>
+                      {resourceItems.map((subItem, subIndex) => (
+                        <TouchableOpacity
+                          key={subIndex}
+                          style={styles.subMenuItem}
+                          onPress={() => handleMenuItemPress(subItem.title)}>
+                          <Icon
+                            name={subItem.icon}
+                            size={metrics.scale(20)}
+                            color={Colors.primary}
+                          />
+                          <Text style={styles.subMenuItemText}>{subItem.title}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </React.Fragment>
               ))}
 
               <View style={styles.socialSection}>
@@ -389,6 +442,36 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.sm,
     color: Colors.lightText,
     opacity: 0.7,
+  },
+  sectionHeader: {
+    backgroundColor: Colors.cardBackground,
+  },
+  sectionHeaderText: {
+    fontWeight: '600',
+  },
+  expandIcon: {
+    marginLeft: 'auto',
+  },
+  subMenuContainer: {
+    backgroundColor: `${Colors.cardBackground}80`,
+  },
+  subMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: metrics.padding.md,
+    paddingLeft: metrics.padding.xl * 2,
+    borderBottomWidth: 1,
+    borderBottomColor: `${Colors.border}30`,
+  },
+  subMenuItemText: {
+    marginLeft: metrics.margin.md,
+    fontSize: metrics.fontSize.md,
+    color: Colors.lightText,
+  },
+  settingsItem: {
+    marginTop: 'auto',
+    borderTopWidth: 1,
+    borderTopColor: `${Colors.border}50`,
   },
 });
 

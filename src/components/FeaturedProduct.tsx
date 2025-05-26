@@ -275,7 +275,10 @@ const FeaturedProduct: React.FC<FeaturedProductProps> = ({ discount }) => {
                           onError={() => console.log('Image failed to load')}
                         />
                         <LinearGradient
-                          colors={['rgba(0,0,0,0.7)', 'transparent']}
+                          colors={['rgba(0, 0, 0, 0.83)', 'rgba(0, 0, 0, 0.3)', 'transparent']}
+                          locations={[0, 0.5, 1]}
+                          start={{ x: 0, y: 1 }}
+                          end={{ x: 0, y: 0 }}
                           style={styles.imageOverlay}
                         >
                           <Text
