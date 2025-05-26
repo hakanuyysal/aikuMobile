@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -15,24 +15,6 @@ type RootStackParamList = {
 
 const TalentPoolScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  const developers = Array(6).fill({
-    id: Math.random().toString(),
-    name: 'Sample Developer',
-    title: 'Sample titles',
-    subscriptionRequired: true,
-    isFavorite: false,
-  });
-
-  const handleViewProfile = () => {
-    alert('Subscription required. Subscribe for free!');
-  };
-
-  const handleFavoritePress = (id: string) => {
-    const updatedDevelopers = developers.map(dev =>
-      dev.id === id ? { ...dev, isFavorite: !dev.isFavorite } : dev
-    );
-  };
 
   return (
     <LinearGradient
@@ -88,53 +70,6 @@ const TalentPoolScreen = () => {
             </View>
           </View>
         </TouchableOpacity>
-
-        <PaperText style={styles.sectionTitle}>Developers</PaperText>
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search developers..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value=""
-            onChangeText={() => {}}
-          />
-        </View>
-
-        {developers.map((dev, index) => (
-          <TouchableOpacity key={index} style={styles.cardContainer} onPress={handleViewProfile}>
-            <View style={styles.contentContainer}>
-              <View style={styles.imageContainer}>
-                <LinearGradient
-                  colors={['rgb(255, 255, 255)', 'rgb(255, 255, 255)', 'rgb(255, 255, 255)']}
-                  style={styles.spotlight}
-                  start={{ x: 0.4, y: 1 }}
-                  end={{ x: 0, y: 0.2 }}
-                />
-                <Image
-                  source={require('../assets/images/Alohaicon.png')}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.infoContainer}>
-                <View style={styles.textContainer}>
-                  <PaperText style={styles.type} numberOfLines={1} ellipsizeMode="tail">
-                    Developer
-                  </PaperText>
-                  <PaperText style={styles.brandName} numberOfLines={1} ellipsizeMode="tail">
-                    {dev.name} - {dev.title}
-                  </PaperText>
-                </View>
-                <View style={styles.priceContainer}>
-                  <PaperText style={styles.price} numberOfLines={1} ellipsizeMode="tail">
-                    Contact
-                  </PaperText>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
       </ScrollView>
     </LinearGradient>
   );
@@ -213,43 +148,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 2,
-    marginLeft:20,
+    marginLeft: 20,
   },
   brandName: {
     color: Colors.lightText,
     fontSize: 16,
     marginBottom: 2,
-    marginLeft:20,
+    marginLeft: 20,
   },
   priceContainer: {
     justifyContent: 'center',
     alignItems: 'flex-end',
-    marginLeft:20,
+    marginLeft: 20,
     marginTop: 35,
   },
   price: {
     color: Colors.lightText,
     fontSize: 15,
     opacity: 0.8,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    margin: 16,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 8,
-    fontSize: 16,
-    color: Colors.lightText,
   },
 });

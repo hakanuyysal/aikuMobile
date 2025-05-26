@@ -23,6 +23,7 @@ import ProductCard from '../components/ProductCard';
 import FeaturedProduct from '../components/FeaturedProduct';
 import CategoryButton from '../components/CategoryButton';
 import { Product } from '../types';
+import AIBlogSection from 'components/AiBlogSection';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -34,16 +35,19 @@ type RootStackParamList = {
   StartupsDetails: undefined; // Added for Startups
   InvestorDetails: undefined; // Added for Investor
   BusinessDetails: undefined; // Added for Business
+  AddBlogPost: undefined; // Added for AddBlogPostScreen
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const categories = ['Our Community', 'Resources', 'Marketplace'];
+// Update the categories array to remove Marketplace
+const categories = ['Our Community', 'Resources'];
 
+// Update subcategories to include Marketplace under Our Community
 const subcategories = {
-  'Our Community': ['Startups', 'Investor', 'Business'],
+  'Our Community': ['Startups', 'Investor', 'Business', 'Marketplace'],
   'Resources': ['Talent Pool', 'Investment Opportunities', 'How It Works ?'],
 };
 
@@ -56,6 +60,7 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [tooltipCategory, setTooltipCategory] = useState('Our Community');
   const [hasSeenTooltips, setHasSeenTooltips] = useState(false);
+  const [activeTab, setActiveTab] = useState<'blog' | 'pulse'>('blog');
   const { onMenuOpen } = props;
 
   useEffect(() => {
@@ -115,8 +120,6 @@ const HomeScreen = (props: HomeScreenProps) => {
         setSelectedCategory(category);
         setDropdownVisible(true);
       }
-    } else if (category === 'Marketplace') {
-      navigation.navigate('MarketPlace');
     } else {
       setActiveCategory(category);
       setDropdownVisible(false);
@@ -129,6 +132,7 @@ const HomeScreen = (props: HomeScreenProps) => {
     }
   };
 
+  // Update handleSubcategoryPress to include Marketplace navigation
   const handleSubcategoryPress = async (subcategory: string) => {
     setDropdownVisible(false);
     setSelectedCategory(null);
@@ -140,6 +144,8 @@ const HomeScreen = (props: HomeScreenProps) => {
       navigation.navigate('InvestorDetails');
     } else if (subcategory === 'Business') {
       navigation.navigate('BusinessDetails');
+    } else if (subcategory === 'Marketplace') {
+      navigation.navigate('MarketPlace');
     } else if (subcategory === 'How It Works ?') {
       navigation.navigate('HowItWorksScreen');
     } else if (subcategory === 'Investment Opportunities') {
@@ -224,11 +230,12 @@ const HomeScreen = (props: HomeScreenProps) => {
     </TouchableOpacity>
   );
 
+  // Update the getTooltipContent function to remove Marketplace tooltip
   const getTooltipContent = () => {
     switch (tooltipCategory) {
       case 'Our Community':
         return {
-          text: 'You can look at startups, investors and businesses here.',
+          text: 'You can look at startups, investors, businesses and marketplace here.',
           buttonLeft: SCREEN_WIDTH * 0.083,
           textLeft: SCREEN_WIDTH * 0.361,
           imageLeft: SCREEN_WIDTH * -0.306,
@@ -240,14 +247,6 @@ const HomeScreen = (props: HomeScreenProps) => {
           buttonLeft: SCREEN_WIDTH * 0.38,
           textLeft: SCREEN_WIDTH * 0.495,
           imageLeft: SCREEN_WIDTH * -0.075,
-          marginTop: SCREEN_HEIGHT * -0.03,
-        };
-      case 'Marketplace':
-        return {
-          text: 'Discover products and services in the marketplace.',
-          buttonLeft: SCREEN_WIDTH * 0.67,
-          textLeft: SCREEN_WIDTH * 0.417,
-          imageLeft: SCREEN_WIDTH * 0.361,
           marginTop: SCREEN_HEIGHT * -0.03,
         };
       default:
@@ -293,11 +292,49 @@ const HomeScreen = (props: HomeScreenProps) => {
             />
           </Surface>
 
-          <FeaturedProduct
-            product={products[0]}
-            discount="AI Pulse"
-            onPress={() => handleProductPress(products[0].id)}
-          />
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, gap: 10 }}>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: activeTab === 'blog' ? Colors.cardBackground : 'transparent',
+                borderRadius: 16,
+                paddingVertical: 10,
+                alignItems: 'center',
+                borderWidth: activeTab === 'blog' ? 1 : 0,
+                borderColor: activeTab === 'blog' ? Colors.primary : 'transparent',
+              }}
+              onPress={() => setActiveTab('blog')}
+            >
+              <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 16 }}>AI Blog</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: activeTab === 'pulse' ? Colors.cardBackground : 'transparent',
+                borderRadius: 16,
+                paddingVertical: 10,
+                alignItems: 'center',
+                borderWidth: activeTab === 'pulse' ? 1 : 0,
+                borderColor: activeTab === 'pulse' ? Colors.primary : 'transparent',
+              }}
+              onPress={() => setActiveTab('pulse')}
+            >
+              <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 16 }}>AI Pulse</Text>
+            </TouchableOpacity>
+          </View>
+
+          {activeTab === 'blog' ? (
+            <AIBlogSection
+              title="AI Blog"
+              navigation={navigation}
+            />
+          ) : (
+            <FeaturedProduct
+              product={products[0]}
+              discount="AI Pulse"
+              onPress={() => handleProductPress(products[0].id)}
+            />
+          )}
 
           <View style={styles.categoriesContainer}>
             <View style={styles.categoriesContent}>
@@ -463,21 +500,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 0,
     zIndex: 2,
+    justifyContent: 'center',
+    gap: 40,
   },
   categoryButtonWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 0,
   },
   firstCategory: {
-    marginRight: 'auto',
+    marginRight: 0,
   },
   centerCategory: {
-    flex: 1,
-    justifyContent: 'center',
+    flex: 0,
+    marginLeft: 0,
   },
   lastCategory: {
-    marginLeft: 'auto',
+    marginLeft: 0,
   },
 
   dropdownContainer: {
