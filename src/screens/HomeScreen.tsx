@@ -148,7 +148,7 @@ const HomeScreen = (props: HomeScreenProps) => {
             <TouchableOpacity
               style={{
                 flex: 1,
-                backgroundColor: activeTab === 'blog' ? Colors.cardBackground : 'transparent',
+                backgroundColor: activeTab === 'blog' ? 'rgba(43, 64, 99, 0.8)' : 'transparent',
                 borderRadius: 16,
                 paddingVertical: 10,
                 alignItems: 'center',
@@ -162,7 +162,7 @@ const HomeScreen = (props: HomeScreenProps) => {
             <TouchableOpacity
               style={{
                 flex: 1,
-                backgroundColor: activeTab === 'pulse' ? Colors.cardBackground : 'transparent',
+                backgroundColor: activeTab === 'pulse' ? 'rgba(43, 64, 99, 0.8)' : 'transparent',
                 borderRadius: 16,
                 paddingVertical: 10,
                 alignItems: 'center',
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     padding: 16,
     paddingHorizontal: 44,
     borderRadius: 12,

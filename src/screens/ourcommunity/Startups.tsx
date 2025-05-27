@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text as PaperText, Button, Portal, Modal, TextInput as PaperTextInput } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -35,17 +35,7 @@ const Startups = () => {
     try {
       setLoading(true);
       const data = await companyService.getStartups();
-      const fixedData = (Array.isArray(data) ? data : []).map(item => {
-        let id: any = item._id;
-        if (id && typeof id === 'object' && '$oid' in id) {
-          id = id.$oid;
-        }
-        return {
-          ...item,
-          _id: id
-        };
-      });
-      setStartups(fixedData);
+      setStartups(data);
     } catch (error) {
       Alert.alert('Hata', 'Startup\'lar yüklenirken bir hata oluştu.');
       setStartups([]);
@@ -65,14 +55,20 @@ const Startups = () => {
     }
   };
 
-  const filteredStartups = (startups || []).filter(
-    item =>
-      item.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      item.companyInfo.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredStartups = (startups || []).filter(item => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+
+    const nameMatch = item.companyName?.toLowerCase().includes(q);
+    const infoMatch = item.companyInfo?.toLowerCase().includes(q);
+    const sectorMatch = item.companySector?.join(' ').toLowerCase().includes(q);
+    const locationMatch = item.companyAddress?.toLowerCase().includes(q);
+
+    return nameMatch || infoMatch || sectorMatch || locationMatch;
+  });
 
   const renderItem = ({ item }: { item: Company }) => (
-    <TouchableOpacity style={styles.cardContainer}>
+    <TouchableOpacity style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
       <LinearGradient
         colors={['#2A2F3D', '#3B82F720']}
         start={{ x: 0, y: 0 }}
@@ -81,12 +77,21 @@ const Startups = () => {
       >
         <View style={styles.contentContainer}>
           <View style={styles.companyHeader}>
-            {item.companyLogo && (
+            {item.isHighlighted && (
+              <View style={styles.highlightedBadge}>
+                <Icon name="star" size={16} color="#FFD700" />
+              </View>
+            )}
+            {item.companyLogo ? (
               <Image
                 source={{ uri: item.companyLogo }}
                 style={styles.companyLogo}
                 resizeMode="contain"
               />
+            ) : (
+              <View style={styles.placeholderLogo}>
+                <Icon name="business" size={24} color="#666" />
+              </View>
             )}
             <PaperText style={styles.companyName}>
               {item.companyName}
@@ -102,7 +107,11 @@ const Startups = () => {
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Sector</PaperText>
               <PaperText style={styles.detailValue}>
-                {item.companySector.join(', ')}
+                {Array.isArray(item.companySector)
+                  ? item.companySector.length > 5
+                    ? item.companySector.slice(0, 5).join(', ') + '...'
+                    : item.companySector.join(', ')
+                  : item.companySector || 'N/A'}
               </PaperText>
             </View>
             <View style={styles.detail}>
@@ -167,40 +176,101 @@ const Startups = () => {
           onDismiss={() => setModalVisible(false)}
           contentContainerStyle={styles.modalContainer}
         >
-          <PaperText style={styles.modalTitle}>Add New Startup</PaperText>
-          <PaperTextInput
-            label="Company Name"
-            value={newStartup.companyName}
-            onChangeText={(text) => setNewStartup({ ...newStartup, companyName: text })}
-            style={styles.input}
-          />
-          <PaperTextInput
-            label="Description"
-            value={newStartup.companyInfo}
-            onChangeText={(text) => setNewStartup({ ...newStartup, companyInfo: text })}
-            multiline
-            style={styles.input}
-          />
-          <PaperTextInput
-            label="Website"
-            value={newStartup.companyWebsite}
-            onChangeText={(text) => setNewStartup({ ...newStartup, companyWebsite: text })}
-            style={styles.input}
-          />
-          <PaperTextInput
-            label="Address"
-            value={newStartup.companyAddress}
-            onChangeText={(text) => setNewStartup({ ...newStartup, companyAddress: text })}
-            style={styles.input}
-          />
-          <View style={styles.modalButtons}>
-            <Button mode="outlined" onPress={() => setModalVisible(false)} style={styles.modalButton}>
-              Cancel
-            </Button>
-            <Button mode="contained" onPress={handleAddStartup} style={styles.modalButton}>
-              Add Startup
-            </Button>
-          </View>
+          <LinearGradient
+            colors={['#1E293B', '#0F172A']}
+            style={styles.modalGradient}
+          >
+            <KeyboardAvoidingView 
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.keyboardAvoidingView}
+            >
+              <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                <PaperText style={styles.modalTitle}>Add New Startup</PaperText>
+                <View style={styles.modalContent}>
+                  <PaperTextInput
+                    label="Company Name"
+                    value={newStartup.companyName}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companyName: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Description"
+                    value={newStartup.companyInfo}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companyInfo: text })}
+                    multiline
+                    numberOfLines={4}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Website"
+                    value={newStartup.companyWebsite}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companyWebsite: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Address"
+                    value={newStartup.companyAddress}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companyAddress: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Sectors (comma separated)"
+                    value={newStartup.companySector?.join(', ')}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companySector: text.split(',').map(s => s.trim()) })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Business Model"
+                    value={newStartup.businessModel}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, businessModel: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Company Size"
+                    value={newStartup.companySize}
+                    onChangeText={(text) => setNewStartup({ ...newStartup, companySize: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                </View>
+              </ScrollView>
+              <View style={styles.modalButtons}>
+                <Button 
+                  mode="outlined" 
+                  onPress={() => setModalVisible(false)} 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  labelStyle={{ color: '#60A5FA' }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  mode="contained" 
+                  onPress={handleAddStartup} 
+                  style={[styles.modalButton, styles.submitButton]}
+                  labelStyle={{ color: '#fff' }}
+                >
+                  Add Startup
+                </Button>
+              </View>
+            </KeyboardAvoidingView>
+          </LinearGradient>
         </Modal>
       </Portal>
     </LinearGradient>
@@ -266,6 +336,10 @@ const styles = StyleSheet.create({
     elevation: 10,
     marginTop: 18,
   },
+  highlightedCard: {
+    borderColor: '#FFD700',
+    borderWidth: 2,
+  },
   cardGradient: {
     flex: 1,
     padding: 20,
@@ -278,11 +352,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
+  highlightedBadge: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 12,
+    padding: 4,
+    zIndex: 1,
+  },
   companyLogo: {
     width: 40,
     height: 40,
     marginRight: 12,
     borderRadius: 8,
+  },
+  placeholderLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   companyName: {
     color: '#fff',
@@ -328,28 +420,63 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   modalContainer: {
-    backgroundColor: '#2A2F3D',
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
+    margin: 0,
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalGradient: {
+    flex: 1,
+    padding: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 20,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalContent: {
+    flex: 1,
+    paddingVertical: 16,
   },
   input: {
-    marginBottom: 15,
+    marginBottom: 16,
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    gap: 12,
+    marginBottom: 45,
   },
   modalButton: {
-    marginLeft: 10,
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  cancelButton: {
+    borderColor: '#60A5FA',
+    borderWidth: 2,
+  },
+  submitButton: {
+
   },
 });
 

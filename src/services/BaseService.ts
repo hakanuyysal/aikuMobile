@@ -1,6 +1,8 @@
 import { storage } from '../storage/mmkv';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
+const API_URL = 'YOUR_API_URL'; // API URL'nizi buraya ekleyin
+
 export class BaseService {
   private static instance: BaseService;
   private axios: AxiosInstance;
@@ -228,6 +230,24 @@ export class BaseService {
       message: 'Server connection failed. Please try again later.',
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+  }
+
+  static async getAllProducts() {
+    try {
+      const response = await axios.get(`${API_URL}/products`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCurrentUser() {
+    try {
+      const response = await axios.get(`${API_URL}/user/current`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

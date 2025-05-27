@@ -1,4 +1,28 @@
 {
   "name": "aikuMobile",
-  "displayName": "aikuMobile"
+  "displayName": "aikuMobile",
+  "expo": {
+    "scheme": "aikuaiplatform",
+    "ios": {
+      "bundleIdentifier": "com.aikuaiplatform.app",
+      "associatedDomains": ["applinks:aikuaiplatform.com"]
+    },
+    "android": {
+      "package": "com.aikuaiplatform.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "aikuaiplatform",
+              "host": "auth",
+              "pathPrefix": "/social-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    }
+  }
 }

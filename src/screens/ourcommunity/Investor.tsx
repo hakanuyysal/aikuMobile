@@ -1,67 +1,127 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput } from 'react-native';
-import { Text as PaperText } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { Text as PaperText, Button, Portal, Modal, TextInput as PaperTextInput } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { companyService, Company } from '../../services/companyService';
+import * as ImagePicker from 'react-native-image-picker';
+import type { ImageLibraryOptions, MediaType } from 'react-native-image-picker';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const investorsData = [
-  {
-    id: '1',
-    name: 'Vision Capital',
-    location: 'San Francisco, CA, USA',
-    sector: 'AI & Machine Learning, Technology',
-    description: 'Vision Capital is a venture capital firm specializing in early-stage AI and technology startups. They focus on innovative solutions with high growth potential, providing funding and strategic guidance.',
-    link: 'https://visioncapital.vc'
-  },
-  {
-    id: '2',
-    name: 'TechTrend Investments',
-    location: 'London, England, United Kingdom',
-    sector: 'AI & Machine Learning, Fintech',
-    description: 'TechTrend Investments supports fintech and AI startups with a focus on disruptive technologies. They offer capital, mentorship, and access to a global network of industry leaders.',
-    link: 'https://techtrendinvest.com'
-  },
-  {
-    id: '3',
-    name: 'Innovate Ventures',
-    location: 'Berlin, Germany',
-    sector: 'AI & Machine Learning, Healthcare',
-    description: 'Innovate Ventures invests in AI-driven healthcare solutions, aiming to transform patient care and medical research through cutting-edge technology and innovation.',
-    link: 'https://innovateventures.de'
-  },
-  {
-    id: '4',
-    name: 'Future Fund',
-    location: 'Singapore',
-    sector: 'AI & Machine Learning, Blockchain',
-    description: 'Future Fund is a global investment firm focusing on AI and blockchain startups. They provide funding and resources to help companies scale and succeed in competitive markets.',
-    link: 'https://futurefund.sg'
-  },
-  {
-    id: '5',
-    name: 'AI Growth Partners',
-    location: 'New York, NY, USA',
-    sector: 'AI & Machine Learning, Cybersecurity',
-    description: 'AI Growth Partners specializes in AI and cybersecurity investments, supporting companies that enhance digital security through advanced machine learning technologies.',
-    link: 'https://aigrowthpartners.com'
-  }
-];
 
 const Investor = () => {
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
+  const [investors, setInvestors] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newInvestor, setNewInvestor] = useState<Partial<Company>>({
+    companyName: '',
+    companyInfo: '',
+    companyWebsite: '',
+    companyAddress: '',
+    companySector: [],
+    businessModel: '',
+    companySize: '',
+    businessScale: '',
+    openForInvestments: false
+  });
+  const [logoFile, setLogoFile] = useState<any>(null);
 
-  const filteredInvestors = investorsData.filter(
+  useEffect(() => {
+    fetchInvestors();
+  }, []);
+
+  const fetchInvestors = async () => {
+    try {
+      setLoading(true);
+      const data = await companyService.getInvestors();
+      console.log('Investors data:', data);
+      setInvestors(data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load investors.');
+      setInvestors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddInvestor = async () => {
+    const formData = new FormData();
+    formData.append('companyName', newInvestor.companyName || '');
+    formData.append('companyInfo', newInvestor.companyInfo || '');
+    formData.append('companyWebsite', newInvestor.companyWebsite || '');
+    formData.append('companyAddress', newInvestor.companyAddress || '');
+    formData.append('companySector', JSON.stringify(newInvestor.companySector || []));
+    formData.append('businessModel', newInvestor.businessModel || '');
+    formData.append('companySize', newInvestor.companySize || '');
+    formData.append('businessScale', newInvestor.businessScale || '');
+    formData.append('companyType', 'Investor');
+
+    if (logoFile) {
+      formData.append('companyLogo', {
+        uri: logoFile.uri,
+        type: logoFile.type,
+        name: logoFile.fileName || 'upload.jpg',
+      });
+    }
+
+    try {
+      await companyService.addStartup(formData);
+      setModalVisible(false);
+      setNewInvestor({
+        companyName: '',
+        companyInfo: '',
+        companyWebsite: '',
+        companyAddress: '',
+        companySector: [],
+        businessModel: '',
+        companySize: '',
+        businessScale: '',
+        openForInvestments: false
+      });
+      setLogoFile(null);
+      fetchInvestors();
+      Alert.alert('Success', 'Investor added successfully.');
+    } catch (error) {
+      console.error('Yatırımcı eklenirken hata:', error);
+      Alert.alert('Error', 'Failed to add investor.');
+    }
+  };
+
+  const selectLogo = () => {
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo' as MediaType,
+      includeBase64: false,
+      maxHeight: 200,
+      maxWidth: 200,
+    };
+
+    ImagePicker.launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('Resim seçimi iptal edildi');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Hatası: ', response.errorCode);
+        Alert.alert('Error', 'Failed to pick image.');
+      } else if (response.assets && response.assets.length > 0) {
+        const asset = response.assets[0];
+        setLogoFile(asset);
+      } else {
+        Alert.alert('Error', 'Failed to pick image.');
+      }
+    });
+  };
+
+  const filteredInvestors = investors.filter(
     item =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase())
+      item.companyName?.toLowerCase().includes(search.toLowerCase()) ||
+      item.companyInfo?.toLowerCase().includes(search.toLowerCase()) ||
+      item.companySector?.join(' ').toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: Company }) => (
     <TouchableOpacity style={styles.cardContainer}>
       <LinearGradient
         colors={['#2A2F3D', '#3B82F720']}
@@ -70,29 +130,72 @@ const Investor = () => {
         style={styles.cardGradient}
       >
         <View style={styles.contentContainer}>
-          <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
-            {item.name}
-          </PaperText>
+          <View style={styles.companyHeader}>
+            {item.isHighlighted && (
+              <View style={styles.highlightedBadge}>
+                <Icon name="star" size={16} color="#FFD700" />
+              </View>
+            )}
+            {item.companyLogo ? (
+              <Image
+                source={{ uri: item.companyLogo }}
+                style={styles.companyLogo}
+                resizeMode="contain"
+                defaultSource={require('../../assets/images/defaultCompanyLogo.png')}
+                onError={(e) => {
+                  console.log('Logo yüklenirken hata:', e.nativeEvent.error);
+                  console.log('Logo URL:', item.companyLogo);
+                }}
+              />
+            ) : (
+              <View style={styles.placeholderLogo}>
+                <Icon name="business" size={24} color="#666" />
+              </View>
+            )}
+            <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
+              {item.companyName}
+            </PaperText>
+          </View>
           <View style={styles.detailsContainer}>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Location</PaperText>
               <PaperText style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
-                {item.location}
+                {item.companyAddress}
               </PaperText>
             </View>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Sector</PaperText>
               <PaperText style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
-                {item.sector}
+                {Array.isArray(item.companySector)
+                  ? item.companySector.join(', ')
+                  : item.companySector || 'N/A'}
+              </PaperText>
+            </View>
+            <View style={styles.detail}>
+              <PaperText style={styles.detailLabel}>Business Model</PaperText>
+              <PaperText style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.businessModel || 'N/A'}
+              </PaperText>
+            </View>
+            <View style={styles.detail}>
+              <PaperText style={styles.detailLabel}>Company Size</PaperText>
+              <PaperText style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.companySize || 'N/A'}
+              </PaperText>
+            </View>
+            <View style={styles.detail}>
+              <PaperText style={styles.detailLabel}>Business Scale</PaperText>
+              <PaperText style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.businessScale || 'N/A'}
               </PaperText>
             </View>
           </View>
           <PaperText style={styles.description} numberOfLines={3} ellipsizeMode="tail">
-            {item.description}
+            {item.companyInfo}
           </PaperText>
           <TouchableOpacity
             style={styles.visitButton}
-            onPress={() => Linking.openURL(item.link)}
+            onPress={() => Linking.openURL(item.companyWebsite)}
           >
             <PaperText style={styles.visitButtonText}>Visit</PaperText>
           </TouchableOpacity>
@@ -113,6 +216,9 @@ const Investor = () => {
           <Icon name="chevron-back" size={24} color="#3B82F7" />
         </TouchableOpacity>
         <PaperText style={styles.header}>Investors</PaperText>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
+          <Icon name="add-circle-outline" size={24} color="#3B82F7" />
+        </TouchableOpacity>
       </View>
       <View style={styles.searchContainer}>
         <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
@@ -127,10 +233,130 @@ const Investor = () => {
       <FlatList
         data={filteredInvestors}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => item._id ? item._id.toString() : index.toString()}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={fetchInvestors}
       />
+
+      <Portal>
+        <Modal
+          visible={modalVisible}
+          onDismiss={() => setModalVisible(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <LinearGradient
+            colors={['#1E293B', '#0F172A']}
+            style={styles.modalGradient}
+          >
+            <KeyboardAvoidingView 
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.keyboardAvoidingView}
+            >
+              <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                <PaperText style={styles.modalTitle}>Add New Investor</PaperText>
+                <View style={styles.modalContent}>
+                  <PaperTextInput
+                    label="Company Name"
+                    value={newInvestor.companyName}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyName: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Description"
+                    value={newInvestor.companyInfo}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyInfo: text })}
+                    multiline
+                    numberOfLines={4}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Website"
+                    value={newInvestor.companyWebsite}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyWebsite: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Address"
+                    value={newInvestor.companyAddress}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyAddress: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Sectors (comma separated)"
+                    value={newInvestor.companySector?.join(', ')}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companySector: text.split(',').map(s => s.trim()) })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Business Model"
+                    value={newInvestor.businessModel}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, businessModel: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Company Size"
+                    value={newInvestor.companySize}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companySize: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+                  <PaperTextInput
+                    label="Business Scale"
+                    value={newInvestor.businessScale}
+                    onChangeText={(text) => setNewInvestor({ ...newInvestor, businessScale: text })}
+                    style={styles.input}
+                    mode="outlined"
+                    theme={{ colors: { primary: '#60A5FA' } }}
+                  />
+
+                  <Button mode="outlined" onPress={selectLogo} style={styles.logoButton} labelStyle={{ color: '#60A5FA' }}>
+                    {logoFile ? 'Logo Değiştir' : 'Logo Seç'}
+                  </Button>
+                  {logoFile && <PaperText style={styles.fileNameText}>{logoFile.fileName}</PaperText>}
+
+                </View>
+              </ScrollView>
+              <View style={styles.modalButtons}>
+                <Button 
+                  mode="outlined" 
+                  onPress={() => setModalVisible(false)} 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  labelStyle={{ color: '#60A5FA' }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  mode="contained" 
+                  onPress={handleAddInvestor} 
+                  style={[styles.modalButton, styles.submitButton]}
+                  labelStyle={{ color: '#fff' }}
+                >
+                  Add Investor
+                </Button>
+              </View>
+            </KeyboardAvoidingView>
+          </LinearGradient>
+        </Modal>
+      </Portal>
     </LinearGradient>
   );
 };
@@ -157,6 +383,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     flex: 1,
     textAlign: 'center',
+  },
+  addButton: {
+    marginLeft: 10,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -204,6 +433,35 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
+  companyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  highlightedBadge: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 12,
+    padding: 4,
+    zIndex: 1,
+  },
+  companyLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+  },
+  placeholderLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   companyName: {
     color: '#fff',
     fontSize: 18,
@@ -211,12 +469,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   detailsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     marginBottom: 20,
   },
   detail: {
-    flex: 1,
+    marginBottom: 12,
   },
   detailLabel: {
     fontSize: 14,
@@ -224,9 +481,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailValue: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '400',
   },
   description: {
     fontSize: 14,
@@ -244,5 +501,73 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  modalContainer: {
+    margin: 0,
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalGradient: {
+    flex: 1,
+    padding: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalContent: {
+    flex: 1,
+    paddingVertical: 16,
+  },
+  input: {
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    gap: 12,
+    marginBottom: 45,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+  },
+  cancelButton: {
+    borderColor: '#60A5FA',
+    borderWidth: 2,
+  },
+  submitButton: {
+    backgroundColor: '#60A5FA',
+  },
+  logoButton: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  fileNameText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginBottom: 16,
   },
 });

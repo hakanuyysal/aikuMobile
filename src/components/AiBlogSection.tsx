@@ -192,83 +192,90 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
   return (
     <View style={styles.container}>
       <Surface style={styles.cardContainer} elevation={4}>
-        <View style={styles.gradientContainer}>
-          {/* Title Section */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleContainer}>
-              <Text variant="displaySmall" style={styles.titleText}>
-                {title}
-              </Text>
+        <LinearGradient
+          colors={['rgba(43, 64, 99, 0.8)', 'rgba(43, 64, 99, 0.3)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.gradientBackground}
+        >
+          <View style={styles.gradientContainer}>
+            {/* Title Section */}
+            <View style={styles.titleRow}>
+              <View style={styles.titleContainer}>
+                <Text variant="displaySmall" style={styles.titleText}>
+                  {title}
+                </Text>
+              </View>
+              <View style={styles.iconAndBadgeContainer}>
+                <Icon
+                  name="book-outline"
+                  size={24}
+                  color={Colors.lightText}
+                  style={styles.icon}
+                />
+                <IconButton
+                  icon="plus"
+                  iconColor={Colors.lightText}
+                  size={20}
+                  onPress={() => navigation.navigate('AddBlogPost')}
+                  style={styles.addButton}
+                />
+              </View>
             </View>
-            <View style={styles.iconAndBadgeContainer}>
-              <Icon
-                name="book-outline"
-                size={24}
-                color={Colors.lightText}
-                style={styles.icon}
-              />
-              <IconButton
-                icon="plus"
-                iconColor={Colors.lightText}
-                size={20}
-                onPress={() => navigation.navigate('AddBlogPost')}
-                style={styles.addButton}
-              />
-            </View>
-          </View>
 
-          {/* Blogs Section */}
-          <View style={styles.blogsSection}>
-            {blogs.length === 0 ? (
-              <Text style={styles.blogText}>No AI blogs available.</Text>
-            ) : (
-              <FlatList
-                ref={listRef}
-                data={blogs.slice(0, 5)}
-                keyExtractor={(item) => item._id}
-                horizontal
-                snapToInterval={itemWidth}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                showsHorizontalScrollIndicator={false}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[styles.blogCard, { width: itemWidth }]}
-                    onPress={() => openModalWithContent(item)}
-                  >
-                    <View style={styles.blogCardContent}>
-                      <Image
-                        source={
-                          item.urlToImage
-                            ? { uri: item.urlToImage }
-                            : Nophoto
-                        }
-                        style={styles.blogImage}
-                        resizeMode="cover"
-                        defaultSource={Nophoto}
-                        onError={() => console.log('Image failed to load')}
-                      />
-                      <LinearGradient
-                        colors={['rgba(0,0,0,0.7)', 'transparent']}
-                        style={styles.imageOverlay}
-                      >
-                        <Text
-                          style={styles.blogTitle}
-                          numberOfLines={3}
-                          ellipsizeMode="tail"
+            {/* Blogs Section */}
+            <View style={styles.blogsSection}>
+              {blogs.length === 0 ? (
+                <Text style={styles.blogText}>No AI blogs available.</Text>
+              ) : (
+                <FlatList
+                  ref={listRef}
+                  data={blogs.slice(0, 5)}
+                  keyExtractor={(item) => item._id}
+                  horizontal
+                  snapToInterval={itemWidth}
+                  snapToAlignment="start"
+                  decelerationRate="fast"
+                  showsHorizontalScrollIndicator={false}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.blogCard, { width: itemWidth }]}
+                      onPress={() => openModalWithContent(item)}
+                    >
+                      <View style={styles.blogCardContent}>
+                        <Image
+                          source={
+                            item.urlToImage
+                              ? { uri: item.urlToImage }
+                              : Nophoto
+                          }
+                          style={styles.blogImage}
+                          resizeMode="cover"
+                          defaultSource={Nophoto}
+                          onError={() => console.log('Image failed to load')}
+                        />
+                        <LinearGradient
+                          colors={['rgba(0,0,0,0.7)', 'transparent']}
+                          style={styles.imageOverlay}
                         >
-                          {item.title || 'No Title'}
-                        </Text>
-                      </LinearGradient>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+                          <Text
+                            style={styles.blogTitle}
+                            numberOfLines={3}
+                            ellipsizeMode="tail"
+                          >
+                            {item.title || 'No Title'}
+                          </Text>
+                        </LinearGradient>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                />
+              )}
+            </View>
           </View>
-        </View>
+        </LinearGradient>
       </Surface>
 
       {/* Modal for Full Blog Content */}
@@ -347,7 +354,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: `${Colors.cardBackground}dd`,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     shadowColor: '#000',
@@ -355,6 +361,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.44,
     shadowRadius: 10.32,
     elevation: 16,
+  },
+  gradientBackground: {
+    flex: 1,
   },
   gradientContainer: {
     flex: 1,
