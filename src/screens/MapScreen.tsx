@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,33 +6,22 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  PermissionsAndroid,
   Platform,
   TextInput,
   FlatList,
   Image,
-  AsyncStorage,
   Modal,
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
 import { Text, IconButton, Surface, Button } from 'react-native-paper';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import Autocomplete from 'react-native-autocomplete-input';
 import { Colors } from 'constants/colors';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { companyService, Company } from '../services/companyService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.9;
-
-// Örnek veri (backend'den gelecek varsayımıyla)
-const searchData = [
-  { id: 1, type: 'Startup', name: 'Startup A', latitude: 37.7749, longitude: -122.4194, description: 'Innovative tech solutions', icon: 'https://via.placeholder.com/40', sector: 'Health', stage: 'Seed' },
-  { id: 2, type: 'Investor', name: 'Investment Opportunities', latitude: 37.7840, longitude: -122.4094, description: 'PDI', icon: 'https://via.placeholder.com/40', sector: 'Finance', stage: 'Series A' },
-  { id: 3, type: 'Developer', name: 'John Doe', latitude: 37.7640, longitude: -122.4294, description: 'Full-stack developer', icon: 'https://via.placeholder.com/40', sector: 'Education', stage: 'Pre-Seed' },
-];
 
 // Sektör listesi
 const initialSectors = [
@@ -74,26 +63,28 @@ const initialSectors = [
 ];
 
 // Şirket türleri ve yatırım aşamaları
-const companyTypes = ['Startup', 'Investor', 'Developer'];
+const companyTypes = ['Startup', 'Investor'];
 const investmentStages = ['Pre-Seed', 'Seed', 'Series A', 'Series B'];
 
+type RootStackParamList = {
+  DetailScreen: { itemId: string; itemType: string; };
+  StartupsDetails: { item: Company };
+  InvestorDetails: { item: Company };
+};
+
+type MapScreenNavigationProp = NavigationProp<RootStackParamList>;
+
 const MapScreen = () => {
-  const [userLocation, setUserLocation] = useState({ latitude: 37.7749, longitude: -122.4194 });
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredResults, setFilteredResults] = useState(searchData);
-  const [suggestions, setSuggestions] = useState([]);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [favorites, setFavorites] = useState([]);
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [filteredResults, setFilteredResults] = useState<Company[]>([]);
+  const [selectedItem, setSelectedItem] = useState<Company | null>(null);
+  const [_searchHistory, _setSearchHistory] = useState<string[]>([]);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState({
-    types: [],
-    sectors: [],
-    stages: [],
-    location: '',
+    types: [] as string[],
+    sectors: [] as string[],
+    stages: [] as string[],
   });
-  const [page, setPage] = useState(1);
-  const [sectors, setSectors] = useState(initialSectors);
   const [filteredSectors, setFilteredSectors] = useState(initialSectors);
   const [filteredTypes, setFilteredTypes] = useState(companyTypes);
   const [filteredStages, setFilteredStages] = useState(investmentStages);
@@ -103,105 +94,61 @@ const MapScreen = () => {
   const [typesExpanded, setTypesExpanded] = useState(false);
   const [sectorsExpanded, setSectorsExpanded] = useState(false);
   const [stagesExpanded, setStagesExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Konum izni
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
+  const navigation = useNavigation<MapScreenNavigationProp>();
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { companies } = await companyService.getAllCompanies();
+      setFilteredResults(companies);
+    } catch (error) {
+      console.error('Veri yüklenirken hata:', error);
+    } finally {
+      setLoading(false);
     }
-    return true;
-  };
-
-  useEffect(() => {
-    const fetchLocation = async () => {
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) return;
-
-      Geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ latitude, longitude });
-        },
-        (error) => console.log('Location error:', error),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    };
-
-    fetchLocation();
-    loadFavorites();
-    loadSearchHistory();
   }, []);
 
-  // Favorileri yükleme
-  const loadFavorites = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('favorites');
-      if (stored) setFavorites(JSON.parse(stored));
-    } catch (error) {
-      console.log('Error loading favorites:', error);
-    }
-  };
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
-  // Arama geçmişini yükleme
-  const loadSearchHistory = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('searchHistory');
-      if (stored) setSearchHistory(JSON.parse(stored));
-    } catch (error) {
-      console.log('Error loading search history:', error);
-    }
-  };
-
-  // Arama işlemi (Backend entegrasyonu simülasyonu)
-  const handleSearch = async (text) => {
+  // Arama işlemi
+  const handleSearch = async (text: string) => {
     setSearchQuery(text);
 
-    const filteredSuggestions = searchData
-      .filter(item =>
-        item.name.toLowerCase().includes(text.toLowerCase()) ||
-        item.type.toLowerCase().includes(text.toLowerCase()) ||
-        item.sector.toLowerCase().includes(text.toLowerCase())
-      )
-      .map(item => item.name);
-    setSuggestions(text.length > 0 ? filteredSuggestions : []);
-
-    if (text.length > 0) {
-      const updatedHistory = [text, ...searchHistory.filter(item => item !== text)].slice(0, 5);
-      setSearchHistory(updatedHistory);
-      await AsyncStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
-    }
-
     try {
-      const filtered = searchData.filter(item =>
-        (item.name.toLowerCase().includes(text.toLowerCase()) ||
-         item.type.toLowerCase().includes(text.toLowerCase()) ||
-         item.description.toLowerCase().includes(text.toLowerCase()) ||
-         item.sector.toLowerCase().includes(text.toLowerCase())) &&
-        (filters.types.length === 0 || filters.types.includes(item.type)) &&
-        (filters.sectors.length === 0 || filters.sectors.includes(item.sector)) &&
-        (filters.stages.length === 0 || filters.stages.includes(item.stage)) &&
-        (!filters.location || item.description.toLowerCase().includes(filters.location.toLowerCase()))
-      );
+      const { companies } = await companyService.getAllCompanies();
+      
+      // Filtreleme işlemi
+      let filtered = companies;
+      
+      // Metin araması
+      if (text) {
+        filtered = filtered.filter(item =>
+          item.companyName?.toLowerCase().includes(text.toLowerCase()) ||
+          item.companyInfo?.toLowerCase().includes(text.toLowerCase()) ||
+          (Array.isArray(item.companySector) ? item.companySector.join(' ').toLowerCase().includes(text.toLowerCase()) : false)
+        );
+      }
+      
+      // Tip filtresi
+      if (filters.types.length > 0) {
+        filtered = filtered.filter(item => filters.types.includes(item.companyType));
+      }
+      
+      // Sektör filtresi
+      if (filters.sectors.length > 0) {
+        filtered = filtered.filter(item =>
+          Array.isArray(item.companySector) && item.companySector.some(sector => filters.sectors.includes(sector))
+        );
+      }
+
       setFilteredResults(filtered);
     } catch (error) {
-      console.log('Search error:', error);
+      console.error('Arama yapılırken hata:', error);
     }
-  };
-
-  // Favori ekleme/kaldırma
-  const toggleFavorite = async (item) => {
-    const isFavorite = favorites.some(fav => fav.id === item.id);
-    let updatedFavorites;
-    if (isFavorite) {
-      updatedFavorites = favorites.filter(fav => fav.id !== item.id);
-    } else {
-      updatedFavorites = [...favorites, item];
-    }
-    setFavorites(updatedFavorites);
-    await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
   };
 
   // Filtre uygulama
@@ -211,7 +158,7 @@ const MapScreen = () => {
   };
 
   // Şirket türü arama
-  const handleTypeSearch = (text) => {
+  const handleTypeSearch = (text: string) => {
     setTypeSearchQuery(text);
     const filtered = companyTypes.filter(type =>
       type.toLowerCase().includes(text.toLowerCase())
@@ -220,16 +167,16 @@ const MapScreen = () => {
   };
 
   // Sektör arama
-  const handleSectorSearch = (text) => {
+  const handleSectorSearch = (text: string) => {
     setSectorSearchQuery(text);
-    const filtered = sectors.filter(sector =>
+    const filtered = initialSectors.filter(sector =>
       sector.toLowerCase().includes(text.toLowerCase())
     );
     setFilteredSectors(filtered);
   };
 
   // Yatırım aşaması arama
-  const handleStageSearch = (text) => {
+  const handleStageSearch = (text: string) => {
     setStageSearchQuery(text);
     const filtered = investmentStages.filter(stage =>
       stage.toLowerCase().includes(text.toLowerCase())
@@ -238,7 +185,7 @@ const MapScreen = () => {
   };
 
   // Şirket türü seçimi (çoklu seçim)
-  const toggleTypeSelection = (type) => {
+  const toggleTypeSelection = (type: string) => {
     setFilters(prev => {
       const updatedTypes = prev.types.includes(type)
         ? prev.types.filter(t => t !== type)
@@ -248,7 +195,7 @@ const MapScreen = () => {
   };
 
   // Sektör seçimi (çoklu seçim)
-  const toggleSectorSelection = (sector) => {
+  const toggleSectorSelection = (sector: string) => {
     setFilters(prev => {
       const updatedSectors = prev.sectors.includes(sector)
         ? prev.sectors.filter(s => s !== sector)
@@ -258,7 +205,7 @@ const MapScreen = () => {
   };
 
   // Yatırım aşaması seçimi (çoklu seçim)
-  const toggleStageSelection = (stage) => {
+  const toggleStageSelection = (stage: string) => {
     setFilters(prev => {
       const updatedStages = prev.stages.includes(stage)
         ? prev.stages.filter(s => s !== stage)
@@ -267,35 +214,39 @@ const MapScreen = () => {
     });
   };
 
-  // Daha fazla sonuç yükleme (pagination)
-  const fetchMoreResults = () => {
-    setPage(prev => prev + 1);
-    // Backend'den yeni veriler çekilir: fetch(`https://api.example.com/search?page=${page + 1}`)
-  };
-
   // Kart render fonksiyonu
-  const renderItemCard = ({ item }) => {
-    const isSelected = item.id === selectedItem?.id;
-    const isFavorite = favorites.some(fav => fav.id === item.id);
+  const renderItemCard = ({ item }: { item: Company }) => {
+    const isSelected = item._id === selectedItem?._id;
+
+    const handleCardPress = () => {
+      setSelectedItem(isSelected ? null : item);
+      // Navigate to detail screen based on company type
+      if (item.companyType === 'Startup') {
+        navigation.navigate('StartupsDetails', { item });
+      } else if (item.companyType === 'Investor') {
+        navigation.navigate('InvestorDetails', { item });
+      }
+    };
+
     return (
-      <TouchableOpacity onPress={() => setSelectedItem(isSelected ? null : item)}>
+      <TouchableOpacity onPress={handleCardPress}>
         <Surface style={[styles.card, isSelected && styles.selectedCard]}>
-          <Image source={{ uri: item.icon }} style={styles.cardImage} />
+          <Image 
+            source={{ uri: item.companyLogo }} 
+            style={styles.cardImage}
+            defaultSource={require('../assets/images/defaultCompanyLogo.png')}
+          />
           <View style={styles.cardContent}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              <IconButton
-                icon={isFavorite ? 'heart' : 'heart-outline'}
-                iconColor={isFavorite ? '#FF0000' : '#FFFFFF'}
-                size={20}
-                onPress={() => toggleFavorite(item)}
-              />
+              <Text style={styles.cardTitle}>{item.companyName}</Text>
             </View>
-            <Text style={styles.cardSubtitle}>{item.type} • {item.sector}</Text>
+            <Text style={styles.cardSubtitle}>
+              {item.companyType} • {Array.isArray(item.companySector) ? item.companySector.join(', ') : 'N/A'}
+            </Text>
             {isSelected && (
               <>
-                <Text style={styles.cardDescription}>{item.description}</Text>
-                <Text style={styles.cardStage}>Stage: {item.stage}</Text>
+                <Text style={styles.cardDescription}>{item.companyInfo}</Text>
+                <Text style={styles.cardStage}>Location: {item.companyAddress}</Text>
               </>
             )}
           </View>
@@ -305,7 +256,7 @@ const MapScreen = () => {
   };
 
   // Şirket türü render fonksiyonu
-  const renderTypeItem = ({ item }) => {
+  const renderTypeItem = ({ item }: { item: string }) => {
     const isSelected = filters.types.includes(item);
     return (
       <TouchableOpacity
@@ -321,7 +272,7 @@ const MapScreen = () => {
   };
 
   // Sektör render fonksiyonu
-  const renderSectorItem = ({ item }) => {
+  const renderSectorItem = ({ item }: { item: string }) => {
     const isSelected = filters.sectors.includes(item);
     return (
       <TouchableOpacity
@@ -337,7 +288,7 @@ const MapScreen = () => {
   };
 
   // Yatırım aşaması render fonksiyonu
-  const renderStageItem = ({ item }) => {
+  const renderStageItem = ({ item }: { item: string }) => {
     const isSelected = filters.stages.includes(item);
     return (
       <TouchableOpacity
@@ -374,32 +325,16 @@ const MapScreen = () => {
 
         {/* Arama Çubuğu ve Filtre Butonu */}
         <View style={styles.searchContainer}>
-          <Autocomplete
-            data={suggestions}
+          <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Aiku'da Ara"
+            placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={handleSearch}
-            placeholder="Search in Aiku"
-            placeholderTextColor="#9CA3AF"
-            inputContainerStyle={styles.autocompleteContainer}
-            style={styles.searchInput}
-            flatListProps={{
-              keyboardShouldPersistTaps: 'always',
-              renderItem: ({ item }) => (
-                <TouchableOpacity
-                  style={styles.suggestionItem}
-                  onPress={() => {
-                    setSearchQuery(item);
-                    handleSearch(item);
-                    setSuggestions([]);
-                  }}
-                >
-                  <Text style={styles.suggestionText}>{item}</Text>
-                </TouchableOpacity>
-              ),
-            }}
             returnKeyType="search"
             onSubmitEditing={() => handleSearch(searchQuery)}
-            accessibilityLabel="Search startups or investors"
+            accessibilityLabel="Startup veya yatırımcı ara"
           />
           <IconButton
             icon="filter"
@@ -544,12 +479,12 @@ const MapScreen = () => {
         </Modal>
 
         {/* Arama Geçmişi */}
-        {searchQuery.length === 0 && searchHistory.length > 0 && (
+        {searchQuery.length === 0 && _searchHistory.length > 0 && (
           <View style={styles.historyContainer}>
             <Text style={styles.historyTitle}>Recent Searches</Text>
             <FlatList
               horizontal
-              data={searchHistory}
+              data={_searchHistory}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.historyItem}
@@ -558,7 +493,7 @@ const MapScreen = () => {
                     handleSearch(item);
                   }}
                 >
-                  <Text style={styles.historyText}>{item}</Text>
+                  <Text style={styles.suggestionText}>{item}</Text>
                 </TouchableOpacity>
               )}
               keyExtractor={(item, index) => String(index)}
@@ -570,10 +505,10 @@ const MapScreen = () => {
         <FlatList
           data={filteredResults}
           renderItem={renderItemCard}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
-          onEndReached={fetchMoreResults}
-          onEndReachedThreshold={0.5}
+          refreshing={loading}
+          onRefresh={loadInitialData}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No results found</Text>
@@ -625,8 +560,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  autocompleteContainer: { flex: 1, borderWidth: 0, paddingVertical: 2 },
+  searchIcon: {
+    marginRight: 8,
+  },
   searchInput: {
+    flex: 1,
     paddingVertical: 10,
     fontSize: 16,
     color: '#E5E7EB',
