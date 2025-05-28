@@ -8,15 +8,31 @@ import {
   Modal,
   ScrollView,
   Image,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
-import { Surface, Text, IconButton } from 'react-native-paper';
+import { Surface, Text, IconButton, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
-import Nophoto from '../assets/images/Nophoto.png';
+import BaseService from '../api/BaseService';
+import * as ImagePicker from 'react-native-image-picker';
+import Config from 'react-native-config';
 
-// Define navigation stack param list
+const { width } = Dimensions.get('window');
+const DEFAULT_IMAGE = 'https://via.placeholder.com/400x200?text=Blog+Görseli';
+const API_BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+
+interface Blog {
+  _id: string;
+  title: string;
+  fullContent: string;
+  coverImage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 type RootStackParamList = {
   HomeScreen: undefined;
   MarketPlace: undefined;
@@ -26,124 +42,108 @@ type RootStackParamList = {
   StartupsDetails: undefined;
   InvestorDetails: undefined;
   BusinessDetails: undefined;
-  AddBlogPost: undefined;
 };
 
 type AIBlogSectionProps = {
   title: string;
-  onPress?: () => void;
-  navigation: NativeStackNavigationProp<RootStackParamList>; // NEW: Add navigation prop
+  navigation?: NativeStackNavigationProp<RootStackParamList>;
 };
 
-const { width } = Dimensions.get('window');
-
-interface Blog {
-  _id: string;
-  url: string;
-  title: string;
-  abstract?: string;
-  pub_date?: string;
-  web_url?: string;
-  urlToImage?: string;
-  fullContent?: string;
-}
-
-// Static blog data
-const STATIC_BLOGS: Blog[] = [
-  {
-    _id: 'blog-1',
-    url: 'https://example.com/ai-healthcare',
-    web_url: 'https://example.com/ai-healthcare',
-    title: 'The Future of AI in Healthcare',
-    abstract: 'Explore how AI is transforming diagnostics and patient care.',
-    pub_date: '2025-05-20T10:00:00Z',
-    urlToImage: 'https://example.com/images/ai-healthcare.jpg',
-    fullContent: `
-      Artificial Intelligence is revolutionizing healthcare by enhancing diagnostics, personalizing treatment plans, and improving patient outcomes. Machine learning models analyze medical imaging with precision, detecting conditions like cancer earlier than traditional methods. AI-driven chatbots provide 24/7 patient support, reducing the burden on healthcare professionals. Predictive analytics help hospitals manage resources efficiently, forecasting patient admissions and optimizing staff schedules. However, challenges like data privacy, ethical concerns, and integration with existing systems remain. As AI continues to evolve, its potential to make healthcare more accessible and effective is immense, promising a future where technology and medicine work hand-in-hand to save lives.
-    `,
-  },
-  {
-    _id: 'blog-2',
-    url: 'https://example.com/ethics-ai',
-    web_url: 'https://example.com/ethics-ai',
-    title: 'Ethical Challenges in AI Development',
-    abstract: 'A look at the moral dilemmas facing AI developers today.',
-    pub_date: '2025-05-18T14:30:00Z',
-    urlToImage: null,
-    fullContent: `
-      As AI becomes integral to society, ethical challenges are at the forefront of its development. Bias in algorithms, often stemming from skewed training data, can perpetuate discrimination in areas like hiring or criminal justice. Transparency is another hurdle—many AI systems operate as "black boxes," making it hard to understand their decisions. Privacy concerns arise as AI systems collect vast amounts of personal data, raising questions about consent and security. Developers must also grapple with the societal impact of automation, which could displace jobs. Addressing these issues requires collaboration between technologists, policymakers, and ethicists to ensure AI is developed responsibly, balancing innovation with accountability.
-    `,
-  },
-  {
-    _id: 'blog-3',
-    url: 'https://example.com/ai-automation',
-    web_url: 'https://example.com/ai-automation',
-    title: 'AI and the Rise of Automation',
-    abstract: 'How AI is reshaping industries through automation.',
-    pub_date: '2025-05-16T09:15:00Z',
-    urlToImage: 'https://example.com/images/ai-automation.jpg',
-    fullContent: `
-      AI-powered automation is transforming industries, from manufacturing to customer service. In factories, AI-driven robots perform complex tasks with precision, increasing efficiency and reducing costs. In offices, AI tools automate repetitive tasks like data entry, allowing employees to focus on creative work. The logistics sector benefits from AI optimizing supply chains, predicting demand, and routing deliveries. While automation boosts productivity, it also raises concerns about job displacement. Upskilling workers and integrating AI as a collaborative tool are essential to mitigate these impacts. The future of work lies in a synergy where AI enhances human capabilities, driving innovation across the globe.
-    `,
-  },
-  {
-    _id: 'blog-4',
-    url: 'https://example.com/generative-ai',
-    web_url: 'https://example.com/generative-ai',
-    title: 'Generative AI: Creativity Unleashed',
-    abstract: 'Discover how generative AI is changing art and content creation.',
-    pub_date: '2025-05-14T11:00:00Z',
-    urlToImage: 'https://example.com/images/generative-ai.jpg',
-    fullContent: `
-      Generative AI, capable of creating text, images, and videos, is redefining creativity. Tools like DALL·E and GPT models produce artwork and narratives that rival human output, enabling artists to explore new frontiers. In marketing, generative AI crafts personalized content at scale, enhancing customer experiences. However, its misuse—such as generating misleading deepfakes—poses risks. Intellectual property disputes also emerge, as AI-generated works challenge traditional notions of authorship. To harness generative AI's potential, clear regulations and ethical guidelines are needed. As this technology advances, it promises to democratize creativity, making artistic expression more accessible to all.
-    `,
-  },
-  {
-    _id: 'blog-5',
-    url: 'https://example.com/ai-education',
-    web_url: 'https://example.com/ai-education',
-    title: 'AI in Education: Personalized Learning',
-    abstract: 'AI is revolutionizing education with tailored learning experiences.',
-    pub_date: '2025-05-12T13:45:00Z',
-    urlToImage: 'https://example.com/images/ai-education.jpg',
-    fullContent: `
-      AI is reshaping education by offering personalized learning experiences. Adaptive platforms assess students' strengths and weaknesses, tailoring lessons to their needs. AI tutors provide instant feedback, helping students master subjects at their own pace. In schools, AI streamlines administrative tasks, allowing teachers to focus on instruction. Language models assist with language learning, offering real-time translation and conversation practice. However, equitable access is a challenge, as not all schools can afford AI tools. Data privacy is also critical, given the sensitive nature of student information. By addressing these hurdles, AI can make education more engaging and inclusive, preparing students for a tech-driven future.
-    `,
-  },
-];
-
-const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
+const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [selectedBlogPost, setSelectedBlog] = useState<Blog | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isScrolling, setIsScrolling] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Add Blog Modal States
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [newBlogTitle, setNewBlogTitle] = useState('');
+  const [newBlogContent, setNewBlogContent] = useState('');
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   const listRef = useRef<FlatList>(null);
   const scrollOffset = useRef(0);
   const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
+  const itemWidth = width - 90;
+  const scrollSpeed = 1.2;
 
-  const itemWidth = width - 90; // Width of each blog card
-  const scrollSpeed = 1.2; // Pixels per frame
-
-  // Decode HTML entities
-  const decodeHtmlEntities = (text: string) => {
-    return text
-      .replace(/&/g, '&')
-      .replace(/</g, '<')
-      .replace(/>/g, '>')
-      .replace(/"/g, '"')
-      .replace(/'/g, "'")
-      .replace(/ /g, ' ');
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await BaseService.getBlogs(1, 5);
+      if (response.success) {
+        setBlogs(response.blogs || []);
+      } else {
+        throw new Error(response.message || 'Bloglar yüklenirken bir hata oluştu.');
+      }
+    } catch (err: any) {
+      console.error('Blog fetch error:', err);
+      setError(err.response?.data?.message || err.message || 'Bloglar yüklenirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Initialize blogs with static data
   useEffect(() => {
-    setBlogs(STATIC_BLOGS);
+    fetchBlogs();
   }, []);
 
-  const openModalWithContent = (blog: Blog) => {
-    setSelectedBlog(blog);
-    setModalVisible(true);
+  const handleImagePick = () => {
+    ImagePicker.launchImageLibrary({
+      mediaType: 'photo',
+      quality: 1,
+    }, (response) => {
+      if (response.didCancel) {
+        return;
+      }
+      if (response.errorCode) {
+        setError('Resim seçilirken bir hata oluştu.');
+        return;
+      }
+      if (response.assets && response.assets[0]) {
+        setSelectedImage(response.assets[0]);
+      }
+    });
+  };
+
+  const handleSaveBlog = async () => {
+    if (!newBlogTitle.trim() || !newBlogContent.trim()) {
+      setError('Başlık ve içerik zorunludur.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const createResp = await BaseService.createBlog({
+        title: newBlogTitle,
+        fullContent: newBlogContent,
+      });
+
+      if (selectedImage) {
+        await BaseService.uploadBlogCover(createResp.blog._id, selectedImage);
+      }
+
+      await fetchBlogs();
+      setAddModalVisible(false);
+      resetForm();
+    } catch (err: any) {
+      setError(err.message || 'Blog kaydedilirken bir hata oluştu.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetForm = () => {
+    setNewBlogTitle('');
+    setNewBlogContent('');
+    setSelectedImage(null);
+    setError(null);
   };
 
   useEffect(() => {
@@ -199,7 +199,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
           style={styles.gradientBackground}
         >
           <View style={styles.gradientContainer}>
-            {/* Title Section */}
             <View style={styles.titleRow}>
               <View style={styles.titleContainer}>
                 <Text variant="displaySmall" style={styles.titleText}>
@@ -217,20 +216,28 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                   icon="plus"
                   iconColor={Colors.lightText}
                   size={20}
-                  onPress={() => navigation.navigate('AddBlogPost')}
+                  onPress={() => setAddModalVisible(true)}
                   style={styles.addButton}
                 />
               </View>
             </View>
 
-            {/* Blogs Section */}
             <View style={styles.blogsSection}>
-              {blogs.length === 0 ? (
-                <Text style={styles.blogText}>No AI blogs available.</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color={Colors.lightText} />
+              ) : error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <TouchableOpacity onPress={fetchBlogs} style={styles.retryButton}>
+                    <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : blogs.length === 0 ? (
+                <Text style={styles.blogText}>Henüz blog yazısı yok.</Text>
               ) : (
                 <FlatList
                   ref={listRef}
-                  data={blogs.slice(0, 5)}
+                  data={blogs}
                   keyExtractor={(item) => item._id}
                   horizontal
                   snapToInterval={itemWidth}
@@ -242,19 +249,23 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       style={[styles.blogCard, { width: itemWidth }]}
-                      onPress={() => openModalWithContent(item)}
+                      onPress={() => {
+                        setSelectedBlog(item);
+                        setModalVisible(true);
+                      }}
                     >
                       <View style={styles.blogCardContent}>
                         <Image
-                          source={
-                            item.urlToImage
-                              ? { uri: item.urlToImage }
-                              : Nophoto
-                          }
+                          source={{
+                            uri: item.coverImage
+                              ? item.coverImage.startsWith('http')
+                                ? item.coverImage
+                                : `${API_BASE_URL}${item.coverImage.startsWith('/') ? '' : '/'}${item.coverImage}`
+                              : DEFAULT_IMAGE,
+                          }}
                           style={styles.blogImage}
                           resizeMode="cover"
-                          defaultSource={Nophoto}
-                          onError={() => console.log('Image failed to load')}
+                          defaultSource={{ uri: DEFAULT_IMAGE }}
                         />
                         <LinearGradient
                           colors={['rgba(0,0,0,0.7)', 'transparent']}
@@ -265,7 +276,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                             numberOfLines={3}
                             ellipsizeMode="tail"
                           >
-                            {item.title || 'No Title'}
+                            {item.title}
                           </Text>
                         </LinearGradient>
                       </View>
@@ -278,7 +289,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
         </LinearGradient>
       </Surface>
 
-      {/* Modal for Full Blog Content */}
+      {/* Blog Detail Modal */}
       <Modal
         transparent
         visible={modalVisible}
@@ -299,7 +310,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
             >
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
-            {selectedBlogPost ? (
+            {selectedBlog ? (
               <ScrollView
                 style={styles.modalScrollView}
                 contentContainerStyle={styles.modalContentContainer}
@@ -307,35 +318,118 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                 <View style={styles.modalContent}>
                   <View style={styles.modalImageContainer}>
                     <Image
-                      source={
-                        selectedBlogPost.urlToImage
-                          ? { uri: selectedBlogPost.urlToImage }
-                          : Nophoto
-                      }
+                      source={{
+                        uri: selectedBlog.coverImage
+                          ? selectedBlog.coverImage.startsWith('http')
+                            ? selectedBlog.coverImage
+                            : `${API_BASE_URL}${selectedBlog.coverImage.startsWith('/') ? '' : '/'}${selectedBlog.coverImage}`
+                          : DEFAULT_IMAGE,
+                      }}
                       style={styles.modalImage}
                       resizeMode="cover"
-                      defaultSource={Nophoto}
-                      onError={() => console.log('Modal image failed to load')}
+                      defaultSource={{ uri: DEFAULT_IMAGE }}
                     />
                   </View>
                   <View style={styles.modalTextContainer}>
-                    <Text style={styles.modalTitle}>
-                      {selectedBlogPost.title || 'No Title Available'}
+                    <Text style={styles.modalTitle}>{selectedBlog.title}</Text>
+                    <Text style={styles.modalDate}>
+                      {new Date(selectedBlog.createdAt).toLocaleDateString('tr-TR')}
                     </Text>
                     <Text style={styles.modalAbstract}>
-                      {decodeHtmlEntities(
-                        selectedBlogPost.fullContent ||
-                          selectedBlogPost.abstract ||
-                          'No content available.'
-                      )}
+                      {selectedBlog.fullContent}
                     </Text>
                   </View>
                 </View>
               </ScrollView>
             ) : (
-              <Text style={styles.modalText}>No blog selected.</Text>
+              <Text style={styles.modalText}>Blog seçilmedi.</Text>
             )}
           </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* Add Blog Modal */}
+      <Modal
+        transparent
+        visible={addModalVisible}
+        animationType="fade"
+        onRequestClose={() => setAddModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.addModalContainer}>
+            <View style={styles.addModalHeader}>
+              <Text style={styles.addModalTitle}>Yeni Blog Yazısı</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setAddModalVisible(false);
+                  resetForm();
+                }}
+                style={styles.closeIconContainer}
+              >
+                <Text style={styles.closeIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.addModalContent}>
+              <TextInput
+                style={styles.input}
+                placeholder="Blog Başlığı"
+                value={newBlogTitle}
+                onChangeText={setNewBlogTitle}
+                placeholderTextColor={Colors.lightText}
+              />
+
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={handleImagePick}
+              >
+                <Icon name="image-outline" size={24} color={Colors.lightText} />
+                <Text style={styles.imagePickerText}>
+                  {selectedImage ? 'Resim Seçildi' : 'Kapak Resmi Seç'}
+                </Text>
+              </TouchableOpacity>
+
+              <TextInput
+                style={[styles.input, styles.contentInput]}
+                placeholder="Blog İçeriği"
+                value={newBlogContent}
+                onChangeText={setNewBlogContent}
+                multiline
+                numberOfLines={8}
+                textAlignVertical="top"
+                placeholderTextColor={Colors.lightText}
+              />
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
+              <Text style={styles.infoText}>
+                Blog yazınız yönetici onayından sonra yayınlanacaktır.
+              </Text>
+
+              <View style={styles.addModalActions}>
+                <Button
+                  mode="contained"
+                  onPress={handleSaveBlog}
+                  loading={saving}
+                  disabled={saving}
+                  style={styles.saveButton}
+                >
+                  {saving ? 'Kaydediliyor...' : 'Kaydet'}
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setAddModalVisible(false);
+                    resetForm();
+                  }}
+                  disabled={saving}
+                  style={styles.cancelButton}
+                >
+                  İptal
+                </Button>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </Modal>
     </View>
@@ -516,14 +610,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retryButton: {
-    fontSize: 16,
-    color: Colors.primary,
-    marginTop: 10,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: Colors.lightText,
+    fontSize: 14,
+    fontWeight: '600',
   },
   blogText: {
     color: Colors.lightText,
     fontSize: 14,
     textAlign: 'center',
+  },
+  addModalContainer: {
+    backgroundColor: '#1A1E29',
+    borderRadius: 24,
+    width: '90%',
+    maxHeight: '80%',
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  addModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  addModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.lightText,
+  },
+  addModalContent: {
+    flex: 1,
+  },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    color: Colors.lightText,
+  },
+  contentInput: {
+    height: 200,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  imagePickerText: {
+    color: Colors.lightText,
+    marginLeft: 8,
+  },
+  addModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+    gap: 12,
+  },
+  saveButton: {
+    backgroundColor: Colors.primary,
+  },
+  cancelButton: {
+    borderColor: Colors.lightText,
+  },
+  infoText: {
+    color: Colors.lightText,
+    opacity: 0.7,
+    fontSize: 12,
+    marginTop: 8,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    marginBottom: 12,
+  },
+  modalDate: {
+    color: Colors.lightText,
+    opacity: 0.7,
+    fontSize: 14,
+    marginBottom: 12,
   },
 });
 

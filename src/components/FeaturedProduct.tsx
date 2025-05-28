@@ -9,27 +9,28 @@ import {
   Modal,
   ScrollView,
   Image,
-  Linking,
 } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { Colors } from '../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
-import Nophoto from '../assets/images/Nophoto.png';
 import BaseService from '../api/BaseService';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width } = Dimensions.get('window');
 const itemWidth = width - 90;
+const DEFAULT_IMAGE = 'https://via.placeholder.com/400x200?text=Haber+Görseli';
 
 interface Article {
   _id: string;
+  title: string;
+  description: string;
   url: string;
-  headline?: { main: string };
-  abstract?: string;
-  pub_date?: string;
-  web_url?: string;
-  urlToImage?: string;
+  urlToImage: string;
+  publishedAt: string;
+  content: string;
   fullContent?: string;
-  source?: { name: string };
+  source: { name: string };
+  author?: string;
 }
 
 const FeaturedProduct: React.FC = () => {
@@ -48,19 +49,12 @@ const FeaturedProduct: React.FC = () => {
   const fetchNews = async () => {
     try {
       setError(null);
-      const { articles } = await BaseService.getNews();
-      const mappedArticles = articles.map((article: any, index: number) => ({
-        _id: article._id || `${index}-${article.publishedAt}`,
-        url: article.url,
-        headline: { main: article.title },
-        abstract: article.description,
-        pub_date: article.publishedAt,
-        web_url: article.url,
-        urlToImage: article.urlToImage,
-        fullContent: article.content,
-        source: article.source,
-      }));
-      setArticles(mappedArticles);
+      const response = await BaseService.getNews(1, 5);
+      if (response.success) {
+        setArticles(response.articles);
+      } else {
+        throw new Error(response.message || 'Haberler yüklenirken bir hata oluştu.');
+      }
     } catch (err: any) {
       setError(err.message || 'Haberler yüklenirken bir hata oluştu.');
     } finally {
@@ -73,8 +67,15 @@ const FeaturedProduct: React.FC = () => {
   }, []);
 
   const openModalWithContent = async (article: Article) => {
-    setSelectedArticle(article);
-    setModalVisible(true);
+    try {
+      const response = await BaseService.getNewsById(article._id);
+      if (response.success) {
+        setSelectedArticle(response.article);
+        setModalVisible(true);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Haber detayı yüklenirken bir hata oluştu.');
+    }
   };
 
   useEffect(() => {
@@ -120,6 +121,21 @@ const FeaturedProduct: React.FC = () => {
     setIsScrolling(true);
   };
 
+  const cleanContent = (content: string | undefined) => {
+    if (!content) return '';
+    
+    // "4702 chars" gibi ifadeleri temizle
+    let cleaned = content.replace(/\d+\s*chars?/gi, '');
+    
+    // Fazla boşlukları temizle
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Noktalama işaretlerinden sonra boşluk ekle
+    cleaned = cleaned.replace(/([.,!?])([^\s])/g, '$1 $2');
+    
+    return cleaned;
+  };
+
   return (
     <View style={styles.container}>
       <Surface style={styles.cardContainer} elevation={4}>
@@ -130,6 +146,9 @@ const FeaturedProduct: React.FC = () => {
           style={styles.gradientBackground}
         >
           <View style={styles.gradientContainer}>
+            <View style={styles.headerContainer}>
+              <Icon name="newspaper-variant" size={24} color={Colors.lightText} />
+            </View>
             <View style={styles.newsSection}>
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.lightText} />
@@ -137,7 +156,7 @@ const FeaturedProduct: React.FC = () => {
                 <View style={styles.errorContainer}>
                   <Text style={styles.newsText}>{error}</Text>
                   <TouchableOpacity onPress={() => fetchNews()}>
-                    <Text style={styles.retryButton}>Try Again</Text>
+                    <Text style={styles.retryButton}>Tekrar Dene</Text>
                   </TouchableOpacity>
                 </View>
               ) : articles.length === 0 ? (
@@ -145,7 +164,7 @@ const FeaturedProduct: React.FC = () => {
               ) : (
                 <FlatList
                   ref={listRef}
-                  data={articles.slice(0, 5)}
+                  data={articles}
                   keyExtractor={(item) => item._id}
                   horizontal
                   snapToInterval={itemWidth}
@@ -164,11 +183,11 @@ const FeaturedProduct: React.FC = () => {
                           source={
                             item.urlToImage
                               ? { uri: item.urlToImage }
-                              : Nophoto
+                              : { uri: DEFAULT_IMAGE }
                           }
                           style={styles.newsImage}
                           resizeMode="cover"
-                          defaultSource={Nophoto}
+                          defaultSource={{ uri: DEFAULT_IMAGE }}
                         />
                         <LinearGradient
                           colors={['rgba(0, 0, 0, 0.83)', 'rgba(0, 0, 0, 0.3)', 'transparent']}
@@ -182,7 +201,7 @@ const FeaturedProduct: React.FC = () => {
                             numberOfLines={3}
                             ellipsizeMode="tail"
                           >
-                            {item.headline?.main || 'Başlık Yok'}
+                            {item.title || 'Başlık Yok'}
                           </Text>
                         </LinearGradient>
                       </View>
@@ -226,30 +245,26 @@ const FeaturedProduct: React.FC = () => {
                       source={
                         selectedArticle.urlToImage
                           ? { uri: selectedArticle.urlToImage }
-                          : Nophoto
+                          : { uri: DEFAULT_IMAGE }
                       }
                       style={styles.modalImage}
                       resizeMode="cover"
-                      defaultSource={Nophoto}
+                      defaultSource={{ uri: DEFAULT_IMAGE }}
                     />
                   </View>
                   <View style={styles.modalTextContainer}>
                     <Text style={styles.modalTitle}>
-                      {selectedArticle.headline?.main || 'Başlık Yok'}
+                      {selectedArticle.title || 'Başlık Yok'}
+                    </Text>
+                    <Text style={styles.modalSource}>
+                      {selectedArticle.source?.name} - {new Date(selectedArticle.publishedAt).toLocaleDateString('tr-TR')}
                     </Text>
                     <Text style={styles.modalAbstract}>
-                      {selectedArticle.fullContent ||
-                        selectedArticle.abstract ||
+                      {cleanContent(selectedArticle.fullContent) ||
+                        cleanContent(selectedArticle.content) ||
+                        cleanContent(selectedArticle.description) ||
                         'İçerik bulunamadı.'}
                     </Text>
-                    <TouchableOpacity
-                      style={styles.readMoreButton}
-                      onPress={() => {
-                        Linking.openURL(selectedArticle.url);
-                      }}
-                    >
-                      <Text style={styles.readMoreText}>Devamını Oku</Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
               </ScrollView>
@@ -289,6 +304,18 @@ const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
     padding: 16,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  headerText: {
+    color: Colors.lightText,
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   newsSection: {
     flex: 1,
@@ -392,11 +419,17 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     marginBottom: 12,
   },
-  modalAbstract: {
+  modalSource: {
     fontSize: 14,
     color: Colors.lightText,
+    opacity: 0.7,
+    marginBottom: 16,
+  },
+  modalAbstract: {
+    fontSize: 15,
+    color: Colors.lightText,
     lineHeight: 24,
-    opacity: 0.8,
+    opacity: 0.9,
   },
   modalText: {
     fontSize: 16,
@@ -417,18 +450,6 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: 14,
     textAlign: 'center',
-  },
-  readMoreButton: {
-    backgroundColor: Colors.primary,
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  readMoreText: {
-    color: Colors.lightText,
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

@@ -7,6 +7,8 @@ import {
   Dimensions,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,6 +16,12 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
+import BaseService from '../api/BaseService';
+import Config from 'react-native-config';
+// import placeholder from '../assets/images/defaultProductLogo.png'; // Comment out or remove if not found
+
+// Use a default image URL or check if the local path is correct
+const placeholder = require('../assets/images/defaultCompanyLogo.png');
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -28,100 +36,104 @@ type RootStackParamList = {
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const API_BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
 
+// Update Product interface based on backend data structure
 interface Product {
-  id: string;
-  company: string;
-  name: string;
-  category: string;
-  price: string;
-  description: string;
-  tags: string;
-  releaseDate: string;
-  address: string;
-  phone: string;
-  email: string;
+  _id: string;
+  productName: string;
+  productCategory: string;
+  pricingModel: string;
+  productDescription: string;
+  tags: string[];
+  releaseDate?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  productLogo?: string;
+  companyId: {
+    companyName: string;
+    _id: string;
+  };
 }
-
-const products: Product[] = [
-  {
-    id: '1',
-    company: 'Aloha Dijital Bilişim',
-    name: 'Aloha Live App',
-    category: 'AI',
-    price: 'Freemium',
-    description: 'A real-time AI-powered collaboration tool.',
-    tags: 'live streaming, social networking, video broadcasting, interactive platform, community',
-    releaseDate: '15.03.2025',
-    address: 'Marmara Üniversitesi Teknopark, Başıbüyük Mah. Süreyyapaşa Başıbüyük Yolu Sk. 4/1 İç Kapı No:1 Maltepe/İstanbul',
-    phone: '+908507579427',
-    email: 'support@alohalive.online',
-  },
-  {
-    id: '2',
-    company: 'Aloha Dijital',
-    name: 'PDI AI',
-    category: 'AI',
-    price: 'One-time Payment',
-    description: 'PDI AI is an AI solution designed to securely optimize document processes for businesses, focusing on innovation and efficiency.',
-    tags: 'AI, Document Processing, Optimization, Security, Efficiency',
-    releaseDate: '01.01.2025',
-    address: 'Marmara Üniversitesi Teknopark, Başıbüyük Mah. Süreyyapaşa Başıbüyük Yolu Sk. 4/1 İç Kapı No:1 Maltepe/İstanbul',
-    phone: '+908507579427',
-    email: 'orkide@alohalive.online',
-  },
-  {
-    id: '3',
-    company: 'QuantumLabs',
-    name: 'Quantum Analytics',
-    category: 'Data Analytics',
-    price: '$299',
-    description: 'Advanced AI-driven data insights.',
-    tags: 'AI, Data Analysis, Insights, Automation',
-    releaseDate: '10.02.2025',
-    address: 'QuantumLabs HQ, 123 Tech Street, Istanbul',
-    phone: '+905551234567',
-    email: 'info@quantumlabs.com',
-  },
-];
 
 const MarketplaceScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [search, setSearch] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await BaseService.getAllProducts();
+        if (response.success) {
+          setProducts(response.products || []);
+        } else {
+          setError(response.message || 'Ürünler yüklenirken bir hata oluştu.');
+          setProducts([]);
+        }
+      } catch (err: any) {
+        console.error('Error fetching products:', err);
+        setError(err.message || 'Ürünler yüklenirken bir hata oluştu.');
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     setFilteredProducts(
       products.filter(
         (product) =>
-          product.name.toLowerCase().includes(search.toLowerCase()) ||
-          product.company.toLowerCase().includes(search.toLowerCase()) ||
-          product.category.toLowerCase().includes(search.toLowerCase()) ||
-          product.tags.toLowerCase().includes(search.toLowerCase()),
+          product.productName.toLowerCase().includes(search.toLowerCase()) ||
+          product.companyId.companyName.toLowerCase().includes(search.toLowerCase()) ||
+          product.productCategory.toLowerCase().includes(search.toLowerCase()) ||
+          product.productDescription.toLowerCase().includes(search.toLowerCase()) ||
+          product.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
       ),
     );
-  }, [search]);
+  }, [search, products]);
 
   const renderProductCard = (item: Product) => (
-    <View key={item.id} style={styles.cardContainer}>
+    <View key={item._id} style={styles.cardContainer}>
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
+          <Image
+            source={{
+              uri: item.productLogo
+                ? item.productLogo.startsWith('http')
+                  ? item.productLogo
+                  : `${API_BASE_URL}${item.productLogo.startsWith('/') ? '' : '/'}${item.productLogo}`
+                : placeholder,
+            }}
+            style={styles.productImage}
+            resizeMode="cover"
+            defaultSource={placeholder}
+          />
           <PaperText style={styles.productName} numberOfLines={1} ellipsizeMode="tail">
-            {item.name}
+            {item.productName}
           </PaperText>
           <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
-            {item.company}
+            {item.companyId.companyName}
           </PaperText>
           <PaperText style={styles.type} numberOfLines={1} ellipsizeMode="tail">
-            Category: {item.category}
+            Category: {item.productCategory}
           </PaperText>
           <PaperText style={styles.tags} numberOfLines={2} ellipsizeMode="tail">
-            Tags: {item.tags}
+            Tags: {item.tags ? item.tags.join(', ') : ''}
           </PaperText>
           <View style={styles.detailsContainer}>
             <View style={styles.detail}>
               <PaperText style={styles.detailLabel}>Price</PaperText>
-              <PaperText style={styles.detailValue}>{item.price}</PaperText>
+              <PaperText style={styles.detailValue}>{item.pricingModel}</PaperText>
             </View>
           </View>
           <TouchableOpacity
@@ -172,7 +184,14 @@ const MarketplaceScreen: React.FC = () => {
           </View>
 
           <PaperText style={styles.sectionTitle}>Products</PaperText>
-          {filteredProducts.length > 0 ? (
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#3B82F7" style={{ marginTop: 20 }} />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <PaperText style={styles.errorText}>Error: {error}</PaperText>
+            </View>
+          ) : filteredProducts.length > 0 ? (
             filteredProducts.map((product) => renderProductCard(product))
           ) : (
             <PaperText style={styles.noResults}>No products found.</PaperText>
@@ -324,6 +343,22 @@ const styles = StyleSheet.create({
     color: 'rgb(255, 255, 255)',
     textAlign: 'center',
     marginTop: 20,
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+    alignSelf: 'center',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff6b6b',
+    textAlign: 'center',
   },
 });
 
