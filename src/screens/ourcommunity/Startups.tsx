@@ -7,6 +7,9 @@ import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
 
+// Define the base image URL (matching REACT_APP_IMG_URL from web)
+const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com'; // Should be loaded from env in production
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const Startups = () => {
@@ -24,7 +27,6 @@ const Startups = () => {
     businessModel: '',
     companySize: '',
     businessScale: '',
-    openForInvestments: false
   });
 
   useEffect(() => {
@@ -35,6 +37,8 @@ const Startups = () => {
     try {
       setLoading(true);
       const data = await companyService.getStartups();
+      // Log companyLogo values for debugging
+      data.forEach(item => console.log(`Company: ${item.companyName}, Logo: ${item.companyLogo}`));
       setStartups(data);
     } catch (error) {
       Alert.alert('Hata', 'Startup\'lar yüklenirken bir hata oluştu.');
@@ -84,9 +88,14 @@ const Startups = () => {
             )}
             {item.companyLogo ? (
               <Image
-                source={{ uri: item.companyLogo }}
+                source={{
+                  uri: item.companyLogo.startsWith('http')
+                    ? item.companyLogo
+                    : `${IMAGE_BASE_URL}${item.companyLogo}`
+                }}
                 style={styles.companyLogo}
                 resizeMode="contain"
+                onError={(e) => console.log(`Failed to load image for ${item.companyName}: ${item.companyLogo}`, e.nativeEvent.error)}
               />
             ) : (
               <View style={styles.placeholderLogo}>
@@ -475,9 +484,7 @@ const styles = StyleSheet.create({
     borderColor: '#60A5FA',
     borderWidth: 2,
   },
-  submitButton: {
-
-  },
+  submitButton: {},
 });
 
 export default Startups;

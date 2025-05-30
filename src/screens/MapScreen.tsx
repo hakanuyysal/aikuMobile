@@ -328,7 +328,7 @@ const MapScreen = () => {
           <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Aiku'da Ara"
+            placeholder="Search in aiku"
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={handleSearch}

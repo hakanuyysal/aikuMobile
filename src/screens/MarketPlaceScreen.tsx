@@ -36,7 +36,7 @@ type RootStackParamList = {
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const API_BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+const API_BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com';
 
 // Update Product interface based on backend data structure
 interface Product {

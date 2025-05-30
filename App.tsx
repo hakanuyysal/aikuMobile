@@ -35,6 +35,7 @@ import Investor from 'screens/ourcommunity/Investor';
 import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
+import AddProduct from './src/screens/AddProduct';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -63,6 +64,7 @@ export type RootStackParamList = {
   BusinessDetails: undefined;
   InvestorMenuDetails: undefined;
   AddBlogPost: undefined;
+  AddProduct: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -285,6 +287,11 @@ function AppContent(): React.JSX.Element {
               <RootStack.Screen
                 name="AddBlogPost"
                 component={AddBlogPostScreen}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="AddProduct"
+                component={AddProduct}
                 options={{ headerShown: false }}
               />
             </>

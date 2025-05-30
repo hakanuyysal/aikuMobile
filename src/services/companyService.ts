@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://10.34.12.128:3004/api';
-const BASE_URL = 'http://10.34.12.128:3004';
+const API_URL = 'https://api.aikuaiplatform.com/api';
+const BASE_URL = 'https://api.aikuaiplatform.com';
 
 export interface Company {
   _id: string;

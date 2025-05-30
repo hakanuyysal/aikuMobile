@@ -1,0 +1,13 @@
+{
+  "welcome": "Willkommen",
+  "language": "Sprache",
+  "settings": "Einstellungen",
+  "profile": "Profil",
+  "logout": "Abmelden",
+  "login": "Anmelden",
+  "register": "Registrieren",
+  "email": "E-Mail",
+  "password": "Passwort",
+  "forgotPassword": "Passwort vergessen",
+  "rememberMe": "Angemeldet bleiben"
+} 

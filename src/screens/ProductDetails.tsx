@@ -19,8 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 
 const ProductDetails = ({navigation}: Props) => {
   const handleAddProduct = () => {
-    // Add product logic will be implemented here
-    console.log('Add product pressed');
+    navigation.navigate('AddProduct');
   };
 
   return (

@@ -8,48 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const businessesData = [
-  {
-    id: '1',
-    name: 'TechSolutions Inc.',
-    location: 'Silicon Valley, CA, USA',
-    sector: 'AI & Machine Learning, Software Development',
-    description: 'TechSolutions Inc. provides AI-powered software solutions for enterprise automation, specializing in workflow optimization and data analytics to enhance business efficiency.',
-    link: 'https://techsolutions.com'
-  },
-  {
-    id: '2',
-    name: 'GreenWave Technologies',
-    location: 'Munich, Germany',
-    sector: 'Energy, AI & Machine Learning',
-    description: 'GreenWave Technologies develops AI-driven energy management systems for sustainable business operations, focusing on renewable energy integration and efficiency.',
-    link: 'https://greenwavetech.de'
-  },
-  {
-    id: '3',
-    name: 'SmartRetail Solutions',
-    location: 'Tokyo, Japan',
-    sector: 'AI & Machine Learning, Retail',
-    description: 'SmartRetail Solutions offers AI-based tools for inventory management and customer analytics, helping retailers optimize operations and enhance customer experiences.',
-    link: 'https://smartretail.jp'
-  },
-  {
-    id: '4',
-    name: 'HealthTech Innovations',
-    location: 'Boston, MA, USA',
-    sector: 'Healthcare, AI & Machine Learning',
-    description: 'HealthTech Innovations leverages AI to streamline healthcare operations, offering solutions for patient data management and predictive diagnostics.',
-    link: 'https://healthtechinnovations.com'
-  },
-  {
-    id: '5',
-    name: 'ChainSecure',
-    location: 'Dubai, UAE',
-    sector: 'Blockchain, Cybersecurity',
-    description: 'ChainSecure provides blockchain-based cybersecurity solutions for businesses, ensuring secure transactions and data integrity across digital platforms.',
-    link: 'https://chainsecure.ae'
-  }
-];
+const businessesData = []; // Ürünler kaldırıldı, dizi boş bırakıldı
 
 const Business = () => {
   const navigation = useNavigation();

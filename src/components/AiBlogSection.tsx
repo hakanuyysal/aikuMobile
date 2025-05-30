@@ -19,16 +19,18 @@ import { Colors } from '../constants/colors';
 import BaseService from '../api/BaseService';
 import * as ImagePicker from 'react-native-image-picker';
 import Config from 'react-native-config';
+import { blogService } from '../services/blogService';
 
 const { width } = Dimensions.get('window');
+const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const DEFAULT_IMAGE = 'https://via.placeholder.com/400x200?text=Blog+Görseli';
-const API_BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+
 
 interface Blog {
   _id: string;
   title: string;
   fullContent: string;
-  coverImage?: string;
+  coverPhoto?: string; 
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +44,7 @@ type RootStackParamList = {
   StartupsDetails: undefined;
   InvestorDetails: undefined;
   BusinessDetails: undefined;
+  AddBlogPost: undefined;
 };
 
 type AIBlogSectionProps = {
@@ -49,7 +52,7 @@ type AIBlogSectionProps = {
   navigation?: NativeStackNavigationProp<RootStackParamList>;
 };
 
-const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
+const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -74,15 +77,14 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await BaseService.getBlogs(1, 5);
+      const response = await blogService.getBlogs(1, 5);
       if (response.success) {
         setBlogs(response.blogs || []);
       } else {
         throw new Error(response.message || 'Bloglar yüklenirken bir hata oluştu.');
       }
     } catch (err: any) {
-      console.error('Blog fetch error:', err);
-      setError(err.response?.data?.message || err.message || 'Bloglar yüklenirken bir hata oluştu.');
+      setError(err.message || 'Bloglar yüklenirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -120,13 +122,14 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
       setSaving(true);
       setError(null);
 
-      const createResp = await BaseService.createBlog({
+      const createdBlog = await blogService.createBlog({
         title: newBlogTitle,
         fullContent: newBlogContent,
+        // coverPhoto: ... (gerekirse)
       });
 
-      if (selectedImage) {
-        await BaseService.uploadBlogCover(createResp.blog._id, selectedImage);
+      if (selectedImage && createdBlog._id) {
+        await blogService.uploadBlogCover(createdBlog._id, selectedImage);
       }
 
       await fetchBlogs();
@@ -216,7 +219,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
                   icon="plus"
                   iconColor={Colors.lightText}
                   size={20}
-                  onPress={() => setAddModalVisible(true)}
+                  onPress={() => navigation?.navigate('AddBlogPost')}
                   style={styles.addButton}
                 />
               </View>
@@ -246,42 +249,47 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
                   showsHorizontalScrollIndicator={false}
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[styles.blogCard, { width: itemWidth }]}
-                      onPress={() => {
-                        setSelectedBlog(item);
-                        setModalVisible(true);
-                      }}
-                    >
-                      <View style={styles.blogCardContent}>
-                        <Image
-                          source={{
-                            uri: item.coverImage
-                              ? item.coverImage.startsWith('http')
-                                ? item.coverImage
-                                : `${API_BASE_URL}${item.coverImage.startsWith('/') ? '' : '/'}${item.coverImage}`
-                              : DEFAULT_IMAGE,
-                          }}
-                          style={styles.blogImage}
-                          resizeMode="cover"
-                          defaultSource={{ uri: DEFAULT_IMAGE }}
-                        />
-                        <LinearGradient
-                          colors={['rgba(0,0,0,0.7)', 'transparent']}
-                          style={styles.imageOverlay}
-                        >
-                          <Text
-                            style={styles.blogTitle}
-                            numberOfLines={3}
-                            ellipsizeMode="tail"
+                  renderItem={({ item }) => {
+                    console.log('Blog item:', item); // Tüm blog nesnesini logla
+                    return (
+                      <TouchableOpacity
+                        style={[styles.blogCard, { width: itemWidth }]}
+                        onPress={() => {
+                          setSelectedBlog(item);
+                          setModalVisible(true);
+                        }}
+                      >
+                        <View style={styles.blogCardContent}>
+                          <Image
+                            source={{
+                              uri: item.coverPhoto
+                                ? item.coverPhoto.startsWith('http')
+                                  ? item.coverPhoto
+                                  : item.coverPhoto.startsWith('/uploads')
+                                    ? `${IMAGE_BASE_URL}${item.coverPhoto}`
+                                    : DEFAULT_IMAGE
+                                : DEFAULT_IMAGE,
+                            }}
+                            style={styles.blogImage}
+                            resizeMode="cover"
+                            defaultSource={{ uri: DEFAULT_IMAGE }}
+                          />
+                          <LinearGradient
+                            colors={['rgba(0,0,0,0.7)', 'transparent']}
+                            style={styles.imageOverlay}
                           >
-                            {item.title}
-                          </Text>
-                        </LinearGradient>
-                      </View>
-                    </TouchableOpacity>
-                  )}
+                            <Text
+                              style={styles.blogTitle}
+                              numberOfLines={3}
+                              ellipsizeMode="tail"
+                            >
+                              {item.title}
+                            </Text>
+                          </LinearGradient>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }}
                 />
               )}
             </View>
@@ -319,10 +327,12 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title }) => {
                   <View style={styles.modalImageContainer}>
                     <Image
                       source={{
-                        uri: selectedBlog.coverImage
-                          ? selectedBlog.coverImage.startsWith('http')
-                            ? selectedBlog.coverImage
-                            : `${API_BASE_URL}${selectedBlog.coverImage.startsWith('/') ? '' : '/'}${selectedBlog.coverImage}`
+                        uri: selectedBlog?.coverPhoto
+                          ? selectedBlog.coverPhoto.startsWith('http')
+                            ? selectedBlog.coverPhoto
+                            : selectedBlog.coverPhoto.startsWith('/uploads')
+                              ? `${IMAGE_BASE_URL}${selectedBlog.coverPhoto}`
+                              : DEFAULT_IMAGE
                           : DEFAULT_IMAGE,
                       }}
                       style={styles.modalImage}
