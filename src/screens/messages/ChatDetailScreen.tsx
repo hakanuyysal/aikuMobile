@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -9,66 +9,144 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {ChatDetailScreenProps} from '../../types';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+import socket from '../../socket';
 
 interface Message {
   id: string;
   text: string;
   time: string;
-  sender: 'me' | 'other';
+  senderType: 'me' | 'other';
+  timestamp: number;
+  chatSessionId?: string;
+  chatSession?: string;
+  content?: string;
+  createdAt?: string;
+  sender?: {
+    id?: string;
+    _id?: string;
+  };
 }
 
-// Mock mesaj verileri
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    text: 'Hello! I would like to inquire about your latest gold investment packages.',
-    time: '14:30',
-    sender: 'me',
-  },
-  {
-    id: '2',
-    text: 'Of course! We currently have several investment options available. Would you like me to share our current rates?',
-    time: '14:31',
-    sender: 'other',
-  },
-  {
-    id: '3',
-    text: "Yes, please. I'm particularly interested in long-term investment opportunities.",
-    time: '14:32',
-    sender: 'me',
-  },
-  {
-    id: '4',
-    text: 'Perfect! Our most popular long-term package offers a competitive rate of 8% annually with a minimum investment period of 2 years. Would you like more details?',
-    time: '14:33',
-    sender: 'other',
-  },
-];
-
 const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
-  const {name} = route.params;
+  const {name, chatId} = route.params;
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    // Socket bağlantı durumunu dinle
+    const handleConnect = () => {
+      setIsConnected(true);
+      console.log('Socket bağlantısı başarılı');
+      if (socket.joinChat) {
+        socket.joinChat(chatId);
+      }
+    };
+
+    const handleDisconnect = () => {
+      setIsConnected(false);
+      console.log('Socket bağlantısı kesildi');
+    };
+
+    const handleConnectError = (error: Error) => {
+      setIsConnected(false);
+      console.error('Bağlantı hatası:', error);
+      
+      if (error.message === 'Authentication error') {
+        Alert.alert('Bağlantı Hatası', 'Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
+      } else if (error.message.includes('xhr poll error')) {
+        Alert.alert('Bağlantı Hatası', 'Sunucuya bağlanırken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        Alert.alert('Bağlantı Hatası', `Sunucuya bağlanırken bir hata oluştu: ${error.message}`);
+      }
+    };
+
+    // Mesaj dinleyicileri
+    const handleNewMessage = (message: Message) => {
+      if (message.chatSessionId === chatId || message.chatSession === chatId) {
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(m => m.id === message.id);
+          if (!exists) {
+            return [...prevMessages, message];
+          }
+          return prevMessages;
+        });
+      }
+    };
+
+    const handleChatNotification = (notification: any) => {
+      if (notification.type === 'new-message' && 
+          (notification.chatSessionId === chatId || notification.chatSession === chatId)) {
+        const newMessage = notification.message;
+        setMessages(prevMessages => {
+          const exists = prevMessages.some(m => m.id === newMessage.id);
+          if (!exists) {
+            return [...prevMessages, newMessage];
+          }
+          return prevMessages;
+        });
+      }
+    };
+
+    // Event dinleyicilerini ekle
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('new-message', handleNewMessage);
+    socket.on('chat-notification', handleChatNotification);
+
+    // Sohbet odasına katıl
+    if (socket.connected && socket.joinChat) {
+      socket.joinChat(chatId);
+    }
+
+    // Cleanup
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+      socket.off('new-message', handleNewMessage);
+      socket.off('chat-notification', handleChatNotification);
+      if (socket.leaveChat) {
+        socket.leaveChat(chatId);
+      }
+    };
+  }, [chatId]);
 
   const handleSendMessage = () => {
-    if (message.trim()) {
+    if (message.trim() && isConnected) {
       const newMessage: Message = {
-        id: (messages.length + 1).toString(),
+        id: Date.now().toString(),
         text: message.trim(),
         time: new Date().toLocaleTimeString('tr-TR', {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        sender: 'me',
+        senderType: 'me',
+        timestamp: Date.now(),
+        content: message.trim(),
+        chatSessionId: chatId,
+        createdAt: new Date().toISOString()
       };
-      setMessages([...messages, newMessage]);
+
+      socket.emit('message', {
+        chatSessionId: chatId,
+        content: message.trim(),
+        timestamp: Date.now()
+      });
+      
+      setMessages(prevMessages => [...prevMessages, newMessage]);
       setMessage('');
+    } else if (!isConnected) {
+      Alert.alert('Bağlantı Hatası', 'Sunucuya bağlı değilsiniz.');
     }
   };
 
@@ -88,17 +166,17 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
     <View
       style={[
         styles.messageContainer,
-        item.sender === 'me' ? styles.myMessage : styles.otherMessage,
+        item.senderType === 'me' ? styles.myMessage : styles.otherMessage,
       ]}>
       <View
         style={[
           styles.messageBubble,
-          item.sender === 'me' ? styles.myBubble : styles.otherBubble,
+          item.senderType === 'me' ? styles.myBubble : styles.otherBubble,
         ]}>
         <Text
           style={[
             styles.messageText,
-            item.sender === 'me'
+            item.senderType === 'me'
               ? styles.myMessageText
               : styles.otherMessageText,
           ]}>
@@ -107,7 +185,7 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
         <Text
           style={[
             styles.timeText,
-            item.sender === 'me' ? styles.myTimeText : styles.otherTimeText,
+            item.senderType === 'me' ? styles.myTimeText : styles.otherTimeText,
           ]}>
           {item.time}
         </Text>
@@ -129,6 +207,7 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
           <FlatList
+            ref={flatListRef}
             data={messages}
             renderItem={renderMessage}
             keyExtractor={item => item.id}
@@ -136,11 +215,12 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
             contentContainerStyle={styles.messageListContent}
             inverted={false}
             showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
           />
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Type a message..."
+              placeholder="Mesajınızı yazın..."
               placeholderTextColor={Colors.inactive}
               value={message}
               onChangeText={setMessage}

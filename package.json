@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@react-native-async-storage/async-storage": "1.21.0",
+    "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/blur": "^4.4.1",
     "@react-native-community/cli-platform-android": "^18.0.0",
     "@react-native-google-signin/google-signin": "^13.2.0",
@@ -57,6 +57,7 @@
     "react-native-video": "^6.13.0",
     "react-native-walkthrough-tooltip": "^1.6.0",
     "react-native-webview": "^13.13.5",
+    "socket.io-client": "^4.8.1",
     "stream-browserify": "^3.0.0",
     "text-encoding": "^0.7.0",
     "tls-browserify": "^0.2.2",
