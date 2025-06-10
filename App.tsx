@@ -36,7 +36,11 @@ import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
 import AddProduct from './src/screens/AddProduct';
+<<<<<<< HEAD
 import { ChatProvider } from './src/contexts/ChatContext';
+=======
+import ChatScreen from './src/screens/ChatScreen';
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 
 export type RootStackParamList = {
   Main: undefined;
@@ -66,6 +70,7 @@ export type RootStackParamList = {
   InvestorMenuDetails: undefined;
   AddBlogPost: undefined;
   AddProduct: undefined;
+  Chat: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList>;
@@ -296,6 +301,11 @@ function AppContent(): React.JSX.Element {
               <RootStack.Screen
                 name="AddProduct"
                 component={AddProduct}
+                options={{ headerShown: false }}
+              />
+              <RootStack.Screen
+                name="Chat"
+                component={ChatScreen}
                 options={{ headerShown: false }}
               />
             </>

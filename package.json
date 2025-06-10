@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
+<<<<<<< HEAD
     "@react-native-async-storage/async-storage": "^2.2.0",
+=======
+    "@react-native-async-storage/async-storage": "^2.1.2",
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
     "@react-native-community/blur": "^4.4.1",
     "@react-native-community/cli-platform-android": "^18.0.0",
     "@react-native-google-signin/google-signin": "^13.2.0",

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 import {
   View,
   Text,
@@ -16,11 +20,16 @@ import { ChatListScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+<<<<<<< HEAD
 import chatApi from '../../api/chatApi';
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 import { ChatProvider } from '../../components/Chat/ChatProvider';
+=======
+import io, { Socket } from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 
 interface Chat {
   id: string;
@@ -33,10 +42,16 @@ interface Chat {
   participants: string[];
 }
 
+<<<<<<< HEAD
+=======
+const API_URL = __DEV__ ? 'http://localhost:3004' : 'https://api.aikuaiplatform.com';
+
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
+<<<<<<< HEAD
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
   const setupUser = useCallback(async () => {
@@ -174,13 +189,118 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       });
     });
   };
+=======
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        const token = await AsyncStorage.getItem('auth_token');
+        
+        const newSocket = io(API_URL, {
+          transports: ['websocket'],
+          withCredentials: true,
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
+          auth: {
+            token
+          },
+          path: '/socket.io',
+          forceNew: true,
+          extraHeaders: {
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+
+        newSocket.on('connect', () => {
+          setIsConnected(true);
+          console.log('Socket bağlantısı başarılı');
+          // Sohbet listesini al
+          newSocket.emit('get-chat-list');
+        });
+
+        newSocket.on('connect_error', (error) => {
+          setIsConnected(false);
+          console.log('Bağlantı hatası detayları:', {
+            message: error.message,
+            stack: error.stack
+          });
+          
+          if (error.message === 'Authentication error') {
+            Alert.alert('Bağlantı Hatası', 'Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
+          } else if (error.message.includes('xhr poll error')) {
+            Alert.alert('Bağlantı Hatası', 'Sunucuya bağlanırken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.');
+          } else {
+            Alert.alert('Bağlantı Hatası', `Sunucuya bağlanırken bir hata oluştu: ${error.message}`);
+          }
+        });
+
+        newSocket.on('disconnect', (reason) => {
+          setIsConnected(false);
+          console.log('Bağlantı kesildi:', reason);
+        });
+
+        // Sohbet listesi güncellemelerini dinle
+        newSocket.on('chat-list', (chatList: Chat[]) => {
+          setChats(chatList);
+        });
+
+        // Yeni mesaj geldiğinde sohbet listesini güncelle
+        newSocket.on('new-message', (message: any) => {
+          setChats(prevChats => {
+            const updatedChats = [...prevChats];
+            const chatIndex = updatedChats.findIndex(chat => chat.id === message.chatId);
+            
+            if (chatIndex !== -1) {
+              updatedChats[chatIndex] = {
+                ...updatedChats[chatIndex],
+                lastMessage: message.text,
+                time: new Date(message.timestamp).toLocaleTimeString('tr-TR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                unread: updatedChats[chatIndex].unread + 1,
+              };
+            }
+            
+            return updatedChats;
+          });
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+          newSocket.close();
+        };
+      } catch (error) {
+        console.error('Socket başlatma hatası:', error);
+        Alert.alert('Hata', 'Mesajlaşma sistemi başlatılamadı.');
+      }
+    };
+
+    initializeSocket();
+  }, []);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    if (socket && isConnected) {
+      socket.emit('get-chat-list');
+    }
+    setRefreshing(false);
+  }, [socket, isConnected]);
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Messages</Text>
+      <Text style={styles.headerTitle}>Mesajlar</Text>
       <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('CompanyList')}>
         <Icon name="create-outline" size={24} color={Colors.primary} />
       </TouchableOpacity>
@@ -239,6 +359,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   };
 
   return (
+<<<<<<< HEAD
     <ChatProvider>
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -256,6 +377,44 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
               placeholderTextColor={Colors.inactive}
               value={searchQuery}
               onChangeText={setSearchQuery}
+=======
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
+      style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Sohbetlerde ara..."
+            placeholderTextColor={Colors.inactive}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <FlatList
+          data={chats.filter(chat =>
+            chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+              progressBackgroundColor="transparent"
+              progressViewOffset={-20}
+              style={{ position: 'absolute', top: -20 }}
+>>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
             />
           </View>
           <FlatList
