@@ -1,80 +1,97 @@
 import { io, Socket } from 'socket.io-client';
-import Config from 'react-native-config';
+
+const API_URL = 'https://api.aikuaiplatform.com';
 
 class SocketService {
   private socket: Socket | null = null;
 
-  async connect(token: string): Promise<Socket> {
-    if (this.socket?.connected) {
-      return this.socket;
-    }
-
-    const SOCKET_URL = __DEV__
-      ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
-      : Config.SOCKET_URL || 'https://api.aikuaiplatform.com';
-
-    this.socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      auth: {
-        token
-      },
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    });
-
-    return new Promise((resolve, reject) => {
-      if (!this.socket) {
-        reject(new Error('Socket oluşturulamadı'));
-        return;
+  connect = async (token: string): Promise<Socket | null> => {
+    try {
+      if (this.socket?.connected) {
+        return this.socket;
       }
 
-      this.socket.on('connect', () => {
-        console.log('Socket bağlantısı başarılı');
-        resolve(this.socket!);
+      this.socket = io(API_URL, {
+        transports: ['websocket', 'polling'],
+        auth: {
+          token
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        forceNew: true,
+        path: '/socket.io',
       });
 
-      this.socket.on('connect_error', (error) => {
-        console.error('Socket bağlantı hatası:', error);
-        reject(error);
-      });
-    });
-  }
+      return new Promise((resolve, reject) => {
+        if (!this.socket) {
+          reject(new Error('Socket oluşturulamadı'));
+          return;
+        }
 
-  disconnect() {
+        this.socket.on('connect', () => {
+          console.log('Socket bağlantısı başarılı');
+          resolve(this.socket);
+        });
+
+        this.socket.on('connect_error', (error) => {
+          console.error('Socket bağlantı hatası:', error.message);
+          reject(error);
+        });
+
+        this.socket.on('disconnect', (reason) => {
+          console.log('Socket bağlantısı kesildi:', reason);
+        });
+
+        // Bağlantı timeout kontrolü
+        setTimeout(() => {
+          if (!this.socket?.connected) {
+            reject(new Error('Socket bağlantı zaman aşımı'));
+          }
+        }, 20000);
+      });
+    } catch (error) {
+      console.error('Socket bağlantısı kurulurken hata:', error);
+      return null;
+    }
+  };
+
+  joinChat = (chatSessionId: string) => {
+    if (this.socket?.connected) {
+      console.log('Chat odasına katılınıyor:', chatSessionId);
+      this.socket.emit('join-chat-session', chatSessionId);
+    } else {
+      console.error('Socket bağlı değil - joinChat');
+    }
+  };
+
+  joinCompanyChat = (companyId: string) => {
+    if (this.socket?.connected) {
+      console.log('Şirket chat odasına katılınıyor:', companyId);
+      this.socket.emit('join-company-chat', companyId);
+    } else {
+      console.error('Socket bağlı değil - joinCompanyChat');
+    }
+  };
+
+  leaveChat = (chatSessionId: string) => {
+    if (this.socket?.connected) {
+      console.log('Chat odasından çıkılıyor:', chatSessionId);
+      this.socket.emit('leave-chat-session', chatSessionId);
+    }
+  };
+
+  disconnect = () => {
     if (this.socket) {
+      console.log('Socket bağlantısı kapatılıyor');
       this.socket.disconnect();
       this.socket = null;
     }
-  }
+  };
 
-  getSocket(): Socket | null {
-    return this.socket;
-  }
-
-  joinChat(chatSessionId: string) {
-    if (this.socket && chatSessionId) {
-      this.socket.emit('join-chat-session', chatSessionId);
-    }
-  }
-
-  leaveChat(chatSessionId: string) {
-    if (this.socket && chatSessionId) {
-      this.socket.emit('leave-chat-session', chatSessionId);
-    }
-  }
-
-  joinCompanyChat(companyId: string) {
-    if (this.socket && companyId) {
-      this.socket.emit('join-company-chat', companyId);
-    }
-  }
-
-  leaveCompanyChat(companyId: string) {
-    if (this.socket && companyId) {
-      this.socket.emit('leave-company-chat', companyId);
-    }
-  }
+  getSocket = () => this.socket;
 
   onNewMessage(callback: (message: any) => void) {
     this.socket?.on('new-message', callback);

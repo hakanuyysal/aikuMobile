@@ -65,7 +65,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             await chatApi.updateUserStatus(currentUserId, false);
           } catch (error) {
-            console.error('Kullanıcı durumu güncellenirken hata:', error);
           }
         }
       } else if (nextAppState === 'active') {
@@ -73,7 +72,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             await chatApi.updateUserStatus(currentUserId, true);
           } catch (error) {
-            console.error('Kullanıcı durumu güncellenirken hata:', error);
           }
         }
       }

@@ -123,7 +123,6 @@ const chatApi = {
       }
       await api.put('/chat/messages/read', payload);
     } catch (error) {
-      console.error('Mesajlar okundu olarak işaretlenirken hata:', error);
       throw error;
     }
   },
@@ -147,7 +146,6 @@ const chatApi = {
     try {
       await api.put(`/auth/users/${userId}/status`, { isOnline });
     } catch (error) {
-      console.error('Kullanıcı durumu güncellenirken hata:', error);
       throw error;
     }
   },

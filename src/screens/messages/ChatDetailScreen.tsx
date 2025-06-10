@@ -75,7 +75,6 @@ const ChatDetailScreen: React.FC = () => {
     try {
       await chatApi.markAsRead(chatSessionId, currentUserId);
     } catch (error) {
-      console.error('Mesajlar okundu olarak işaretlenirken hata:', error);
     }
   }, [chatSessionId, currentUserId]);
 
@@ -104,17 +103,13 @@ const ChatDetailScreen: React.FC = () => {
           });
 
           if (!response.ok) {
-            console.error('Kullanıcı durumu güncellenirken fetch hatası (ChatDetailScreen):', response.status, response.statusText);
           }
         } catch (fetchError) {
-          console.error('Kullanıcı durumu güncellenirken manuel fetch hatası (ChatDetailScreen):', fetchError);
         }
       } else {
-        console.error('Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error) {
-      console.error('Kullanıcı bilgisi alınırken hata (ChatDetailScreen):', error);
       navigation.getParent()?.navigate('Auth');
     }
   }, [navigation]);
@@ -155,45 +150,61 @@ const ChatDetailScreen: React.FC = () => {
     }
   }, [chatSessionId, companyId, markAllMessagesAsRead]);
 
-  const setupSocket = useCallback(async () => {
-    try {
-      const socket = await socketService.connect();
-      
-      socket?.on('new-message', (message: APIMessage) => {
-        if (message.chatSessionId === chatSessionId) {
-          setMessages(prevMessages => [...prevMessages, message]);
-          markMessageAsRead(message._id);
+  useEffect(() => {
+    const setupSocketConnection = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          console.error('Token bulunamadı');
+          return;
         }
-      });
 
-      return () => {
-        const disconnectUserStatus = async () => {
-          if (currentUserId) {
-            try {
-              const token = await AsyncStorage.getItem('auth_token');
-              const response = await fetch(`${API_URL}/auth/users/${currentUserId}/status`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ isOnline: false })
-              });
+        const socket = await socketService.connect(token);
+        
+        if (socket) {
+          // Chat odasına katıl
+          socketService.joinChat(chatSessionId);
+          socketService.joinCompanyChat(companyId);
 
-              if (!response.ok) {
-                console.error('Kullanıcı durumu güncellenirken fetch hatası (ChatDetailScreen):', response.status, response.statusText);
-              }
-            } catch (fetchError) {
-              console.error('Kullanıcı durumu güncellenirken manuel fetch hatası (ChatDetailScreen):', fetchError);
+          // Yeni mesaj dinleyicisi
+          socket.on('new-message', (message) => {
+            if (message.chatSession === chatSessionId) {
+              setMessages(prevMessages => [...prevMessages, message]);
             }
+          });
+
+          // Chat bildirimi dinleyicisi
+          socket.on('chat-notification', (notification) => {
+            if (notification.type === 'new-message') {
+              // Bildirim işlemleri burada yapılabilir
+              console.log('Yeni mesaj bildirimi:', notification);
+            }
+          });
+
+          // Chat oturumu güncelleme dinleyicisi
+          socket.on('chat-session-update', (updatedSession) => {
+            if (updatedSession) {
+              loadMessages();
+            }
+          });
+        }
+
+        return () => {
+          if (socket) {
+            socket.off('new-message');
+            socket.off('chat-notification');
+            socket.off('chat-session-update');
+            socketService.leaveChat(chatSessionId);
+            socketService.disconnect();
           }
         };
-        disconnectUserStatus();
-      };
-    } catch (error) {
-      console.error('Socket bağlantısı kurulurken hata (ChatDetailScreen):', error);
-    }
-  }, [currentUserId, chatSessionId, markMessageAsRead]);
+      } catch (error) {
+        console.error('Socket bağlantısı kurulurken hata:', error);
+      }
+    };
+
+    setupSocketConnection();
+  }, [chatSessionId, companyId]);
 
   useEffect(() => {
     setupUser();
@@ -203,9 +214,8 @@ const ChatDetailScreen: React.FC = () => {
     if (chatSessionId && companyId) {
       console.log('Mesajlar yüklenmeye başlıyor...');
       loadMessages();
-      setupSocket();
     }
-  }, [chatSessionId, companyId, loadMessages, setupSocket]);
+  }, [chatSessionId, companyId, loadMessages]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() && !sending) {

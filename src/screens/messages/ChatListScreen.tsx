@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {ChatListScreenProps} from '../../types';
+import {ChatListScreenProps, MessageStackParamList} from '../../types';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
@@ -50,11 +50,17 @@ interface Chat {
   participants: string[];
 }
 
+interface ChatDetailParams {
+  chatSessionId: string;
+  receiverId: string;
+  receiverName: string;
+  companyId: string;
+}
+
 const ChatListScreen = ({navigation}: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
 
   const fetchCurrentCompany = async (userId: string) => {
@@ -162,7 +168,6 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       console.log('Bulunan userId:', userId);
 
       if (userId) {
-        setCurrentUserId(userId);
         const companyId = await fetchCurrentCompany(userId);
         console.log('fetchCurrentCompany sonucu:', companyId);
 
@@ -194,36 +199,108 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
     }
   }, [currentCompanyId]);
 
+  const updateChatWithNewMessage = useCallback((message: any) => {
+    setChats(prevChats => {
+      const chatIndex = prevChats.findIndex(chat => chat.id === message.chatSession);
+      if (chatIndex === -1) return prevChats;
+
+      const updatedChats = [...prevChats];
+      const updatedChat = {...updatedChats[chatIndex]};
+
+      // Mesaj içeriğini güncelle
+      updatedChat.lastMessage = message.content;
+      updatedChat.time = new Date(message.createdAt).toLocaleTimeString();
+
+      // Eğer mesaj başka bir kullanıcıdan geldiyse okunmamış sayısını artır
+      if (message.sender.id !== currentCompanyId) {
+        updatedChat.unread = (updatedChat.unread || 0) + 1;
+      }
+
+      updatedChats[chatIndex] = updatedChat;
+
+      // En son mesaj gelen sohbeti en üste taşı
+      const [recentChat] = updatedChats.splice(chatIndex, 1);
+      updatedChats.unshift(recentChat);
+
+      return updatedChats;
+    });
+  }, [currentCompanyId]);
+
+  const updateChatSessionStatus = useCallback((sessionUpdate: any) => {
+    setChats(prevChats => {
+      const chatIndex = prevChats.findIndex(chat => chat.id === sessionUpdate.chatSessionId);
+      if (chatIndex === -1) return prevChats;
+
+      const updatedChats = [...prevChats];
+      const updatedChat = {...updatedChats[chatIndex]};
+
+      // Okunma durumunu güncelle
+      if (sessionUpdate.type === 'read') {
+        updatedChat.unread = 0;
+      }
+
+      updatedChats[chatIndex] = updatedChat;
+      return updatedChats;
+    });
+  }, []);
+
   const setupSocket = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        throw new Error('Token bulunamadı');
+        console.error('Token bulunamadı');
+        return;
       }
 
       const socket = await socketService.connect(token);
+      
+      if (socket && currentCompanyId) {
+        // Şirket chat odasına katıl
+        socketService.joinCompanyChat(currentCompanyId);
 
-      socket?.on('new-message', message => {
-        updateChatWithNewMessage(message);
-      });
+        // Yeni mesaj dinleyicisi
+        socket.on('new-message', (message) => {
+          console.log('Yeni mesaj alındı:', message);
+          updateChatWithNewMessage(message);
+        });
 
-      socket?.on('user-online', userId => {
-        updateUserStatus(userId, true);
-      });
+        // Chat oturumu güncelleme dinleyicisi
+        socket.on('chat-session-update', (sessionUpdate) => {
+          console.log('Chat oturumu güncellendi:', sessionUpdate);
+          updateChatSessionStatus(sessionUpdate);
+        });
 
-      socket?.on('user-offline', userId => {
-        updateUserStatus(userId, false);
-      });
+        // Mesaj okundu bildirimi
+        socket.on('message-read', (data) => {
+          console.log('Mesaj okundu bildirimi:', data);
+          updateChatSessionStatus({ 
+            type: 'read', 
+            chatSessionId: data.chatSessionId 
+          });
+        });
+
+        // Kullanıcı durumu dinleyicisi
+        socket.on('user-status-change', ({userId, isOnline}) => {
+          console.log('Kullanıcı durumu değişti:', userId, isOnline);
+          updateUserStatus(userId, isOnline);
+        });
+      }
 
       return () => {
-        if (currentUserId) {
-          chatApi.updateUserStatus(currentUserId, false);
+        if (socket) {
+          socket.off('new-message');
+          socket.off('chat-session-update');
+          socket.off('message-read');
+          socket.off('user-status-change');
+          if (currentCompanyId) {
+            socketService.disconnect();
+          }
         }
       };
     } catch (error) {
       console.error('Socket bağlantısı kurulurken hata:', error);
     }
-  }, [currentUserId]);
+  }, [currentCompanyId, updateChatWithNewMessage, updateChatSessionStatus]);
 
   useEffect(() => {
     console.log('İlk useEffect çalıştı - setupUser');
@@ -237,25 +314,6 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       setupSocket();
     }
   }, [currentCompanyId, loadChatSessions, setupSocket]);
-
-  const updateChatWithNewMessage = (message: any) => {
-    setChats(prevChats => {
-      const chatIndex = prevChats.findIndex(
-        chat => chat.id === message.chatSessionId,
-      );
-      if (chatIndex === -1) return prevChats;
-
-      const updatedChats = [...prevChats];
-      updatedChats[chatIndex] = {
-        ...updatedChats[chatIndex],
-        lastMessage: message.content,
-        time: new Date(message.timestamp).toLocaleTimeString(),
-        unread: updatedChats[chatIndex].unread + 1,
-      };
-
-      return updatedChats;
-    });
-  };
 
   const updateUserStatus = (userId: string, isOnline: boolean) => {
     setChats(prevChats => {
@@ -286,25 +344,20 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
 
   const renderItem = ({item}: {item: Chat}) => {
     const handleChatPress = () => {
-      console.log('Chat pressed:', {
-        chatSessionId: item.id,
-        receiverId: item.participants.find(p => p !== currentCompanyId) || '',
-        receiverName: item.name,
-        companyId: currentCompanyId
-      });
-      
       const otherParticipantId = item.participants.find(p => p !== currentCompanyId);
       if (!otherParticipantId) {
         console.error('Karşı katılımcı bulunamadı');
         return;
       }
 
-      navigation.navigate('ChatDetail', {
+      const params: MessageStackParamList['ChatDetail'] = {
         chatSessionId: item.id,
         receiverId: otherParticipantId,
         receiverName: item.name,
         companyId: currentCompanyId
-      });
+      };
+
+      navigation.navigate('ChatDetail', params);
     };
 
     return (
