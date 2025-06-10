@@ -26,7 +26,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -49,7 +49,7 @@ api.interceptors.response.use(
       // 401 hatası durumunda token'ı temizle ve kullanıcıyı çıkış yap
       if (error.response.status === 401) {
         try {
-          await AsyncStorage.removeItem('auth_token');
+          await AsyncStorage.removeItem('token');
           await AsyncStorage.removeItem('user_id');
           socketService.disconnect();
         } catch (e) {
@@ -185,7 +185,7 @@ const chatApi = {
   // Socket bağlantısını başlat
   initializeSocket: async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
         throw new Error('Token bulunamadı');
       }

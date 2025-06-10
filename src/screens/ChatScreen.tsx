@@ -33,7 +33,7 @@ const ChatScreen = () => {
   useEffect(() => {
     const initializeSocket = async () => {
       try {
-        const token = await AsyncStorage.getItem('auth_token');
+        const token = await AsyncStorage.getItem('token');
         
         const newSocket = io(API_URL, {
           transports: ['websocket', 'polling'],

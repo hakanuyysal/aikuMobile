@@ -285,24 +285,26 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
   );
 
   const renderItem = ({item}: {item: Chat}) => {
-    const handleChatPress = async () => {
-      try {
-        const otherParticipant = item.participants.find(
-          p => p !== currentUserId,
-        );
-        if (!otherParticipant) {
-          throw new Error('Katılımcı bulunamadı');
-        }
-        const userInfo = await chatApi.getUserInfo(otherParticipant);
-        navigation.navigate('ChatDetail', {
-          chatId: item.id,
-          receiverId: otherParticipant,
-          name: userInfo.name,
-          companyId: currentUserId,
-        });
-      } catch (error) {
-        console.error('Kullanıcı bilgileri alınırken hata:', error);
+    const handleChatPress = () => {
+      console.log('Chat pressed:', {
+        chatSessionId: item.id,
+        receiverId: item.participants.find(p => p !== currentCompanyId) || '',
+        receiverName: item.name,
+        companyId: currentCompanyId
+      });
+      
+      const otherParticipantId = item.participants.find(p => p !== currentCompanyId);
+      if (!otherParticipantId) {
+        console.error('Karşı katılımcı bulunamadı');
+        return;
       }
+
+      navigation.navigate('ChatDetail', {
+        chatSessionId: item.id,
+        receiverId: otherParticipantId,
+        receiverName: item.name,
+        companyId: currentCompanyId
+      });
     };
 
     return (

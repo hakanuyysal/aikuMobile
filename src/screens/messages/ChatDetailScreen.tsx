@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -33,14 +34,40 @@ interface RouteParams {
   companyId: string;
 }
 
+interface APIMessage {
+  _id: string;
+  chatSession: string;
+  sender: {
+    _id: string;
+    companyName: string;
+    companyLogo: string;
+    slug: string;
+    id: string;
+  };
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  timestamp: string;
+  chatSessionId: string;
+}
+
 const ChatDetailScreen: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<APIMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const flatListRef = useRef<FlatList>(null);
   const route = useRoute();
   const navigation = useNavigation();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const { chatSessionId, receiverId, receiverName, companyId } = route.params as RouteParams;
 
@@ -95,9 +122,32 @@ const ChatDetailScreen: React.FC = () => {
   const loadMessages = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await chatApi.getMessages(chatSessionId, companyId);
-      setMessages(response);
-      markAllMessagesAsRead();
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('Token bulunamadı');
+        return;
+      }
+
+      console.log('Mesajlar yükleniyor:', chatSessionId, companyId);
+      const response = await fetch(
+        `https://api.aikuaiplatform.com/api/chat/messages/${chatSessionId}?companyId=${companyId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const data = await response.json();
+      console.log('API Yanıtı:', data);
+
+      if (data.success) {
+        setMessages(data.data);
+        markAllMessagesAsRead();
+      } else {
+        console.error('Mesajlar alınamadı:', data);
+      }
     } catch (error) {
       console.error('Mesajlar yüklenirken hata:', error);
     } finally {
@@ -109,10 +159,10 @@ const ChatDetailScreen: React.FC = () => {
     try {
       const socket = await socketService.connect();
       
-      socket?.on('new-message', (message: Message) => {
+      socket?.on('new-message', (message: APIMessage) => {
         if (message.chatSessionId === chatSessionId) {
           setMessages(prevMessages => [...prevMessages, message]);
-          markMessageAsRead(message.id);
+          markMessageAsRead(message._id);
         }
       });
 
@@ -150,11 +200,12 @@ const ChatDetailScreen: React.FC = () => {
   }, [setupUser]);
 
   useEffect(() => {
-    if (currentUserId && chatSessionId) {
+    if (chatSessionId && companyId) {
+      console.log('Mesajlar yüklenmeye başlıyor...');
       loadMessages();
       setupSocket();
     }
-  }, [currentUserId, chatSessionId, loadMessages, setupSocket]);
+  }, [chatSessionId, companyId, loadMessages, setupSocket]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() && !sending) {
@@ -166,15 +217,101 @@ const ChatDetailScreen: React.FC = () => {
           senderId: currentUserId,
           receiverId: receiverId,
         };
-        const response = await chatApi.sendMessage(messageToSend);
-        setMessages(prevMessages => [...prevMessages, response]);
-        setNewMessage('');
+        
+        // API'ye mesaj gönderme isteği
+        const token = await AsyncStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/chat/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(messageToSend)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMessages(prevMessages => [...prevMessages, data.message]);
+          setNewMessage('');
+        }
       } catch (error) {
         console.error('Mesaj gönderilirken hata:', error);
       } finally {
         setSending(false);
       }
     }
+  };
+
+  const formatMessageDate = (dateString: string) => {
+    const messageDate = new Date(dateString);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const isToday = messageDate.toDateString() === now.toDateString();
+    const isYesterday = messageDate.toDateString() === yesterday.toDateString();
+    
+    if (isToday) {
+      return 'Bugün';
+    } else if (isYesterday) {
+      return 'Dün';
+    } else {
+      return messageDate.toLocaleDateString('tr-TR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  };
+
+  const renderDateBadge = (date: string) => (
+    <View style={styles.dateBadgeContainer}>
+      <View style={styles.dateBadge}>
+        <Text style={styles.dateBadgeText}>{formatMessageDate(date)}</Text>
+      </View>
+    </View>
+  );
+
+  const renderMessages = () => {
+    let currentDate = '';
+    const messageElements: React.ReactNode[] = [];
+
+    messages.forEach((item, index) => {
+      const messageDate = new Date(item.createdAt).toDateString();
+      
+      if (messageDate !== currentDate) {
+        currentDate = messageDate;
+        messageElements.push(
+          <React.Fragment key={`date-${item._id}`}>
+            {renderDateBadge(item.createdAt)}
+          </React.Fragment>
+        );
+      }
+
+      messageElements.push(
+        <View
+          key={item._id}
+          style={[
+            styles.messageContainer,
+            item.sender._id === companyId ? styles.myMessage : styles.otherMessage,
+          ]}>
+          <View
+            style={[
+              styles.messageBubble,
+              item.sender._id === companyId ? styles.myBubble : styles.otherBubble,
+            ]}>
+            <Text style={[styles.messageText, item.sender._id === companyId ? styles.myMessageText : styles.otherMessageText]}>
+              {item.content}
+            </Text>
+            <Text style={[styles.timeText, item.sender._id === companyId ? styles.myTimeText : styles.otherTimeText]}>
+              {new Date(item.createdAt).toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}
+            </Text>
+          </View>
+        </View>
+      );
+    });
+
+    return messageElements;
   };
 
   const renderHeader = () => (
@@ -186,37 +323,6 @@ const ChatDetailScreen: React.FC = () => {
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{receiverName}</Text>
       <View style={styles.headerButton} />
-    </View>
-  );
-
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View
-      style={[
-        styles.messageContainer,
-        item.senderId === currentUserId ? styles.myMessage : styles.otherMessage,
-      ]}>
-      <View
-        style={[
-          styles.messageBubble,
-          item.senderId === currentUserId ? styles.myBubble : styles.otherBubble,
-        ]}>
-        <Text
-          style={[
-            styles.messageText,
-            item.senderId === currentUserId
-              ? styles.myMessageText
-              : styles.otherMessageText,
-          ]}>
-          {item.content}
-        </Text>
-        <Text
-          style={[
-            styles.timeText,
-            item.senderId === currentUserId ? styles.myTimeText : styles.otherTimeText,
-          ]}>
-          {new Date(item.timestamp).toLocaleTimeString()}
-        </Text>
-      </View>
     </View>
   );
 
@@ -251,16 +357,13 @@ const ChatDetailScreen: React.FC = () => {
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
-          <FlatList
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={item => item.id}
+          <ScrollView
             style={styles.messageList}
             contentContainerStyle={styles.messageListContent}
-            inverted={false}
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-          />
+            ref={scrollViewRef}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({animated: true})}>
+            {renderMessages()}
+          </ScrollView>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -336,8 +439,10 @@ const styles = StyleSheet.create({
     paddingBottom: metrics.padding.xl,
   },
   messageContainer: {
-    marginVertical: metrics.margin.xs,
+    marginVertical: 2,
     flexDirection: 'row',
+    width: '100%',
+    paddingHorizontal: 8,
   },
   myMessage: {
     justifyContent: 'flex-end',
@@ -346,37 +451,45 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   messageBubble: {
-    maxWidth: '70%',
-    padding: metrics.padding.sm,
-    borderRadius: metrics.borderRadius.lg,
+    maxWidth: '75%',
+    padding: 8,
+    paddingHorizontal: 12,
+    borderRadius: 18,
   },
   myBubble: {
-    backgroundColor: Colors.primary,
-    borderBottomRightRadius: metrics.borderRadius.xs,
+    backgroundColor: '#E1FFC7',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 5,
   },
   otherBubble: {
-    backgroundColor: Colors.cardBackground,
-    borderBottomLeftRadius: metrics.borderRadius.xs,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 18,
   },
   messageText: {
-    fontSize: metrics.fontSize.md,
-    marginBottom: metrics.margin.xs,
+    fontSize: 16,
+    lineHeight: 20,
   },
   myMessageText: {
-    color: Colors.lightText,
+    color: '#000000',
   },
   otherMessageText: {
-    color: Colors.lightText,
+    color: '#000000',
   },
   timeText: {
-    fontSize: metrics.fontSize.xs,
+    fontSize: 11,
+    marginTop: 3,
     alignSelf: 'flex-end',
   },
   myTimeText: {
-    color: Colors.lightText + '80',
+    color: '#7EAA71',
   },
   otherTimeText: {
-    color: Colors.inactive,
+    color: '#8D8D8D',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -422,6 +535,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  dateBadgeContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  dateBadge: {
+    backgroundColor: 'rgba(225, 245, 254, 0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  dateBadgeText: {
+    color: '#1B1B1B',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 
