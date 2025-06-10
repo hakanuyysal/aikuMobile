@@ -23,13 +23,13 @@ import metrics from '../constants/aikuMetric';
 
 interface MenuProps {
   user: {
-    name: string;
+    name?: string;
     firstName?: string;
     lastName?: string;
     avatar?: string;
     email?: string;
     role?: string;
-  };
+  } | null;
   onClose: () => void;
   mainViewRef: Animated.AnimatedValue;
   scaleRef: Animated.AnimatedValue;
@@ -126,7 +126,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
       } else if (title === 'Investment Opportunities') {
         navigation.navigate('InvestmentDetails');
       } else if (title === 'How It Works') {
-        navigation.navigate('HowItWorksScreen');
+        navigation.navigate('HowItWorks');
       } else {
         console.log(`${title} pressed`);
       }
@@ -180,7 +180,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
               </TouchableOpacity>
               <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
-                  {user.avatar ? (
+                  {user?.avatar ? (
                     <Image source={{uri: user.avatar}} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
@@ -195,11 +195,11 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   <Text style={styles.userName}>
-                    {user.firstName && user.lastName
+                    {user?.firstName && user?.lastName
                       ? `${user.firstName} ${user.lastName}`
                       : 'Murat Tanrıyakul'}
                   </Text>
-                  {user.email && (
+                  {user?.email && (
                     <Text style={styles.userEmail}>{user.email}</Text>
                   )}
                   <View style={styles.planContainer}>

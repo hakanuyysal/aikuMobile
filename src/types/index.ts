@@ -57,3 +57,35 @@ export interface TabBarProps {
   descriptors: Record<string, any>;
   navigation: NavigationProp<ParamListBase>;
 }
+
+export type RootStackParamList = {
+  Main: undefined;
+  Auth: undefined;
+  UpdateProfile: undefined;
+  ProfileDetail: undefined;
+  SubscriptionDetails: undefined;
+  Favorites: undefined;
+  CompanyDetails: undefined;
+  ProductDetails: undefined;
+  Settings: undefined;
+  ContactUs: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+  PersonalDataProtection: undefined;
+  PaymentSuccess: undefined;
+  PaymentError: undefined;
+  InvestmentDetails: undefined;
+  Onboarding: undefined;
+  TalentPool: undefined;
+  TrainingDetail: undefined;
+  MarketPlace: undefined;
+  MarketPlaceProductDetails: undefined;
+  StartupsDetails: undefined;
+  InvestorDetails: undefined;
+  BusinessDetails: undefined;
+  InvestorMenuDetails: undefined;
+  AddBlogPost: undefined;
+  AddProduct: undefined;
+  Chat: undefined;
+  HowItWorks: undefined;
+};

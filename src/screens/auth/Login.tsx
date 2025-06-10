@@ -16,8 +16,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useAuth} from '../../contexts/AuthContext';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/AuthNavigator';
+import {RootStackParamList} from '../../types';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
 const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
@@ -27,8 +28,13 @@ const Login = ({navigation}: Props) => {
 
   const handleLogin = async () => {
     try {
-      await login(email, password);
-      navigation.navigate('Main')
+      const response = await login(email, password);
+      if (response?.user) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Main'}],
+        });
+      }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
     }
@@ -37,7 +43,13 @@ const Login = ({navigation}: Props) => {
   const handleGoogleLogin = async () => {
     try {
       const token = 'google-token';
-      await googleLogin(token);
+      const response = await googleLogin(token);
+      if (response?.success && response?.user) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Main'}],
+        });
+      }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
     }
@@ -45,7 +57,13 @@ const Login = ({navigation}: Props) => {
 
   const handleLinkedInLogin = async () => {
     try {
-      await linkedInLogin();
+      const response = await linkedInLogin();
+      if (response?.user) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Main'}],
+        });
+      }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
     }

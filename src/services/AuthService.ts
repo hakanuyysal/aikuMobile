@@ -66,7 +66,7 @@ class AuthService {
 
     // Token'ı her istekte otomatik ekle
     this.axios.interceptors.request.use(async config => {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -83,13 +83,10 @@ class AuthService {
     try {
       const response = await this.axios.post('/auth/login', credentials);
       if (response.data.token) {
-        await AsyncStorage.setItem('auth_token', response.data.token);
-        if (response.data.user && response.data.user.id) {
-          console.log('Kayıt edilecek user_id:', response.data.user.id);
-          await AsyncStorage.setItem('user_id', response.data.user.id);
-        }
+        await this.setAuthData(response.data.token, response.data.user);
+        return response.data;
       }
-      return response.data;
+      throw new Error('Token alınamadı');
     } catch (error) {
       throw this.handleError(error);
     }
@@ -97,7 +94,7 @@ class AuthService {
 
   async logout() {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
         // Token yoksa direkt çıkış yapmış sayılır
         return;
@@ -112,7 +109,7 @@ class AuthService {
       }
 
       // Her durumda local storage'ı temizle
-      await AsyncStorage.multiRemove(['auth_token', 'user', 'user_id']);
+      await AsyncStorage.multiRemove(['token', 'user', 'user_id']);
     } catch (error) {
       console.error('Logout error:', error);
       // Hata olsa bile sessizce devam et
@@ -121,19 +118,51 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
-        throw new Error('Yetkisiz erişim');
+        return null;
       }
 
-      const response = await this.axios.get('/auth/currentUser', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.data;
+      try {
+        const response = await this.axios.get('/auth/me');
+        if (response.data && response.data.user) {
+          await this.setAuthData(token, response.data.user);
+          return response.data.user;
+        }
+        return null;
+      } catch (error) {
+        if (error.response?.status === 401) {
+          await this.clearAuth();
+        }
+        return null;
+      }
     } catch (error) {
-      throw this.handleError(error);
+      console.error('Kullanıcı bilgisi alma hatası:', error);
+      return null;
+    }
+  }
+
+  private async setAuthData(token: string, user: any) {
+    try {
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+      if (user.id) {
+        await AsyncStorage.setItem('user_id', user.id);
+      }
+      this.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } catch (error) {
+      console.error('Token kaydetme hatası:', error);
+      throw error;
+    }
+  }
+
+  async clearAuth() {
+    try {
+      await AsyncStorage.multiRemove(['token', 'user', 'user_id']);
+      delete this.axios.defaults.headers.common['Authorization'];
+    } catch (error) {
+      console.error('Token silme hatası:', error);
+      throw error;
     }
   }
 
@@ -161,7 +190,7 @@ class AuthService {
       const response = await this.axios.post('/auth/google/login', {idToken});
 
       if (response.data && response.data.token) {
-        await AsyncStorage.setItem('auth_token', response.data.token);
+        await AsyncStorage.setItem('token', response.data.token);
         if (response.data.user) {
           await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
           if (response.data.user.id) {
@@ -260,7 +289,7 @@ class AuthService {
 
       // Store token if available
       if (data.session?.access_token) {
-        await AsyncStorage.setItem('auth_token', data.session.access_token);
+        await AsyncStorage.setItem('token', data.session.access_token);
         if (data.user?.id) {
           console.log('LinkedIn login sonrası kayıt edilecek user_id:', data.user.id);
           await AsyncStorage.setItem('user_id', data.user.id);

@@ -1,5 +1,6 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
 import AuthService from '../services/AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id: string;
@@ -16,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   googleLogin: (token: string) => Promise<void>;
   linkedInLogin: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,12 +34,26 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const loadUser = async () => {
     try {
+      setLoading(true);
       const userData = await AuthService.getCurrentUser();
       if (userData) {
-        setUser(userData as User);
+        setUser(userData);
+        return;
+      }
+
+      const storedUser = await AsyncStorage.getItem('user');
+      const token = await AsyncStorage.getItem('token');
+
+      if (storedUser && token) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
+        await AuthService.clearAuth();
       }
     } catch (error) {
       console.error('Kullanıcı bilgileri yüklenirken hata:', error);
+      setUser(null);
+      await AuthService.clearAuth();
     } finally {
       setLoading(false);
     }
@@ -45,12 +61,22 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await AuthService.login({ email, password });
+      const response = await AuthService.login({email, password});
       if (response.user) {
-        setUser(response.user as User);
+        setUser(response.user);
       }
+      return response;
     } catch (error) {
       throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AuthService.clearAuth();
+      setUser(null);
+    } catch (error) {
+      console.error('Çıkış yapılırken hata:', error);
     }
   };
 
@@ -58,10 +84,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       const response = await AuthService.googleLogin(token);
       if (response.success && response.user) {
-        setUser(response.user as User);
-      } else {
-        throw new Error(response.error || 'Google login failed');
+        setUser(response.user);
       }
+      return response;
     } catch (error) {
       throw error;
     }
@@ -71,19 +96,29 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       const response = await AuthService.signInWithLinkedIn();
       if (response.user) {
-        setUser(response.user as User);
+        setUser(response.user);
       }
+      return response;
     } catch (error) {
       throw error;
     }
   };
 
   const updateUser = (data: Partial<User>) => {
-    setUser(prev => prev ? {...prev, ...data} : null);
+    setUser(prev => (prev ? {...prev, ...data} : null));
   };
 
   return (
-    <AuthContext.Provider value={{user, loading, updateUser, login, googleLogin, linkedInLogin}}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        googleLogin,
+        linkedInLogin,
+        updateUser,
+      }}>
       {children}
     </AuthContext.Provider>
   );

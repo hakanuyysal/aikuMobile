@@ -12,7 +12,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from 'constants/colors';
@@ -249,7 +249,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete, navigat
 
   const onNext = (buttonText: string) => {
     if (buttonText === 'Get Started') {
-      navigation.navigate('Main');
+      onComplete();
+      navigation.navigate('Auth');
     } else if (currentIndex < slides.length - 1) {
       const newIndex = currentIndex + 1;
       setCurrentIndex(newIndex);
@@ -258,6 +259,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete, navigat
   };
 
   const onSkip = () => {
+    onComplete();
     navigation.navigate('Auth');
   };
 
