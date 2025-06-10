@@ -211,28 +211,35 @@ const ChatDetailScreen: React.FC = () => {
     if (newMessage.trim() && !sending) {
       try {
         setSending(true);
+        const token = await AsyncStorage.getItem('token');
+        
+        if (!token) {
+          console.error('Token bulunamadı');
+          return;
+        }
+
         const messageToSend = {
           chatSessionId: chatSessionId,
-          content: newMessage.trim(),
-          senderId: currentUserId,
-          receiverId: receiverId,
+          senderId: companyId,
+          content: newMessage.trim()
         };
-        
-        // API'ye mesaj gönderme isteği
-        const token = await AsyncStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/chat/messages`, {
+
+        const response = await fetch('https://api.aikuaiplatform.com/api/chat/messages', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(messageToSend)
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          setMessages(prevMessages => [...prevMessages, data.message]);
+        const data = await response.json();
+        
+        if (data.success) {
+          setMessages(prevMessages => [...prevMessages, data.data]);
           setNewMessage('');
+        } else {
+          console.error('Mesaj gönderilemedi:', data);
         }
       } catch (error) {
         console.error('Mesaj gönderilirken hata:', error);
