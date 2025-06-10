@@ -36,6 +36,7 @@ import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
 import AddProduct from './src/screens/AddProduct';
+import { ChatProvider } from './src/contexts/ChatContext';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -98,6 +99,7 @@ const navigationTheme = {
     notification: Colors.primary,
   },
 };
+
 function AppContent(): React.JSX.Element {
   const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -132,8 +134,12 @@ function AppContent(): React.JSX.Element {
     return <SplashScreen />;
   }
 
-  const handleMenuOpen = () => {
-    setIsMenuOpen(true);
+  const MainScreen = (props: any) => {
+    const handleMenuOpen = () => {
+      setIsMenuOpen(true);
+    };
+    
+    return <TabNavigator {...props} onMenuOpen={handleMenuOpen} />;
   };
 
   // Determine initial route based on state
@@ -169,9 +175,7 @@ function AppContent(): React.JSX.Element {
             <>
               <RootStack.Screen
                 name="Main"
-                component={(props: Props) => (
-                  <TabNavigator {...props} onMenuOpen={handleMenuOpen} />
-                )}
+                component={MainScreen}
                 options={{ headerShown: false }}
               />
               <RootStack.Screen
@@ -322,8 +326,10 @@ function App(): React.JSX.Element {
     <NavigationContainer theme={navigationTheme}>
       <PaperProvider theme={materialTheme}>
         <AuthProvider>
-          <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-          <AppContent />
+          <ChatProvider>
+            <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+            <AppContent />
+          </ChatProvider>
         </AuthProvider>
       </PaperProvider>
     </NavigationContainer>

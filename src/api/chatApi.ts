@@ -1,10 +1,18 @@
 import axios, { AxiosInstance } from 'axios';
 import { Message, ChatSession } from '../types/chat';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
+import socketService from '../services/socketService';
 
 // Android emülatörü için: http://10.0.2.2:3004/api
 // Gerçek cihaz veya iOS simülatörü için: Bilgisayarınızın yerel IP adresi (örn: http://192.168.1.XX:3004/api)
-const API_URL = 'https://api.aikuaiplatform.com/api';
+const API_URL = __DEV__ 
+  ? 'http://10.0.2.2:3004/api'  // Android emülatör için localhost
+  : Config.API_URL || 'https://api.aikuaiplatform.com/api';
+
+const SOCKET_URL = __DEV__
+  ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
+  : Config.SOCKET_URL || 'https://api.aikuaiplatform.com';
 
 // Axios instance oluştur
 const api = axios.create({
@@ -43,7 +51,7 @@ api.interceptors.response.use(
         try {
           await AsyncStorage.removeItem('auth_token');
           await AsyncStorage.removeItem('user_id');
-          // Burada bir event emitter veya global state yönetimi ile login ekranına yönlendirme yapılabilir
+          socketService.disconnect();
         } catch (e) {
           console.error('Token temizlenirken hata:', e);
         }
@@ -137,7 +145,7 @@ const chatApi = {
   // Kullanıcı durumunu güncelle
   updateUserStatus: async (userId: string, isOnline: boolean): Promise<void> => {
     try {
-      await api.put(`/users/${userId}/status`, { isOnline });
+      await api.put(`/auth/users/${userId}/status`, { isOnline });
     } catch (error) {
       console.error('Kullanıcı durumu güncellenirken hata:', error);
       throw error;
@@ -147,22 +155,86 @@ const chatApi = {
   // Kullanıcı bilgilerini getir
   getUserInfo: async (userId: string) => {
     try {
-      const response = await api.get(`/users/${userId}`);
+      const response = await api.get(`/auth/users/${userId}`);
+      if (!response.data || !response.data.user) {
+        throw new Error('Kullanıcı bilgisi bulunamadı');
+      }
       return response.data.user;
     } catch (error) {
       console.error('Kullanıcı bilgileri alınırken hata:', error);
+      // Varsayılan kullanıcı bilgilerini döndür
+      return {
+        name: 'Bilinmeyen Kullanıcı',
+        avatar: '',
+        isOnline: false
+      };
+    }
+  },
+
+  // getCompanies endpoint'i
+  getCompanies: async (): Promise<any[]> => {
+    try {
+      const response = await api.get('/auth/companies/current');
+      return response.data.companies || [];
+    } catch (error) {
+      console.error('Şirketler alınırken hata:', error);
+      return [];
+    }
+  },
+
+  // Socket bağlantısını başlat
+  initializeSocket: async () => {
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Token bulunamadı');
+      }
+
+      const socket = await socketService.connect(token);
+      
+      if (!socket) {
+        throw new Error('Socket bağlantısı kurulamadı');
+      }
+
+      return socket;
+    } catch (error) {
+      console.error('Socket başlatılırken hata:', error);
       throw error;
     }
   },
 
-  // getCompanies endpoint'i eksik, backend'e eklenmeli veya doğrulanmalı
-  getCompanies: async (): Promise<any[]> => {
-    try {
-      const response = await api.get('/companies/current');
-      return response.data.companies;
-    } catch (error) {
-      console.error('Şirketler alınırken hata:', error);
-      throw error;
+  // Socket bağlantısını kapat
+  disconnectSocket: () => {
+    socketService.disconnect();
+  },
+
+  // Socket mesajı gönder
+  sendSocketMessage: (message: {
+    chatSessionId: string;
+    content: string;
+    senderId: string;
+    receiverId: string;
+    attachment?: string;
+  }) => {
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.emit('message', message);
+    }
+  },
+
+  // Socket mesajlarını dinle
+  onMessage: (callback: (message: Message) => void) => {
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('message', callback);
+    }
+  },
+
+  // Socket mesaj dinleyicisini kaldır
+  offMessage: (callback: (message: Message) => void) => {
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.off('message', callback);
     }
   },
 };

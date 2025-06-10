@@ -78,6 +78,7 @@ class AuthService {
       if (response.data.token) {
         await AsyncStorage.setItem('auth_token', response.data.token);
         if (response.data.user && response.data.user.id) {
+          console.log('Kayıt edilecek user_id:', response.data.user.id);
           await AsyncStorage.setItem('user_id', response.data.user.id);
         }
       }
@@ -157,6 +158,7 @@ class AuthService {
         if (response.data.user) {
           await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
           if (response.data.user.id) {
+            console.log('Google login sonrası kayıt edilecek user_id:', response.data.user.id);
             await AsyncStorage.setItem('user_id', response.data.user.id);
           }
         }
@@ -223,6 +225,7 @@ class AuthService {
       if (data.session?.access_token) {
         await AsyncStorage.setItem('auth_token', data.session.access_token);
         if (data.user?.id) {
+          console.log('LinkedIn login sonrası kayıt edilecek user_id:', data.user.id);
           await AsyncStorage.setItem('user_id', data.user.id);
         }
       }

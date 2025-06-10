@@ -19,8 +19,13 @@ import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import chatApi from '../../api/chatApi';
-import SocketService from '../../services/socketService';
+import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
+
+const API_URL = __DEV__ 
+  ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
+  : Config.API_URL || 'https://api.aikuaiplatform.com';
 
 interface RouteParams {
   chatSessionId: string;
@@ -37,7 +42,6 @@ const ChatDetailScreen: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const route = useRoute();
   const navigation = useNavigation();
-  const socketService = SocketService.getInstance();
 
   const { chatSessionId, receiverId, receiverName, companyId } = route.params as RouteParams;
 
@@ -62,13 +66,29 @@ const ChatDetailScreen: React.FC = () => {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) {
         setCurrentUserId(userId);
-        await chatApi.updateUserStatus(userId, true);
+        try {
+          const token = await AsyncStorage.getItem('auth_token');
+          const response = await fetch(`${API_URL}/auth/users/${userId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ isOnline: true })
+          });
+
+          if (!response.ok) {
+            console.error('Kullanıcı durumu güncellenirken fetch hatası (ChatDetailScreen):', response.status, response.statusText);
+          }
+        } catch (fetchError) {
+          console.error('Kullanıcı durumu güncellenirken manuel fetch hatası (ChatDetailScreen):', fetchError);
+        }
       } else {
         Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error) {
-      console.error('Kullanıcı bilgisi alınırken hata:', error);
+      console.error('Kullanıcı bilgisi alınırken hata (ChatDetailScreen):', error);
       Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
       navigation.getParent()?.navigate('Auth');
     }
@@ -100,15 +120,34 @@ const ChatDetailScreen: React.FC = () => {
       });
 
       return () => {
-        if (currentUserId) {
-          chatApi.updateUserStatus(currentUserId, false);
-        }
+        const disconnectUserStatus = async () => {
+          if (currentUserId) {
+            try {
+              const token = await AsyncStorage.getItem('auth_token');
+              const response = await fetch(`${API_URL}/auth/users/${currentUserId}/status`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ isOnline: false })
+              });
+
+              if (!response.ok) {
+                console.error('Kullanıcı durumu güncellenirken fetch hatası (ChatDetailScreen):', response.status, response.statusText);
+              }
+            } catch (fetchError) {
+              console.error('Kullanıcı durumu güncellenirken manuel fetch hatası (ChatDetailScreen):', fetchError);
+            }
+          }
+        };
+        disconnectUserStatus();
       };
     } catch (error) {
-      console.error('Socket bağlantısı kurulurken hata:', error);
+      console.error('Socket bağlantısı kurulurken hata (ChatDetailScreen):', error);
       Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
     }
-  }, [currentUserId, chatSessionId, socketService, markMessageAsRead]);
+  }, [currentUserId, chatSessionId, markMessageAsRead]);
 
   useEffect(() => {
     setupUser();

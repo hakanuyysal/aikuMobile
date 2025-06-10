@@ -17,8 +17,10 @@ import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import chatApi from '../../api/chatApi';
-import SocketService from '../../services/socketService';
+import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
+import { ChatProvider } from '../../components/Chat/ChatProvider';
 
 interface Chat {
   id: string;
@@ -36,14 +38,29 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
-  const socketService = SocketService.getInstance();
 
   const setupUser = useCallback(async () => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) {
         setCurrentUserId(userId);
-        await chatApi.updateUserStatus(userId, true);
+        try {
+          const token = await AsyncStorage.getItem('auth_token');
+          const response = await fetch(`https://api.aikuaiplatform.com/auth/users/${userId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ isOnline: true })
+          });
+
+          if (!response.ok) {
+            console.error('Kullanıcı durumu güncellenirken fetch hatası:', response.status, response.statusText);
+          }
+        } catch (fetchError) {
+          console.error('Kullanıcı durumu güncellenirken manuel fetch hatası:', fetchError);
+        }
       } else {
         Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
@@ -89,7 +106,12 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
 
   const setupSocket = useCallback(async () => {
     try {
-      const socket = await socketService.connect();
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Token bulunamadı');
+      }
+      
+      const socket = await socketService.connect(token);
       
       socket?.on('new-message', (message) => {
         updateChatWithNewMessage(message);
@@ -112,7 +134,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       console.error('Socket bağlantısı kurulurken hata:', error);
       Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
     }
-  }, [currentUserId, socketService]);
+  }, [currentUserId]);
 
   useEffect(() => {
     setupUser();
@@ -217,47 +239,49 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   };
 
   return (
-    <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
-      style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        {renderHeader()}
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search in chats"
-            placeholderTextColor={Colors.inactive}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-        <FlatList
-          data={chats.filter(chat =>
-            chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={loadChatSessions}
-              tintColor={Colors.primary}
-              colors={[Colors.primary]}
-              progressBackgroundColor="transparent"
-              progressViewOffset={-20}
-              style={{ position: 'absolute', top: -20 }}
+    <ChatProvider>
+      <LinearGradient
+        colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+        locations={[0, 0.3, 0.6, 0.9]}
+        start={{x: 0, y: 0}}
+        end={{x: 2, y: 1}}
+        style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {renderHeader()}
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search in chats"
+              placeholderTextColor={Colors.inactive}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-          }
-        />
-      </SafeAreaView>
-    </LinearGradient>
+          </View>
+          <FlatList
+            data={chats.filter(chat =>
+              chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+            )}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={loadChatSessions}
+                tintColor={Colors.primary}
+                colors={[Colors.primary]}
+                progressBackgroundColor="transparent"
+                progressViewOffset={-20}
+                style={{ position: 'absolute', top: -20 }}
+              />
+            }
+          />
+        </SafeAreaView>
+      </LinearGradient>
+    </ChatProvider>
   );
 };
 
