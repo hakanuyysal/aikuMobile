@@ -9,7 +9,6 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
@@ -19,7 +18,6 @@ import metrics from '../../constants/aikuMetric';
 import chatApi from '../../api/chatApi';
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Config from 'react-native-config';
 import { ChatProvider } from '../../components/Chat/ChatProvider';
 
 interface Chat {
@@ -62,12 +60,11 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           console.error('Kullanıcı durumu güncellenirken manuel fetch hatası:', fetchError);
         }
       } else {
-        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        console.error('Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error) {
       console.error('Kullanıcı bilgisi alınırken hata:', error);
-      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
       navigation.getParent()?.navigate('Auth');
     }
   }, [navigation]);
@@ -98,7 +95,6 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       setChats(formattedChats);
     } catch (error) {
       console.error('Sohbet oturumları yüklenirken hata:', error);
-      Alert.alert('Hata', 'Sohbet listesi yüklenemedi');
     } finally {
       setRefreshing(false);
     }
@@ -132,7 +128,6 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
       };
     } catch (error) {
       console.error('Socket bağlantısı kurulurken hata:', error);
-      Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
     }
   }, [currentUserId]);
 
@@ -203,7 +198,6 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
         });
       } catch (error) {
         console.error('Kullanıcı bilgileri alınırken hata:', error);
-        Alert.alert('Hata', 'Sohbet başlatılamadı');
       }
     };
 

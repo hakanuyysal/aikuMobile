@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -84,12 +83,11 @@ const ChatDetailScreen: React.FC = () => {
           console.error('Kullanıcı durumu güncellenirken manuel fetch hatası (ChatDetailScreen):', fetchError);
         }
       } else {
-        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        console.error('Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error) {
       console.error('Kullanıcı bilgisi alınırken hata (ChatDetailScreen):', error);
-      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
       navigation.getParent()?.navigate('Auth');
     }
   }, [navigation]);
@@ -102,7 +100,6 @@ const ChatDetailScreen: React.FC = () => {
       markAllMessagesAsRead();
     } catch (error) {
       console.error('Mesajlar yüklenirken hata:', error);
-      Alert.alert('Hata', 'Mesajlar yüklenemedi');
     } finally {
       setLoading(false);
     }
@@ -145,7 +142,6 @@ const ChatDetailScreen: React.FC = () => {
       };
     } catch (error) {
       console.error('Socket bağlantısı kurulurken hata (ChatDetailScreen):', error);
-      Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
     }
   }, [currentUserId, chatSessionId, markMessageAsRead]);
 
@@ -175,7 +171,6 @@ const ChatDetailScreen: React.FC = () => {
         setNewMessage('');
       } catch (error) {
         console.error('Mesaj gönderilirken hata:', error);
-        Alert.alert('Hata', 'Mesaj gönderilemedi');
       } finally {
         setSending(false);
       }

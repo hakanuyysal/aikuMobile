@@ -8,7 +8,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import io, { Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,9 +58,9 @@ const ChatScreen = () => {
         newSocket.on('connect_error', (error) => {
           setIsConnected(false);
           if (error.message === 'Authentication error') {
-            Alert.alert('Bağlantı Hatası', 'Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
+            console.error('Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
           } else {
-            Alert.alert('Bağlantı Hatası', 'Sunucuya bağlanırken bir hata oluştu.');
+            console.error('Sunucuya bağlanırken bir hata oluştu.');
           }
         });
 
@@ -82,7 +81,6 @@ const ChatScreen = () => {
         };
       } catch (error) {
         console.error('Socket başlatma hatası:', error);
-        Alert.alert('Hata', 'Mesajlaşma sistemi başlatılamadı.');
       }
     };
 
@@ -94,15 +92,15 @@ const ChatScreen = () => {
       const message: Message = {
         id: Date.now().toString(),
         text: inputText,
-        sender: 'user', // Kullanıcı kimliğini buraya ekleyin
+        sender: 'user',
         timestamp: Date.now(),
-        chatSessionId: 'default', // Sohbet oturumu ID'sini buraya ekleyin
+        chatSessionId: 'default',
       };
 
       socket.emit('message', message);
       setInputText('');
     } else if (!isConnected) {
-      Alert.alert('Bağlantı Hatası', 'Sunucuya bağlı değilsiniz.');
+      console.error('Sunucuya bağlı değilsiniz.');
     }
   };
 
