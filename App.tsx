@@ -36,11 +36,8 @@ import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
 import AddProduct from './src/screens/AddProduct';
-<<<<<<< HEAD
 import { ChatProvider } from './src/contexts/ChatContext';
-=======
 import ChatScreen from './src/screens/ChatScreen';
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 
 export type RootStackParamList = {
   Main: undefined;
@@ -71,9 +68,8 @@ export type RootStackParamList = {
   AddBlogPost: undefined;
   AddProduct: undefined;
   Chat: undefined;
+  HowItWorks: undefined;
 };
-
-type Props = NativeStackScreenProps<RootStackParamList>;
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -258,12 +254,12 @@ function AppContent(): React.JSX.Element {
                 component={PaymentError}
                 options={{ headerShown: false }}
               />
-               <RootStack.Screen
-                name="HowItWorksScreen"
+              <RootStack.Screen
+                name="HowItWorks"
                 component={HowItWorksScreen}
                 options={{ headerShown: false }}
               />
-               <RootStack.Screen
+              <RootStack.Screen
                 name="MarketPlace"
                 component={MarketPlaceScreen}
                 options={{ headerShown: false }}
@@ -283,7 +279,7 @@ function AppContent(): React.JSX.Element {
                 component={Investor}
                 options={{ headerShown: false }}
               />
-               <RootStack.Screen
+              <RootStack.Screen
                 name="BusinessDetails"
                 component={Business}
                 options={{ headerShown: false }}
@@ -313,7 +309,6 @@ function AppContent(): React.JSX.Element {
         </RootStack.Navigator>
       </Animated.View>
 
-
       {isMenuOpen && user && (
         <Menu
           user={{
@@ -333,16 +328,16 @@ function AppContent(): React.JSX.Element {
 
 function App(): React.JSX.Element {
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <AuthProvider>
       <PaperProvider theme={materialTheme}>
-        <AuthProvider>
+        <NavigationContainer theme={navigationTheme}>
           <ChatProvider>
             <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
             <AppContent />
           </ChatProvider>
-        </AuthProvider>
+        </NavigationContainer>
       </PaperProvider>
-    </NavigationContainer>
+    </AuthProvider>
   );
 }
 

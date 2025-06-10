@@ -48,8 +48,12 @@ const slides = [
   },
 ];
 
-const OnboardingScreen = () => {
-  const navigation = useNavigation<OnboardingNavigationProp>();
+interface OnboardingScreenProps {
+  onComplete: () => void;
+  navigation: any;
+}
+
+const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete, navigation }) => {
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');

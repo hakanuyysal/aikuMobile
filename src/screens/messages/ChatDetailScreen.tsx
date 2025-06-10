@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
-=======
-import React, {useState, useEffect, useRef} from 'react';
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 import {
   View,
   Text,
@@ -14,10 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-<<<<<<< HEAD
   ActivityIndicator,
-=======
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -25,7 +18,6 @@ import { Message } from '../../types/chat';
 import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
-<<<<<<< HEAD
 import chatApi from '../../api/chatApi';
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -187,139 +179,6 @@ const ChatDetailScreen: React.FC = () => {
       } finally {
         setSending(false);
       }
-=======
-import socket from '../../socket';
-
-interface Message {
-  id: string;
-  text: string;
-  time: string;
-  senderType: 'me' | 'other';
-  timestamp: number;
-  chatSessionId?: string;
-  chatSession?: string;
-  content?: string;
-  createdAt?: string;
-  sender?: {
-    id?: string;
-    _id?: string;
-  };
-}
-
-const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
-  const {name, chatId} = route.params;
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    // Socket bağlantı durumunu dinle
-    const handleConnect = () => {
-      setIsConnected(true);
-      console.log('Socket bağlantısı başarılı');
-      if (socket.joinChat) {
-        socket.joinChat(chatId);
-      }
-    };
-
-    const handleDisconnect = () => {
-      setIsConnected(false);
-      console.log('Socket bağlantısı kesildi');
-    };
-
-    const handleConnectError = (error: Error) => {
-      setIsConnected(false);
-      console.error('Bağlantı hatası:', error);
-      
-      if (error.message === 'Authentication error') {
-        Alert.alert('Bağlantı Hatası', 'Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
-      } else if (error.message.includes('xhr poll error')) {
-        Alert.alert('Bağlantı Hatası', 'Sunucuya bağlanırken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.');
-      } else {
-        Alert.alert('Bağlantı Hatası', `Sunucuya bağlanırken bir hata oluştu: ${error.message}`);
-      }
-    };
-
-    // Mesaj dinleyicileri
-    const handleNewMessage = (message: Message) => {
-      if (message.chatSessionId === chatId || message.chatSession === chatId) {
-        setMessages(prevMessages => {
-          const exists = prevMessages.some(m => m.id === message.id);
-          if (!exists) {
-            return [...prevMessages, message];
-          }
-          return prevMessages;
-        });
-      }
-    };
-
-    const handleChatNotification = (notification: any) => {
-      if (notification.type === 'new-message' && 
-          (notification.chatSessionId === chatId || notification.chatSession === chatId)) {
-        const newMessage = notification.message;
-        setMessages(prevMessages => {
-          const exists = prevMessages.some(m => m.id === newMessage.id);
-          if (!exists) {
-            return [...prevMessages, newMessage];
-          }
-          return prevMessages;
-        });
-      }
-    };
-
-    // Event dinleyicilerini ekle
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on('connect_error', handleConnectError);
-    socket.on('new-message', handleNewMessage);
-    socket.on('chat-notification', handleChatNotification);
-
-    // Sohbet odasına katıl
-    if (socket.connected && socket.joinChat) {
-      socket.joinChat(chatId);
-    }
-
-    // Cleanup
-    return () => {
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-      socket.off('connect_error', handleConnectError);
-      socket.off('new-message', handleNewMessage);
-      socket.off('chat-notification', handleChatNotification);
-      if (socket.leaveChat) {
-        socket.leaveChat(chatId);
-      }
-    };
-  }, [chatId]);
-
-  const handleSendMessage = () => {
-    if (message.trim() && isConnected) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: message.trim(),
-        time: new Date().toLocaleTimeString('tr-TR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        senderType: 'me',
-        timestamp: Date.now(),
-        content: message.trim(),
-        chatSessionId: chatId,
-        createdAt: new Date().toISOString()
-      };
-
-      socket.emit('message', {
-        chatSessionId: chatId,
-        content: message.trim(),
-        timestamp: Date.now()
-      });
-      
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      setMessage('');
-    } else if (!isConnected) {
-      Alert.alert('Bağlantı Hatası', 'Sunucuya bağlı değilsiniz.');
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
     }
   };
 
@@ -339,29 +198,17 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
     <View
       style={[
         styles.messageContainer,
-<<<<<<< HEAD
         item.senderId === currentUserId ? styles.myMessage : styles.otherMessage,
-=======
-        item.senderType === 'me' ? styles.myMessage : styles.otherMessage,
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
       ]}>
       <View
         style={[
           styles.messageBubble,
-<<<<<<< HEAD
           item.senderId === currentUserId ? styles.myBubble : styles.otherBubble,
-=======
-          item.senderType === 'me' ? styles.myBubble : styles.otherBubble,
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
         ]}>
         <Text
           style={[
             styles.messageText,
-<<<<<<< HEAD
             item.senderId === currentUserId
-=======
-            item.senderType === 'me'
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
               ? styles.myMessageText
               : styles.otherMessageText,
           ]}>
@@ -370,11 +217,7 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
         <Text
           style={[
             styles.timeText,
-<<<<<<< HEAD
             item.senderId === currentUserId ? styles.myTimeText : styles.otherTimeText,
-=======
-            item.senderType === 'me' ? styles.myTimeText : styles.otherTimeText,
->>>>>>> c88be93c794dbe2100913e9be531e3dc39bd2955
           ]}>
           {new Date(item.timestamp).toLocaleTimeString()}
         </Text>
@@ -414,7 +257,6 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
           <FlatList
-            ref={flatListRef}
             data={messages}
             renderItem={renderMessage}
             keyExtractor={item => item.id}
