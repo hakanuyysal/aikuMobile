@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,35 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ChatListScreenProps } from '../../types';
-import { Colors } from '../../constants/colors';
+import {ChatListScreenProps} from '../../types';
+import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import chatApi from '../../api/chatApi';
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChatProvider } from '../../components/Chat/ChatProvider';
+import {ChatProvider} from '../../components/Chat/ChatProvider';
+
+interface Company {
+  id: string;
+  companyName: string;
+  companyLogo: string;
+}
+
+interface ChatSession {
+  _id: string;
+  initiatorCompany: Company;
+  targetCompany: Company;
+  title: string;
+  unreadCountInitiator: number;
+  unreadCountTarget: number;
+  lastMessageText?: string;
+  lastMessageDate?: string;
+  lastMessageSender?: Company;
+}
 
 interface Chat {
   id: string;
@@ -31,40 +50,133 @@ interface Chat {
   participants: string[];
 }
 
-const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
+const ChatListScreen = ({navigation}: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
+
+  const fetchCurrentCompany = async (userId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token);
+      console.log('UserId:', userId);
+
+      if (!token) {
+        console.error('Token bulunamadı');
+        return null;
+      }
+
+      const response = await fetch(
+        `https://api.aikuaiplatform.com/api/company/current?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log('Company API Response Status:', response.status);
+      const data = await response.json();
+      console.log('Company API Response:', data);
+
+      if (data.success && data.companies.length > 0) {
+        const companyId = data.companies[0].id;
+        console.log('Seçilen Company ID:', companyId);
+        setCurrentCompanyId(companyId);
+        return companyId;
+      }
+      console.error('Şirket bulunamadı veya API yanıtı başarısız');
+      return null;
+    } catch (error) {
+      console.error('Şirket bilgisi alınırken hata:', error);
+      return null;
+    }
+  };
+
+  const fetchChatSessions = async (companyId: string) => {
+    try {
+      console.log('fetchChatSessions çağrıldı, companyId:', companyId);
+      const token = await AsyncStorage.getItem('token');
+
+      if (!token) {
+        console.error('Token bulunamadı - fetchChatSessions');
+        return;
+      }
+
+      const response = await fetch(
+        `https://api.aikuaiplatform.com/api/chat/sessions/${companyId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log('Chat Sessions API Response Status:', response.status);
+      const data = await response.json();
+      console.log('Chat Sessions API Response:', data);
+
+      if (data.success && Array.isArray(data.data)) {
+        const formattedChats = data.data.map((session: ChatSession) => {
+          const isInitiator = session.initiatorCompany.id === companyId;
+          return {
+            id: session._id,
+            name: isInitiator
+              ? session.targetCompany.companyName
+              : session.initiatorCompany.companyName,
+            lastMessage: session.lastMessageText || '',
+            time: session.lastMessageDate
+              ? new Date(session.lastMessageDate).toLocaleTimeString()
+              : '',
+            avatar: isInitiator
+              ? session.targetCompany.companyLogo
+              : session.initiatorCompany.companyLogo,
+            unread: isInitiator
+              ? session.unreadCountInitiator
+              : session.unreadCountTarget,
+            isOnline: false,
+            participants: [
+              session.initiatorCompany.id,
+              session.targetCompany.id,
+            ],
+          };
+        });
+        console.log('Formatlanmış chat listesi:', formattedChats);
+        setChats(formattedChats);
+      } else {
+        console.error('Chat sessions verisi alınamadı veya hatalı format');
+      }
+    } catch (error) {
+      console.error('Sohbet oturumları yüklenirken hata:', error);
+    }
+  };
 
   const setupUser = useCallback(async () => {
     try {
+      console.log('setupUser başladı');
       const userId = await AsyncStorage.getItem('user_id');
+      console.log('Bulunan userId:', userId);
+
       if (userId) {
         setCurrentUserId(userId);
-        try {
-          const token = await AsyncStorage.getItem('auth_token');
-          const response = await fetch(`https://api.aikuaiplatform.com/auth/users/${userId}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ isOnline: true })
-          });
+        const companyId = await fetchCurrentCompany(userId);
+        console.log('fetchCurrentCompany sonucu:', companyId);
 
-          if (!response.ok) {
-            console.error('Kullanıcı durumu güncellenirken fetch hatası:', response.status, response.statusText);
-          }
-        } catch (fetchError) {
-          console.error('Kullanıcı durumu güncellenirken manuel fetch hatası:', fetchError);
+        if (companyId) {
+          await fetchChatSessions(companyId);
+        } else {
+          console.error('Company ID alınamadı');
         }
       } else {
         console.error('Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error) {
-      console.error('Kullanıcı bilgisi alınırken hata:', error);
+      console.error('setupUser hata:', error);
       navigation.getParent()?.navigate('Auth');
     }
   }, [navigation]);
@@ -72,52 +184,34 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   const loadChatSessions = useCallback(async () => {
     try {
       setRefreshing(true);
-      const sessions = await chatApi.getChatSessions(currentUserId);
-      const formattedChats = await Promise.all(
-        sessions.map(async (session) => {
-          const otherParticipant = session.participants.find(p => p !== currentUserId);
-          let userInfo: any = { name: 'Bilinmeyen', avatar: '', isOnline: false };
-          if (otherParticipant) {
-            userInfo = await chatApi.getUserInfo(otherParticipant);
-          }
-          return {
-            id: session.id,
-            name: userInfo.name,
-            lastMessage: session.lastMessage?.content || '',
-            time: session.lastMessage ? new Date(session.lastMessage.timestamp).toLocaleTimeString() : '',
-            avatar: userInfo.avatar || '',
-            unread: session.unreadCount,
-            isOnline: userInfo.isOnline,
-            participants: session.participants,
-          };
-        })
-      );
-      setChats(formattedChats);
+      if (currentCompanyId) {
+        await fetchChatSessions(currentCompanyId);
+      }
     } catch (error) {
       console.error('Sohbet oturumları yüklenirken hata:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [currentUserId]);
+  }, [currentCompanyId]);
 
   const setupSocket = useCallback(async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
         throw new Error('Token bulunamadı');
       }
-      
+
       const socket = await socketService.connect(token);
-      
-      socket?.on('new-message', (message) => {
+
+      socket?.on('new-message', message => {
         updateChatWithNewMessage(message);
       });
 
-      socket?.on('user-online', (userId) => {
+      socket?.on('user-online', userId => {
         updateUserStatus(userId, true);
       });
 
-      socket?.on('user-offline', (userId) => {
+      socket?.on('user-offline', userId => {
         updateUserStatus(userId, false);
       });
 
@@ -132,19 +226,23 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   }, [currentUserId]);
 
   useEffect(() => {
+    console.log('İlk useEffect çalıştı - setupUser');
     setupUser();
   }, [setupUser]);
 
   useEffect(() => {
-    if (currentUserId) {
+    if (currentCompanyId) {
+      console.log('CompanyId değişti, yeni değer:', currentCompanyId);
       loadChatSessions();
       setupSocket();
     }
-  }, [currentUserId, loadChatSessions, setupSocket]);
+  }, [currentCompanyId, loadChatSessions, setupSocket]);
 
   const updateChatWithNewMessage = (message: any) => {
     setChats(prevChats => {
-      const chatIndex = prevChats.findIndex(chat => chat.id === message.chatSessionId);
+      const chatIndex = prevChats.findIndex(
+        chat => chat.id === message.chatSessionId,
+      );
       if (chatIndex === -1) return prevChats;
 
       const updatedChats = [...prevChats];
@@ -163,7 +261,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     setChats(prevChats => {
       return prevChats.map(chat => {
         if (chat.id === userId) {
-          return { ...chat, isOnline };
+          return {...chat, isOnline};
         }
         return chat;
       });
@@ -172,20 +270,26 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Mesajlar</Text>
-      <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('CompanyList')}>
+      <Text style={styles.headerTitle}>Messages</Text>
+      <TouchableOpacity
+        style={styles.headerButton}
+        onPress={() => navigation.navigate('CompanyList')}>
         <Icon name="create-outline" size={24} color={Colors.primary} />
       </TouchableOpacity>
     </View>
   );
 
-  const renderItem = ({ item }: { item: Chat }) => {
+  const renderItem = ({item}: {item: Chat}) => {
     const handleChatPress = async () => {
       try {
-        const otherParticipant = item.participants.find(p => p !== currentUserId);
+        const otherParticipant = item.participants.find(
+          p => p !== currentUserId,
+        );
         if (!otherParticipant) {
           throw new Error('Katılımcı bulunamadı');
         }
@@ -202,14 +306,11 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     };
 
     return (
-      <TouchableOpacity
-        style={styles.chatItem}
-        onPress={handleChatPress}
-      >
+      <TouchableOpacity style={styles.chatItem} onPress={handleChatPress}>
         <View style={styles.avatar}>
-          <Image 
-            source={{ uri: item.avatar }} 
-            style={styles.avatarImage} 
+          <Image
+            source={{uri: item.avatar}}
+            style={styles.avatarImage}
             resizeMode="contain"
           />
           {item.isOnline && <View style={styles.onlineIndicator} />}
@@ -243,7 +344,12 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
         <SafeAreaView style={styles.safeArea}>
           {renderHeader()}
           <View style={styles.searchContainer}>
-            <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+            <Icon
+              name="search"
+              size={20}
+              color={Colors.lightText}
+              style={styles.searchIcon}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder="Search in chats"
@@ -254,7 +360,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           </View>
           <FlatList
             data={chats.filter(chat =>
-              chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+              chat.name.toLowerCase().includes(searchQuery.toLowerCase()),
             )}
             renderItem={renderItem}
             keyExtractor={item => item.id}
@@ -269,7 +375,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
                 colors={[Colors.primary]}
                 progressBackgroundColor="transparent"
                 progressViewOffset={-20}
-                style={{ position: 'absolute', top: -20 }}
+                style={{position: 'absolute', top: -20}}
               />
             }
           />
@@ -414,4 +520,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatListScreen; 
+export default ChatListScreen;
