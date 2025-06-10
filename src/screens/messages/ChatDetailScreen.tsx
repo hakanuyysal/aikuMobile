@@ -150,6 +150,51 @@ const ChatDetailScreen: React.FC = () => {
     }
   }, [chatSessionId, companyId, markAllMessagesAsRead]);
 
+  const handleSendMessage = async () => {
+    if (newMessage.trim() && !sending) {
+      try {
+        setSending(true);
+        const token = await AsyncStorage.getItem('token');
+        
+        if (!token) {
+          console.error('Token bulunamadı');
+          return;
+        }
+
+        const messageToSend = {
+          chatSessionId: chatSessionId,
+          senderId: companyId,
+          content: newMessage.trim()
+        };
+
+        const response = await fetch('https://api.aikuaiplatform.com/api/chat/messages', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(messageToSend)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          setNewMessage('');
+          
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({animated: true});
+          }, 100);
+        } else {
+          console.error('Mesaj gönderilemedi:', data);
+        }
+      } catch (error) {
+        console.error('Mesaj gönderilirken hata:', error);
+      } finally {
+        setSending(false);
+      }
+    }
+  };
+
   useEffect(() => {
     const setupSocketConnection = async () => {
       try {
@@ -162,26 +207,27 @@ const ChatDetailScreen: React.FC = () => {
         const socket = await socketService.connect(token);
         
         if (socket) {
-          // Chat odasına katıl
           socketService.joinChat(chatSessionId);
           socketService.joinCompanyChat(companyId);
 
-          // Yeni mesaj dinleyicisi
           socket.on('new-message', (message) => {
             if (message.chatSession === chatSessionId) {
-              setMessages(prevMessages => [...prevMessages, message]);
+              setMessages(prevMessages => {
+                const messageExists = prevMessages.some(m => m._id === message._id);
+                if (messageExists) {
+                  return prevMessages;
+                }
+                return [...prevMessages, message];
+              });
             }
           });
 
-          // Chat bildirimi dinleyicisi
           socket.on('chat-notification', (notification) => {
             if (notification.type === 'new-message') {
-              // Bildirim işlemleri burada yapılabilir
               console.log('Yeni mesaj bildirimi:', notification);
             }
           });
 
-          // Chat oturumu güncelleme dinleyicisi
           socket.on('chat-session-update', (updatedSession) => {
             if (updatedSession) {
               loadMessages();
@@ -216,48 +262,6 @@ const ChatDetailScreen: React.FC = () => {
       loadMessages();
     }
   }, [chatSessionId, companyId, loadMessages]);
-
-  const handleSendMessage = async () => {
-    if (newMessage.trim() && !sending) {
-      try {
-        setSending(true);
-        const token = await AsyncStorage.getItem('token');
-        
-        if (!token) {
-          console.error('Token bulunamadı');
-          return;
-        }
-
-        const messageToSend = {
-          chatSessionId: chatSessionId,
-          senderId: companyId,
-          content: newMessage.trim()
-        };
-
-        const response = await fetch('https://api.aikuaiplatform.com/api/chat/messages', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(messageToSend)
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-          setMessages(prevMessages => [...prevMessages, data.data]);
-          setNewMessage('');
-        } else {
-          console.error('Mesaj gönderilemedi:', data);
-        }
-      } catch (error) {
-        console.error('Mesaj gönderilirken hata:', error);
-      } finally {
-        setSending(false);
-      }
-    }
-  };
 
   const formatMessageDate = (dateString: string) => {
     const messageDate = new Date(dateString);
