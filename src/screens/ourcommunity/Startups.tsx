@@ -7,9 +7,7 @@ import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
 
-// Define the base image URL (matching REACT_APP_IMG_URL from web)
-const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com'; // Should be loaded from env in production
-
+const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const Startups = () => {
@@ -37,7 +35,6 @@ const Startups = () => {
     try {
       setLoading(true);
       const data = await companyService.getStartups();
-      // Log companyLogo values for debugging
       data.forEach(item => console.log(`Company: ${item.companyName}, Logo: ${item.companyLogo}`));
       setStartups(data);
     } catch (error) {
@@ -52,6 +49,16 @@ const Startups = () => {
     try {
       await companyService.addStartup(newStartup);
       setModalVisible(false);
+      setNewStartup({
+        companyName: '',
+        companyInfo: '',
+        companyWebsite: '',
+        companyAddress: '',
+        companySector: [],
+        businessModel: '',
+        companySize: '',
+        businessScale: '',
+      });
       fetchStartups();
       Alert.alert('Başarılı', 'Startup başarıyla eklendi.');
     } catch (error) {
@@ -72,13 +79,10 @@ const Startups = () => {
   });
 
   const renderItem = ({ item }: { item: Company }) => (
-    <TouchableOpacity style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
-      <LinearGradient
-        colors={['#2A2F3D', '#3B82F720']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cardGradient}
-      >
+    <TouchableOpacity
+      style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}
+    >
+      <View style={styles.cardContent}>
         <View style={styles.contentContainer}>
           <View style={styles.companyHeader}>
             {item.isHighlighted && (
@@ -91,20 +95,23 @@ const Startups = () => {
                 source={{
                   uri: item.companyLogo.startsWith('http')
                     ? item.companyLogo
-                    : `${IMAGE_BASE_URL}${item.companyLogo}`
+                    : `${IMAGE_BASE_URL}${item.companyLogo}`,
                 }}
                 style={styles.companyLogo}
                 resizeMode="contain"
-                onError={(e) => console.log(`Failed to load image for ${item.companyName}: ${item.companyLogo}`, e.nativeEvent.error)}
+                onError={(e) =>
+                  console.log(
+                    `Failed to load image for ${item.companyName}: ${item.companyLogo}`,
+                    e.nativeEvent.error
+                  )
+                }
               />
             ) : (
               <View style={styles.placeholderLogo}>
                 <Icon name="business" size={24} color="#666" />
               </View>
             )}
-            <PaperText style={styles.companyName}>
-              {item.companyName}
-            </PaperText>
+            <PaperText style={styles.companyName}>{item.companyName}</PaperText>
           </View>
           <View style={styles.detailsContainer}>
             <View style={styles.detail}>
@@ -137,15 +144,16 @@ const Startups = () => {
             <PaperText style={styles.visitButtonText}>Visit</PaperText>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#3B82F740']}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <View style={styles.headerContainer}>
@@ -290,7 +298,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#1A1E29',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -333,25 +340,20 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH - 32,
     marginBottom: 18,
     alignSelf: 'center',
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: '#2A2F3D',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
     marginTop: 18,
   },
   highlightedCard: {
     borderColor: '#FFD700',
     borderWidth: 2,
   },
-  cardGradient: {
+  cardContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: 'transparent',
   },
   contentContainer: {
     flex: 1,

@@ -25,12 +25,11 @@ const { width } = Dimensions.get('window');
 const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const DEFAULT_IMAGE = 'https://via.placeholder.com/400x200?text=Blog+Görseli';
 
-
 interface Blog {
   _id: string;
   title: string;
   fullContent: string;
-  coverPhoto?: string; 
+  coverPhoto?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,7 +124,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
       const createdBlog = await blogService.createBlog({
         title: newBlogTitle,
         fullContent: newBlogContent,
-        // coverPhoto: ... (gerekirse)
       });
 
       if (selectedImage && createdBlog._id) {
@@ -203,26 +201,26 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
         >
           <View style={styles.gradientContainer}>
             <View style={styles.titleRow}>
-              <View style={styles.titleContainer}>
-                <Text variant="displaySmall" style={styles.titleText}>
-                  {title}
-                </Text>
-              </View>
-              <View style={styles.iconAndBadgeContainer}>
+              <View style={styles.leftContainer}>
                 <Icon
                   name="book-outline"
                   size={24}
                   color={Colors.lightText}
-                  style={styles.icon}
+                  style={styles.bookIcon}
                 />
-                <IconButton
-                  icon="plus"
-                  iconColor={Colors.lightText}
-                  size={20}
-                  onPress={() => navigation?.navigate('AddBlogPost')}
-                  style={styles.addButton}
-                />
+                <View style={styles.titleContainer}>
+                  <Text variant="displaySmall" style={styles.titleText}>
+                    {title}
+                  </Text>
+                </View>
               </View>
+              <IconButton
+                icon="plus"
+                iconColor={Colors.lightText}
+                size={20}
+                onPress={() => navigation?.navigate('AddBlogPost')}
+                style={styles.addButton}
+              />
             </View>
 
             <View style={styles.blogsSection}>
@@ -250,7 +248,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
                   renderItem={({ item }) => {
-                    console.log('Blog item:', item); // Tüm blog nesnesini logla
+                    console.log('Blog item:', item);
                     return (
                       <TouchableOpacity
                         style={[styles.blogCard, { width: itemWidth }]}
@@ -477,6 +475,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+  },
+  leftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   titleContainer: {
     marginLeft: 8,
@@ -489,16 +492,13 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 10 },
   },
-  iconAndBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  icon: {
-    marginRight: 8,
+  bookIcon: {
+    marginLeft: 8,
   },
   addButton: {
     borderRadius: 12,
     padding: 0,
+    marginRight: 8,
   },
   blogsSection: {
     flex: 1,

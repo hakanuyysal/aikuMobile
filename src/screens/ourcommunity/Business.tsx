@@ -22,12 +22,7 @@ const Business = () => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.cardContainer}>
-      <LinearGradient
-        colors={['#2A2F3D', '#3B82F720']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cardGradient}
-      >
+      <View style={styles.cardContent}>
         <View style={styles.contentContainer}>
           <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
             {item.name}
@@ -56,15 +51,16 @@ const Business = () => {
             <PaperText style={styles.visitButtonText}>Visit</PaperText>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#3B82F740']}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <View style={styles.headerContainer}>
@@ -100,7 +96,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#1A1E29',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -144,21 +139,16 @@ const styles = StyleSheet.create({
     minHeight: 180,
     marginBottom: 18,
     alignSelf: 'center',
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: '#2A2F3D',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
     marginTop: 18,
   },
-  cardGradient: {
+  cardContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: 'transparent',
   },
   contentContainer: {
     flex: 1,

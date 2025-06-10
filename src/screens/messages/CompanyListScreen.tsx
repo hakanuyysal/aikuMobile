@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,17 @@ import {
   Image,
   TextInput,
   SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Colors} from '../../constants/colors';
-import {CompanyListScreenProps} from '../../types';
+import { CompanyListScreenProps } from '../../types';
+import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+import chatApi from '../../api/chatApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Company {
   id: string;
@@ -21,97 +26,157 @@ interface Company {
   avatar: string;
 }
 
-// Mock şirket verileri
-const mockCompanies: Company[] = [
-  {
-    id: '1',
-    name: 'Merge Turk Gold',
-    avatar:
-      'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
-  },
-  {
-    id: '2',
-    name: 'Aloha Dijital',
-    avatar:
-      'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
-  },
-  {
-    id: '3',
-    name: 'Turkau Mining',
-    avatar:
-      'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
-  },
-];
-
-const CompanyListScreen = ({navigation}: CompanyListScreenProps) => {
+const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  const setupUser = useCallback(async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (userId) {
+        setCurrentUserId(userId);
+      } else {
+        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        navigation.getParent()?.navigate('Auth');
+      }
+    } catch (error) {
+      console.error('Kullanıcı bilgisi alınırken hata:', error);
+      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
+      navigation.getParent()?.navigate('Auth');
+    }
+  }, [navigation]);
+
+  const loadCompanies = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      const response = await chatApi.getCompanies();
+      setCompanies(response);
+    } catch (error) {
+      console.error('Şirketler yüklenirken hata:', error);
+      Alert.alert('Hata', 'Şirket listesi yüklenemedi');
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setupUser();
+  }, [setupUser]);
+
+  useEffect(() => {
+    if (currentUserId) {
+      loadCompanies();
+    }
+  }, [currentUserId, loadCompanies]);
+
+  const handleCompanyPress = async (company: Company) => {
+    try {
+      const chatSession = await chatApi.createChatSession({
+        initiatorCompanyId: currentUserId,
+        targetCompanyId: company.id,
+        title: company.name,
+      });
+      navigation.navigate('ChatDetail', {
+        chatId: chatSession.id,
+        name: company.name,
+        receiverId: company.id,
+        companyId: currentUserId,
+      });
+    } catch (error) {
+      console.error('Sohbet oturumu oluşturulurken hata:', error);
+      Alert.alert('Hata', 'Sohbet oturumu oluşturulamadı');
+    }
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backButton}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Select Company</Text>
+      <Text style={styles.headerTitle}>Companies</Text>
       <View style={styles.headerButton} />
     </View>
   );
 
-  const renderItem = ({item}: {item: Company}) => (
+  const renderItem = ({ item }: { item: Company }) => (
     <TouchableOpacity
       style={styles.companyItem}
-      onPress={() => {
-        navigation.navigate('ChatDetail', {
-          chatId: item.id,
-          name: item.name,
-        });
-      }}>
+      onPress={() => handleCompanyPress(item)}
+    >
       <View style={styles.avatar}>
-        <Image
-          source={{uri: item.avatar}}
-          style={styles.avatarImage}
+        <Image 
+          source={{ uri: item.avatar }} 
+          style={styles.avatarImage} 
           resizeMode="contain"
         />
       </View>
       <View style={styles.companyInfo}>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.companyName}>{item.name}</Text>
       </View>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+        locations={[0, 0.3, 0.6, 0.9]}
+        start={{x: 0, y: 0}}
+        end={{x: 2, y: 1}}
+        style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {renderHeader()}
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {renderHeader()}
         <View style={styles.searchContainer}>
-          <Icon
-            name="search"
-            size={20}
-            color={Colors.lightText}
-            style={styles.searchIcon}
-          />
+          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search companies"
+            placeholder="Search companies..."
             placeholderTextColor={Colors.inactive}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
         <FlatList
-          data={mockCompanies.filter(company =>
-            company.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          data={companies.filter(company =>
+            company.name.toLowerCase().includes(searchQuery.toLowerCase())
           )}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={loadCompanies}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+              progressBackgroundColor="transparent"
+              progressViewOffset={-20}
+              style={{ position: 'absolute', top: -20 }}
+            />
+          }
         />
       </SafeAreaView>
     </LinearGradient>
@@ -133,7 +198,7 @@ const styles = StyleSheet.create({
     paddingVertical: metrics.padding.sm,
   },
   headerTitle: {
-    fontSize: metrics.fontSize.xl,
+    fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
     flex: 1,
@@ -150,12 +215,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     margin: metrics.margin.md,
-    paddingHorizontal: metrics.padding.sm,
+    marginBottom: metrics.margin.sm,
+    paddingHorizontal: metrics.padding.md,
     borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
     marginRight: metrics.margin.sm,
@@ -168,46 +234,47 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+    paddingTop: metrics.padding.xl,
   },
   listContent: {
     paddingHorizontal: metrics.padding.md,
   },
   companyItem: {
     flexDirection: 'row',
-    padding: metrics.padding.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: 'rgba(255,255,255,0.1)',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 2,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    marginBottom: metrics.margin.sm,
-    borderRadius: metrics.borderRadius.md,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.xs,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: metrics.scale(50),
-    height: metrics.scale(50),
-    borderRadius: metrics.scale(25),
-    backgroundColor: '#FFFFFF',
+    width: metrics.scale(52),
+    height: metrics.scale(52),
+    borderRadius: metrics.scale(26),
+    backgroundColor: 'rgba(255,255,255,0.05)',
     padding: metrics.padding.xs,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: metrics.scale(24),
   },
   companyInfo: {
     flex: 1,
-    marginLeft: metrics.margin.sm,
     justifyContent: 'center',
+    marginLeft: metrics.margin.md,
   },
-  name: {
-    fontSize: metrics.fontSize.md,
-    fontWeight: '600',
+  companyName: {
+    fontSize: metrics.fontSize.lg,
+    fontWeight: 'bold',
     color: Colors.lightText,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,16 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatListScreenProps } from '../../types';
 import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+import chatApi from '../../api/chatApi';
+import SocketService from '../../services/socketService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Chat {
   id: string;
@@ -23,49 +27,131 @@ interface Chat {
   time: string;
   avatar: string;
   unread: number;
+  isOnline?: boolean;
+  participants: string[];
 }
-
-// Mock data
-const mockChats: Chat[] = [
-  {
-    id: '1',
-    name: 'Merge Turk Gold',
-    lastMessage: 'Please review the latest gold prices',
-    time: '14:30',
-    avatar: 'https://mergeturkgold.vercel.app/static/media/mtg-logo-6.c6308c8ef572398d6bb4.png',
-    unread: 2,
-  },
-  {
-    id: '2',
-    name: 'Aloha Digital',
-    lastMessage: 'Meeting scheduled for 3 PM',
-    time: '12:45',
-    avatar: 'https://api.aikuaiplatform.com/uploads/images/1744635007038-746642319.png',
-    unread: 0,
-  },
-  {
-    id: '3',
-    name: 'Turkau Mining',
-    lastMessage: 'Project update: Mining operations',
-    time: 'Yesterday',
-    avatar: 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png',
-    unread: 1,
-  },
-];
 
 const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [chats, setChats] = useState<Chat[]>(mockChats);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const socketService = SocketService.getInstance();
 
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setChats(mockChats);
+  const setupUser = useCallback(async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (userId) {
+        setCurrentUserId(userId);
+        await chatApi.updateUserStatus(userId, true);
+      } else {
+        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        navigation.getParent()?.navigate('Auth');
+      }
+    } catch (error) {
+      console.error('Kullanıcı bilgisi alınırken hata:', error);
+      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
+      navigation.getParent()?.navigate('Auth');
+    }
+  }, [navigation]);
+
+  const loadChatSessions = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      const sessions = await chatApi.getChatSessions(currentUserId);
+      const formattedChats = await Promise.all(
+        sessions.map(async (session) => {
+          const otherParticipant = session.participants.find(p => p !== currentUserId);
+          let userInfo: any = { name: 'Bilinmeyen', avatar: '', isOnline: false };
+          if (otherParticipant) {
+            userInfo = await chatApi.getUserInfo(otherParticipant);
+          }
+          return {
+            id: session.id,
+            name: userInfo.name,
+            lastMessage: session.lastMessage?.content || '',
+            time: session.lastMessage ? new Date(session.lastMessage.timestamp).toLocaleTimeString() : '',
+            avatar: userInfo.avatar || '',
+            unread: session.unreadCount,
+            isOnline: userInfo.isOnline,
+            participants: session.participants,
+          };
+        })
+      );
+      setChats(formattedChats);
+    } catch (error) {
+      console.error('Sohbet oturumları yüklenirken hata:', error);
+      Alert.alert('Hata', 'Sohbet listesi yüklenemedi');
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, []);
+    }
+  }, [currentUserId]);
+
+  const setupSocket = useCallback(async () => {
+    try {
+      const socket = await socketService.connect();
+      
+      socket?.on('new-message', (message) => {
+        updateChatWithNewMessage(message);
+      });
+
+      socket?.on('user-online', (userId) => {
+        updateUserStatus(userId, true);
+      });
+
+      socket?.on('user-offline', (userId) => {
+        updateUserStatus(userId, false);
+      });
+
+      return () => {
+        if (currentUserId) {
+          chatApi.updateUserStatus(currentUserId, false);
+        }
+      };
+    } catch (error) {
+      console.error('Socket bağlantısı kurulurken hata:', error);
+      Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
+    }
+  }, [currentUserId, socketService]);
+
+  useEffect(() => {
+    setupUser();
+  }, [setupUser]);
+
+  useEffect(() => {
+    if (currentUserId) {
+      loadChatSessions();
+      setupSocket();
+    }
+  }, [currentUserId, loadChatSessions, setupSocket]);
+
+  const updateChatWithNewMessage = (message: any) => {
+    setChats(prevChats => {
+      const chatIndex = prevChats.findIndex(chat => chat.id === message.chatSessionId);
+      if (chatIndex === -1) return prevChats;
+
+      const updatedChats = [...prevChats];
+      updatedChats[chatIndex] = {
+        ...updatedChats[chatIndex],
+        lastMessage: message.content,
+        time: new Date(message.timestamp).toLocaleTimeString(),
+        unread: updatedChats[chatIndex].unread + 1,
+      };
+
+      return updatedChats;
+    });
+  };
+
+  const updateUserStatus = (userId: string, isOnline: boolean) => {
+    setChats(prevChats => {
+      return prevChats.map(chat => {
+        if (chat.id === userId) {
+          return { ...chat, isOnline };
+        }
+        return chat;
+      });
+    });
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -79,34 +165,56 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
     </View>
   );
 
-  const renderItem = ({ item }: { item: Chat }) => (
-    <TouchableOpacity
-      style={styles.chatItem}
-      onPress={() => navigation.navigate('ChatDetail', { chatId: item.id, name: item.name })}
-    >
-      <View style={styles.avatar}>
-        <Image 
-          source={{ uri: item.avatar }} 
-          style={styles.avatarImage} 
-          resizeMode="contain"
-        />
-        {item.unread > 0 && (
-          <View style={styles.unreadDot}>
-            <Text style={styles.unreadDotText}>{item.unread}</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.time}>{item.time}</Text>
+  const renderItem = ({ item }: { item: Chat }) => {
+    const handleChatPress = async () => {
+      try {
+        const otherParticipant = item.participants.find(p => p !== currentUserId);
+        if (!otherParticipant) {
+          throw new Error('Katılımcı bulunamadı');
+        }
+        const userInfo = await chatApi.getUserInfo(otherParticipant);
+        navigation.navigate('ChatDetail', {
+          chatId: item.id,
+          receiverId: otherParticipant,
+          name: userInfo.name,
+          companyId: currentUserId,
+        });
+      } catch (error) {
+        console.error('Kullanıcı bilgileri alınırken hata:', error);
+        Alert.alert('Hata', 'Sohbet başlatılamadı');
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={handleChatPress}
+      >
+        <View style={styles.avatar}>
+          <Image 
+            source={{ uri: item.avatar }} 
+            style={styles.avatarImage} 
+            resizeMode="contain"
+          />
+          {item.isOnline && <View style={styles.onlineIndicator} />}
+          {item.unread > 0 && (
+            <View style={styles.unreadDot}>
+              <Text style={styles.unreadDotText}>{item.unread}</Text>
+            </View>
+          )}
         </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.chatInfo}>
+          <View style={styles.chatHeader}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.time}>{item.time}</Text>
+          </View>
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {item.lastMessage}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <LinearGradient
@@ -139,7 +247,7 @@ const ChatListScreen = ({ navigation }: ChatListScreenProps) => {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh}
+              onRefresh={loadChatSessions}
               tintColor={Colors.primary}
               colors={[Colors.primary]}
               progressBackgroundColor="transparent"
@@ -274,6 +382,17 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.sm,
     color: Colors.inactive,
     lineHeight: metrics.scale(20),
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#1A1E29',
   },
 });
 

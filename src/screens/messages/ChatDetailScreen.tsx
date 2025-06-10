@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,66 +9,137 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {ChatDetailScreenProps} from '../../types';
-import {Colors} from '../../constants/colors';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { Message } from '../../types/chat';
+import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+import chatApi from '../../api/chatApi';
+import SocketService from '../../services/socketService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface Message {
-  id: string;
-  text: string;
-  time: string;
-  sender: 'me' | 'other';
+interface RouteParams {
+  chatSessionId: string;
+  receiverId: string;
+  receiverName: string;
+  companyId: string;
 }
 
-// Mock mesaj verileri
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    text: 'Hello! I would like to inquire about your latest gold investment packages.',
-    time: '14:30',
-    sender: 'me',
-  },
-  {
-    id: '2',
-    text: 'Of course! We currently have several investment options available. Would you like me to share our current rates?',
-    time: '14:31',
-    sender: 'other',
-  },
-  {
-    id: '3',
-    text: "Yes, please. I'm particularly interested in long-term investment opportunities.",
-    time: '14:32',
-    sender: 'me',
-  },
-  {
-    id: '4',
-    text: 'Perfect! Our most popular long-term package offers a competitive rate of 8% annually with a minimum investment period of 2 years. Would you like more details?',
-    time: '14:33',
-    sender: 'other',
-  },
-];
+const ChatDetailScreen: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const route = useRoute();
+  const navigation = useNavigation();
+  const socketService = SocketService.getInstance();
 
-const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
-  const {name} = route.params;
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const { chatSessionId, receiverId, receiverName, companyId } = route.params as RouteParams;
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: (messages.length + 1).toString(),
-        text: message.trim(),
-        time: new Date().toLocaleTimeString('tr-TR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        sender: 'me',
+  const markAllMessagesAsRead = useCallback(async () => {
+    try {
+      await chatApi.markAsRead(chatSessionId, currentUserId);
+    } catch (error) {
+      console.error('Mesajlar okundu olarak işaretlenirken hata:', error);
+    }
+  }, [chatSessionId, currentUserId]);
+
+  const markMessageAsRead = useCallback(async (messageId: string) => {
+    try {
+      await chatApi.markAsRead(chatSessionId, currentUserId, messageId);
+    } catch (error) {
+      console.error('Mesaj okundu olarak işaretlenirken hata:', error);
+    }
+  }, [chatSessionId, currentUserId]);
+
+  const setupUser = useCallback(async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user_id');
+      if (userId) {
+        setCurrentUserId(userId);
+        await chatApi.updateUserStatus(userId, true);
+      } else {
+        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        navigation.getParent()?.navigate('Auth');
+      }
+    } catch (error) {
+      console.error('Kullanıcı bilgisi alınırken hata:', error);
+      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
+      navigation.getParent()?.navigate('Auth');
+    }
+  }, [navigation]);
+
+  const loadMessages = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await chatApi.getMessages(chatSessionId, companyId);
+      setMessages(response);
+      markAllMessagesAsRead();
+    } catch (error) {
+      console.error('Mesajlar yüklenirken hata:', error);
+      Alert.alert('Hata', 'Mesajlar yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  }, [chatSessionId, companyId, markAllMessagesAsRead]);
+
+  const setupSocket = useCallback(async () => {
+    try {
+      const socket = await socketService.connect();
+      
+      socket?.on('new-message', (message: Message) => {
+        if (message.chatSessionId === chatSessionId) {
+          setMessages(prevMessages => [...prevMessages, message]);
+          markMessageAsRead(message.id);
+        }
+      });
+
+      return () => {
+        if (currentUserId) {
+          chatApi.updateUserStatus(currentUserId, false);
+        }
       };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+    } catch (error) {
+      console.error('Socket bağlantısı kurulurken hata:', error);
+      Alert.alert('Hata', 'Mesajlaşma bağlantısı kurulamadı');
+    }
+  }, [currentUserId, chatSessionId, socketService, markMessageAsRead]);
+
+  useEffect(() => {
+    setupUser();
+  }, [setupUser]);
+
+  useEffect(() => {
+    if (currentUserId && chatSessionId) {
+      loadMessages();
+      setupSocket();
+    }
+  }, [currentUserId, chatSessionId, loadMessages, setupSocket]);
+
+  const handleSendMessage = async () => {
+    if (newMessage.trim() && !sending) {
+      try {
+        setSending(true);
+        const messageToSend = {
+          chatSessionId: chatSessionId,
+          content: newMessage.trim(),
+          senderId: currentUserId,
+          receiverId: receiverId,
+        };
+        const response = await chatApi.sendMessage(messageToSend);
+        setMessages(prevMessages => [...prevMessages, response]);
+        setNewMessage('');
+      } catch (error) {
+        console.error('Mesaj gönderilirken hata:', error);
+        Alert.alert('Hata', 'Mesaj gönderilemedi');
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -79,41 +150,59 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
         style={styles.backButton}>
         <Icon name="chevron-back" size={24} color={Colors.primary} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{name}</Text>
+      <Text style={styles.headerTitle}>{receiverName}</Text>
       <View style={styles.headerButton} />
     </View>
   );
 
-  const renderMessage = ({item}: {item: Message}) => (
+  const renderMessage = ({ item }: { item: Message }) => (
     <View
       style={[
         styles.messageContainer,
-        item.sender === 'me' ? styles.myMessage : styles.otherMessage,
+        item.senderId === currentUserId ? styles.myMessage : styles.otherMessage,
       ]}>
       <View
         style={[
           styles.messageBubble,
-          item.sender === 'me' ? styles.myBubble : styles.otherBubble,
+          item.senderId === currentUserId ? styles.myBubble : styles.otherBubble,
         ]}>
         <Text
           style={[
             styles.messageText,
-            item.sender === 'me'
+            item.senderId === currentUserId
               ? styles.myMessageText
               : styles.otherMessageText,
           ]}>
-          {item.text}
+          {item.content}
         </Text>
         <Text
           style={[
             styles.timeText,
-            item.sender === 'me' ? styles.myTimeText : styles.otherTimeText,
+            item.senderId === currentUserId ? styles.myTimeText : styles.otherTimeText,
           ]}>
-          {item.time}
+          {new Date(item.timestamp).toLocaleTimeString()}
         </Text>
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+        locations={[0, 0.3, 0.6, 0.9]}
+        start={{x: 0, y: 0}}
+        end={{x: 2, y: 1}}
+        style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {renderHeader()}
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
@@ -142,26 +231,31 @@ const ChatDetailScreen = ({navigation, route}: ChatDetailScreenProps) => {
               style={styles.input}
               placeholder="Type a message..."
               placeholderTextColor={Colors.inactive}
-              value={message}
-              onChangeText={setMessage}
+              value={newMessage}
+              onChangeText={setNewMessage}
               multiline
               maxLength={1000}
               returnKeyType="send"
               onSubmitEditing={handleSendMessage}
+              editable={!sending}
             />
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                message.trim() ? styles.sendButtonActive : null,
-                !message.trim() && styles.sendButtonDisabled,
+                newMessage.trim() ? styles.sendButtonActive : null,
+                !newMessage.trim() && styles.sendButtonDisabled,
               ]}
               onPress={handleSendMessage}
-              disabled={!message.trim()}>
-              <Icon
-                name="send"
-                size={metrics.scale(24)}
-                color={message.trim() ? Colors.primary : Colors.inactive}
-              />
+              disabled={!newMessage.trim() || sending}>
+              {sending ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Icon
+                  name="send"
+                  size={metrics.scale(24)}
+                  color={newMessage.trim() ? Colors.primary : Colors.inactive}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -288,6 +382,11 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

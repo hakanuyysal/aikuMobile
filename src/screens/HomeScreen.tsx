@@ -177,7 +177,7 @@ const HomeScreen = (props: HomeScreenProps) => {
 
           {activeTab === 'blog' ? (
             <AIBlogSection
-              title="AI Blog"
+  
               navigation={navigation}
             />
           ) : (

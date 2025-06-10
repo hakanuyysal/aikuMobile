@@ -23,7 +23,7 @@ export type TabParamList = {
 
 export type MessageStackParamList = {
   ChatList: undefined;
-  ChatDetail: { chatId: string; name: string };
+  ChatDetail: { chatId: string; name: string; receiverId: string; companyId: string };
   CompanyList: undefined;
 } & ParamListBase;
 

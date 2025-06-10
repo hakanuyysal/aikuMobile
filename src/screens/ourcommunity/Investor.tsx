@@ -26,7 +26,7 @@ const Investor = () => {
     businessModel: '',
     companySize: '',
     businessScale: '',
-    openForInvestments: false
+    openForInvestments: false,
   });
   const [logoFile, setLogoFile] = useState<any>(null);
 
@@ -80,7 +80,7 @@ const Investor = () => {
         businessModel: '',
         companySize: '',
         businessScale: '',
-        openForInvestments: false
+        openForInvestments: false,
       });
       setLogoFile(null);
       fetchInvestors();
@@ -122,13 +122,8 @@ const Investor = () => {
   );
 
   const renderItem = ({ item }: { item: Company }) => (
-    <TouchableOpacity style={styles.cardContainer}>
-      <LinearGradient
-        colors={['#2A2F3D', '#3B82F720']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cardGradient}
-      >
+    <TouchableOpacity style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
+      <View style={styles.cardContent}>
         <View style={styles.contentContainer}>
           <View style={styles.companyHeader}>
             {item.isHighlighted && (
@@ -200,15 +195,16 @@ const Investor = () => {
             <PaperText style={styles.visitButtonText}>Visit</PaperText>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#3B82F740']}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <View style={styles.headerContainer}>
@@ -329,10 +325,9 @@ const Investor = () => {
                   />
 
                   <Button mode="outlined" onPress={selectLogo} style={styles.logoButton} labelStyle={{ color: '#60A5FA' }}>
-                    {logoFile ? 'Logo Değiştir' : 'Logo Seç'}
+                    {logoFile ? 'Change Logo' : 'Choose Logo'}
                   </Button>
                   {logoFile && <PaperText style={styles.fileNameText}>{logoFile.fileName}</PaperText>}
-
                 </View>
               </ScrollView>
               <View style={styles.modalButtons}>
@@ -367,7 +362,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#1A1E29',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -414,21 +408,20 @@ const styles = StyleSheet.create({
     minHeight: 180,
     marginBottom: 18,
     alignSelf: 'center',
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: '#2A2F3D',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
     marginTop: 18,
   },
-  cardGradient: {
+  highlightedCard: {
+    borderColor: '#FFD700',
+    borderWidth: 2,
+  },
+  cardContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: 'transparent',
   },
   contentContainer: {
     flex: 1,

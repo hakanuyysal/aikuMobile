@@ -18,9 +18,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
 import BaseService from '../api/BaseService';
 import Config from 'react-native-config';
-// import placeholder from '../assets/images/defaultProductLogo.png'; // Comment out or remove if not found
 
-// Use a default image URL or check if the local path is correct
 const placeholder = require('../assets/images/defaultCompanyLogo.png');
 
 // Define navigation stack param list
@@ -149,10 +147,10 @@ const MarketplaceScreen: React.FC = () => {
 
   return (
     <LinearGradient
-    colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-    locations={[0, 0.3, 0.6, 0.9]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 2, y: 1 }}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -173,7 +171,7 @@ const MarketplaceScreen: React.FC = () => {
           </PaperText>
 
           <View style={styles.searchContainer}>
-            <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+            <Icon name="search" size={20} color="#fff" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search products..."
@@ -205,7 +203,6 @@ const MarketplaceScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1E29',
   },
   safeArea: {
     flex: 1,
@@ -257,7 +254,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     fontSize: 16,
-    color: Colors.lightText,
+    color: '#fff',
   },
   sectionTitle: {
     fontSize: 18,
@@ -271,40 +268,37 @@ const styles = StyleSheet.create({
     minHeight: 140,
     marginBottom: 18,
     alignSelf: 'center',
-    borderRadius: 14,
-    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgb(255, 255, 255)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
   },
   contentContainer: {
-    padding: 16,
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   textContainer: {
     flex: 1,
   },
   productName: {
-    color: Colors.lightText,
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   companyName: {
-    color: 'rgb(255, 255, 255)',
+    color: '#fff',
     fontSize: 14,
     marginBottom: 8,
   },
   type: {
-    color: 'rgb(255, 255, 255)',
+    color: '#fff',
     fontSize: 16,
     marginBottom: 4,
   },
   tags: {
-    color: 'rgb(255, 255, 255)',
+    color: '#fff',
     fontSize: 14,
     marginBottom: 8,
   },
@@ -317,12 +311,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: 'rgb(255, 255, 255)',
+    color: '#fff',
     marginBottom: 4,
   },
   detailValue: {
     fontSize: 16,
-    color: Colors.lightText,
+    color: '#fff',
     fontWeight: '600',
   },
   detailsButton: {
@@ -340,7 +334,7 @@ const styles = StyleSheet.create({
   },
   noResults: {
     fontSize: 16,
-    color: 'rgb(255, 255, 255)',
+    color: '#fff',
     textAlign: 'center',
     marginTop: 20,
   },

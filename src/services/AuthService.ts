@@ -59,7 +59,7 @@ class AuthService {
 
     // Token'ı her istekte otomatik ekle
     this.axios.interceptors.request.use(async (config) => {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -76,7 +76,10 @@ class AuthService {
     try {
       const response = await this.axios.post('/auth/login', credentials);
       if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('auth_token', response.data.token);
+        if (response.data.user && response.data.user.id) {
+          await AsyncStorage.setItem('user_id', response.data.user.id);
+        }
       }
       return response.data;
     } catch (error) {
@@ -86,7 +89,7 @@ class AuthService {
 
   async logout() {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('auth_token');
       if (!token) {
         // Token yoksa direkt çıkış yapmış sayılır
         return;
@@ -101,7 +104,7 @@ class AuthService {
       }
 
       // Her durumda local storage'ı temizle
-      await AsyncStorage.multiRemove(['token', 'user']);
+      await AsyncStorage.multiRemove(['auth_token', 'user', 'user_id']);
     } catch (error) {
       console.error('Logout error:', error);
       // Hata olsa bile sessizce devam et
@@ -110,7 +113,7 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('auth_token');
       if (!token) {
         throw new Error('Yetkisiz erişim');
       }
@@ -150,9 +153,12 @@ class AuthService {
       const response = await this.axios.post('/auth/google/login', { idToken });
       
       if (response.data && response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('auth_token', response.data.token);
         if (response.data.user) {
           await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          if (response.data.user.id) {
+            await AsyncStorage.setItem('user_id', response.data.user.id);
+          }
         }
         return {
           success: true,
@@ -166,38 +172,9 @@ class AuthService {
         error: 'Beklenmeyen yanıt formatı',
         details: 'Sunucu yanıtı token içermiyor',
       };
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        return {
-          success: false,
-          error: 'Google girişi iptal edildi',
-          details: 'Kullanıcı giriş işlemini iptal etti',
-        };
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        return {
-          success: false,
-          error: 'Google girişi zaten devam ediyor',
-          details: 'Başka bir giriş işlemi sürüyor',
-        };
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        return {
-          success: false,
-          error: 'Google Play Servisleri kullanılamıyor',
-          details: 'Cihazda Google Play Servisleri mevcut değil',
-        };
-      }
-
-      console.error('[GoogleAuth] Error:', {
-        message: error.message,
-        code: error.code,
-      });
-
-      return {
-        success: false,
-        error: 'Google authentication error',
-        details: error.message || 'Authentication failed',
-        errorCode: error.code || 'unknown_error',
-      };
+    } catch (error) {
+      console.error('[GoogleAuth] Error:', error);
+      throw this.handleError(error);
     }
   }
 
@@ -244,7 +221,10 @@ class AuthService {
 
       // Store token if available
       if (data.session?.access_token) {
-        await AsyncStorage.setItem('token', data.session.access_token);
+        await AsyncStorage.setItem('auth_token', data.session.access_token);
+        if (data.user?.id) {
+          await AsyncStorage.setItem('user_id', data.user.id);
+        }
       }
 
       return data;
@@ -253,11 +233,18 @@ class AuthService {
     }
   }
 
-  private handleError(error: any) {
+  private handleError(error: any): Error {
     if (error.response) {
-      throw new Error(error.response.data.message || 'Bir hata oluştu');
+      // Sunucudan gelen hata
+      const message = error.response.data?.message || 'Bir hata oluştu';
+      return new Error(message);
+    } else if (error.request) {
+      // İstek yapıldı ama yanıt alınamadı
+      return new Error('Sunucuya ulaşılamıyor');
+    } else {
+      // İstek oluşturulurken hata oluştu
+      return new Error('Bir hata oluştu');
     }
-    throw error;
   }
 
   private async handleGoogleLoginError(error: any): Promise<GoogleSignInResponse> {
