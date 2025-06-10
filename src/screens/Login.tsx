@@ -22,9 +22,9 @@ import {useAuth} from '../contexts/AuthContext';
 
 GoogleSignin.configure({
   webClientId:
-    '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
+    '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
   iosClientId:
-    '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
+    '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
 });
 
 const Login = () => {

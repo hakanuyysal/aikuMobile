@@ -78,11 +78,11 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0</string>
+				<string>com.googleusercontent.apps.940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q</string>
 			</array>
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com</string>
+	<string>940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com</string>
 </dict>
 </plist>

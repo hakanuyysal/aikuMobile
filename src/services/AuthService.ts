@@ -1,10 +1,13 @@
-import { supabase } from '../config/supabase';
-import { Provider } from '@supabase/supabase-js';
-import axios, { AxiosInstance } from 'axios';
+import {supabase} from '../config/supabase';
+import {Provider} from '@supabase/supabase-js';
+import axios, {AxiosInstance} from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
-import { Linking } from 'react-native';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import {Linking} from 'react-native';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
 interface UserData {
   email: string;
@@ -52,13 +55,17 @@ class AuthService {
 
     // Configure Google Sign-In
     GoogleSignin.configure({
-      webClientId: Config.GOOGLE_CLIENT_ID || '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
-      offlineAccess: false, // Set to false as requested
+      webClientId:
+        Config.GOOGLE_CLIENT_ID ||
+        '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
+      iosClientId:
+        '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
+      offlineAccess: false,
       scopes: ['profile', 'email'],
     });
 
     // Token'ı her istekte otomatik ekle
-    this.axios.interceptors.request.use(async (config) => {
+    this.axios.interceptors.request.use(async config => {
       const token = await AsyncStorage.getItem('auth_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -133,7 +140,7 @@ class AuthService {
   async googleLogin() {
     try {
       await GoogleSignin.signOut(); // Clear any existing session
-      
+
       const isPlayServicesAvailable = await GoogleSignin.hasPlayServices();
       if (!isPlayServicesAvailable) {
         console.error('[GoogleAuth] Play Services not available');
@@ -151,8 +158,8 @@ class AuthService {
       }
 
       console.log('[GoogleAuth] Sending token to backend...');
-      const response = await this.axios.post('/auth/google/login', { idToken });
-      
+      const response = await this.axios.post('/auth/google/login', {idToken});
+
       if (response.data && response.data.token) {
         await AsyncStorage.setItem('auth_token', response.data.token);
         if (response.data.user) {
@@ -174,9 +181,38 @@ class AuthService {
         error: 'Beklenmeyen yanıt formatı',
         details: 'Sunucu yanıtı token içermiyor',
       };
-    } catch (error) {
-      console.error('[GoogleAuth] Error:', error);
-      throw this.handleError(error);
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        return {
+          success: false,
+          error: 'Google girişi iptal edildi',
+          details: 'Kullanıcı giriş işlemi iptal edildi',
+        };
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        return {
+          success: false,
+          error: 'Google girişi zaten devam ediyor',
+          details: 'Başka bir giriş işlemi sürüyor',
+        };
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        return {
+          success: false,
+          error: 'Google Play Servisleri kullanılamıyor',
+          details: 'Cihazda Google Play Servisleri mevcut değil',
+        };
+      }
+
+      console.error('[GoogleAuth] Error:', {
+        message: error.message,
+        code: error.code,
+      });
+
+      return {
+        success: false,
+        error: 'Google authentication error',
+        details: error.message || 'Authentication failed',
+        errorCode: error.code || 'unknown_error',
+      };
     }
   }
 
@@ -189,9 +225,10 @@ class AuthService {
       const clientId = Config.LINKEDIN_CLIENT_ID;
       const redirectUri = Config.APP_URL + '/auth/callback';
       const scope = 'r_liteprofile r_emailaddress';
-      
+
       // Construct LinkedIn OAuth URL
-      const linkedInAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?` +
+      const linkedInAuthUrl =
+        `https://www.linkedin.com/oauth/v2/authorization?` +
         `response_type=code` +
         `&client_id=${clientId}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
@@ -214,7 +251,7 @@ class AuthService {
 
   async handleLinkedInCallback(code: string): Promise<any> {
     try {
-      const { data, error } = await supabase.auth.signInWithIdToken({
+      const {data, error} = await supabase.auth.signInWithIdToken({
         provider: 'linkedin',
         token: code,
       });
@@ -250,13 +287,15 @@ class AuthService {
     }
   }
 
-  private async handleGoogleLoginError(error: any): Promise<GoogleSignInResponse> {
+  private async handleGoogleLoginError(
+    error: any,
+  ): Promise<GoogleSignInResponse> {
     if (error.response?.status === 500) {
       return {
         success: false,
         error: 'Internal server error',
         message: 'Please try again later',
-        errorCode: 500
+        errorCode: 500,
       };
     }
 
@@ -265,7 +304,7 @@ class AuthService {
         success: false,
         error: error.response.data.message,
         message: 'Authentication failed',
-        errorCode: error.response.status
+        errorCode: error.response.status,
       };
     }
 
@@ -273,11 +312,10 @@ class AuthService {
       success: false,
       error: 'Network error occurred',
       message: 'Please check your internet connection',
-      errorCode: error.response?.status || 500
+      errorCode: error.response?.status || 500,
     };
   }
 }
 
 const authService = new AuthService();
 export default authService;
-
