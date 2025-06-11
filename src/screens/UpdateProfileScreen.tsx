@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import {Text, TextInput} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useProfile} from '../components/ProfileContext';
 import {Colors} from '../constants/colors';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
@@ -17,11 +16,12 @@ import metrics from '../constants/aikuMetric';
 import LinearGradient from 'react-native-linear-gradient';
 import {useAuth} from '../contexts/AuthContext';
 import CountryPicker, {Country, CountryCode} from 'react-native-country-picker-modal';
+import {useProfileStore} from '../store/profileStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpdateProfile'>;
 
 const UpdateProfileScreen = ({navigation}: Props) => {
-  const {profile, setProfile} = useProfile();
+  const {profile, updateProfile} = useProfileStore();
   const [form, setForm] = useState(profile);
   const {user} = useAuth();
   const [countryCode, setCountryCode] = useState<CountryCode>('TR');
@@ -69,7 +69,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
     }
 
     try {
-      setProfile(form);
+      updateProfile(form);
       Alert.alert('Success', 'Profile updated successfully', [
         {
           text: 'OK',

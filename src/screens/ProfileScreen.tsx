@@ -17,11 +17,13 @@ import {useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
+import {useProfileStore} from '../store/profileStore';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ProfileScreen = () => {
   const {user} = useAuth();
+  const {profile} = useProfileStore();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const scrollY = new Animated.Value(0);
 
@@ -108,9 +110,11 @@ const ProfileScreen = () => {
               <View style={styles.userInfoHeader}>
                 <View>
                   <Text style={styles.userName}>
-                    {user?.name || 'Murat Tanrıyakul'}
+                    {profile.firstName && profile.lastName 
+                      ? `${profile.firstName} ${profile.lastName}`
+                      : user?.name || 'Murat Tanrıyakul'}
                   </Text>
-                  <Text style={styles.userEmail}>{user?.email}</Text>
+                  <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
                   <View style={styles.roleWrapper}>
                     <MaterialCommunityIcons 
                       name="crown" 
