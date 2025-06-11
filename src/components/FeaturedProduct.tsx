@@ -190,8 +190,8 @@ const FeaturedProduct: React.FC = () => {
                           defaultSource={{ uri: DEFAULT_IMAGE }}
                         />
                         <LinearGradient
-                          colors={['rgba(0, 0, 0, 0.83)', 'rgba(0, 0, 0, 0.3)', 'transparent']}
-                          locations={[0, 0.5, 1]}
+                          colors={['rgba(0, 0, 0, 0.87)', 'rgba(0, 0, 0, 0.45)', 'transparent']}
+                          locations={[0, 0.5, 0.7, 1]}
                           start={{ x: 0, y: 1 }}
                           end={{ x: 0, y: 0 }}
                           style={styles.imageOverlay}
@@ -343,6 +343,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    height: '60%',
     padding: 12,
     justifyContent: 'flex-end',
   },
@@ -450,6 +451,50 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: 14,
     textAlign: 'center',
+  },
+  card: {
+    width: width - 32,
+    minHeight: 180,
+    marginBottom: 18,
+    alignSelf: 'center',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
+    marginTop: 18,
+  },
+  cardContent: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  cardImage: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+  },
+  cardTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 14,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 4,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 15,
+    lineHeight: 20,
   },
 });
 

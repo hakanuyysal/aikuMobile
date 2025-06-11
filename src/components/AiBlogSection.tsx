@@ -273,9 +273,12 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                             defaultSource={{ uri: DEFAULT_IMAGE }}
                           />
                           <LinearGradient
-                            colors={['rgba(0,0,0,0.7)', 'transparent']}
-                            style={styles.imageOverlay}
-                          >
+                          colors={['rgba(0, 0, 0, 0.87)', 'rgba(0, 0, 0, 0.45)', 'transparent']}
+                          locations={[0, 0.5, 0.7, 1]}
+                          start={{ x: 0, y: 1 }}
+                          end={{ x: 0, y: 0 }}
+                          style={styles.imageOverlay}
+                        >
                             <Text
                               style={styles.blogTitle}
                               numberOfLines={3}

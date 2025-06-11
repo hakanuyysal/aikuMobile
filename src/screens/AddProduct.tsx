@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,15 +16,39 @@ import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
+import {productService} from '../services/api';
+import {AxiosError} from 'axios';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
+interface FormData {
+  productName: string;
+  productLogo: string;
+  productCategory: string;
+  productDescription: string;
+  detailedDescription: string;
+  tags: string[];
+  problems: string[];
+  solutions: string[];
+  improvements: string[];
+  keyFeatures: string[];
+  pricingModel: string;
+  releaseDate: string;
+  productPrice: number;
+  productWebsite: string;
+  productLinkedIn: string;
+  productTwitter: string;
+  companyName: string;
+  companyId: string;
+}
+
 const AddProduct = ({navigation}: Props) => {
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
     productName: '',
-    category: '',
-    companyName: '',
-    shortDescription: '',
+    productLogo: '',
+    productCategory: '',
+    productDescription: '',
     detailedDescription: '',
     tags: [],
     problems: [],
@@ -31,39 +57,74 @@ const AddProduct = ({navigation}: Props) => {
     keyFeatures: [],
     pricingModel: 'Free',
     releaseDate: '',
-    website: '',
-    linkedin: '',
-    twitter: '',
+    productPrice: 0,
+    productWebsite: '',
+    productLinkedIn: '',
+    productTwitter: '',
+    companyName: '',
+    companyId: '',
   });
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     console.log('Form data:', formData);
-    // Burada form verilerini kaydetme işlemi yapılacak
-    navigation.goBack();
+
+    // Client-side validation
+    if (
+      !formData.productName ||
+      !formData.productCategory ||
+      !formData.productDescription ||
+      !formData.companyId
+    ) {
+      Alert.alert(
+        'Eksik Bilgi',
+        'Lütfen tüm zorunlu alanları doldurun: Ürün Adı, Kategori, Açıklama, Şirket ID'
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await productService.createProduct(formData);
+      Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
+      navigation.navigate('ProductDetails', {id: response.product.id});
+    } catch (error: unknown) {
+      Alert.alert('Hata', 'Ürün eklenirken bir hata oluştu.');
+      console.error('Ürün ekleme hatası:', error);
+      if (error instanceof AxiosError) {
+        console.error('API Hatası Durumu:', error.response?.status);
+        console.error('API Hatası Verisi:', error.response?.data);
+      } else if (error instanceof Error) {
+        console.error('Genel Hata Mesajı:', error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderInputField = (
     label: string,
-    value: string,
+    value: string | number,
     onChangeText: (text: string) => void,
     placeholder: string,
     multiline: boolean = false,
     maxLength?: number,
+    keyboardType: 'default' | 'numeric' | 'email-address' | 'phone-pad' = 'default',
   ) => (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
         style={[styles.input, multiline && styles.multilineInput]}
-        value={value}
-        onChangeText={onChangeText}
+        value={String(value)}
+        onChangeText={(text) => onChangeText(text.trim())}
         placeholder={placeholder}
         placeholderTextColor={Colors.lightText + '80'}
         multiline={multiline}
         maxLength={maxLength}
+        keyboardType={keyboardType}
       />
       {maxLength && (
         <Text style={styles.characterCount}>
-          {value.length}/{maxLength}
+          {String(value).length}/{maxLength}
         </Text>
       )}
     </View>
@@ -84,8 +145,15 @@ const AddProduct = ({navigation}: Props) => {
             <Icon name="chevron-back" size={24} color={Colors.lightText} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add New Product</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleAddProduct}>
-            <Text style={styles.saveButtonText}>Save</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, loading && styles.disabledButton]} 
+            onPress={handleAddProduct}
+            disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : (
+              <Text style={styles.saveButtonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </View>
         <ScrollView style={styles.content}>
@@ -95,35 +163,42 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Product Name',
               formData.productName,
-              (text) => setFormData({...formData, productName: text}),
+              (text) => setFormData({...formData, productName: text.trim()}),
               'Enter your product name',
             )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Product Logo</Text>
-              <TouchableOpacity style={styles.fileUploadButton}>
-                <Text style={styles.fileUploadText}>Dosya seçilmedi</Text>
-              </TouchableOpacity>
-            </View>
+            {renderInputField(
+              'Product Logo URL',
+              formData.productLogo,
+              (text) => setFormData({...formData, productLogo: text.trim()}),
+              'Enter product logo URL',
+            )}
 
             {renderInputField(
-              'Category',
-              formData.category,
-              (text) => setFormData({...formData, category: text}),
+              'Product Category',
+              formData.productCategory,
+              (text) => setFormData({...formData, productCategory: text.trim()}),
               'Select a category',
             )}
 
             {renderInputField(
               'Company Name',
               formData.companyName,
-              (text) => setFormData({...formData, companyName: text}),
+              (text) => setFormData({...formData, companyName: text.trim()}),
               'Select your company',
             )}
 
             {renderInputField(
-              'Short Description',
-              formData.shortDescription,
-              (text) => setFormData({...formData, shortDescription: text}),
+              'Company ID',
+              formData.companyId,
+              (text) => setFormData({...formData, companyId: text.trim()}),
+              'Enter company ID',
+            )}
+
+            {renderInputField(
+              'Product Description',
+              formData.productDescription,
+              (text) => setFormData({...formData, productDescription: text.trim()}),
               'Brief description of your product',
               true,
               500,
@@ -132,7 +207,7 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Detailed Description',
               formData.detailedDescription,
-              (text) => setFormData({...formData, detailedDescription: text}),
+              (text) => setFormData({...formData, detailedDescription: text.trim()}),
               'Provide more details about your product',
               true,
               3000,
@@ -140,72 +215,57 @@ const AddProduct = ({navigation}: Props) => {
 
             <View style={styles.tagContainer}>
               <Text style={styles.inputLabel}>Tags</Text>
-              <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Enter tags"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <TouchableOpacity style={styles.addTagButton}>
-                  <Text style={styles.addTagText}>Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, styles.tagInput]}
+                placeholder="Enter tags (comma-separated)"
+                placeholderTextColor={Colors.lightText + '80'}
+                value={formData.tags.join(', ')}
+                onChangeText={(text) => setFormData({...formData, tags: text.split(',').map(tag => tag.trim())})}
+              />
             </View>
 
             <View style={styles.tagContainer}>
               <Text style={styles.inputLabel}>Problems</Text>
-              <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Enter problems"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <TouchableOpacity style={styles.addTagButton}>
-                  <Text style={styles.addTagText}>Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, styles.tagInput]}
+                placeholder="Enter problems (comma-separated)"
+                placeholderTextColor={Colors.lightText + '80'}
+                value={formData.problems.join(', ')}
+                onChangeText={(text) => setFormData({...formData, problems: text.split(',').map(problem => problem.trim())})}
+              />
             </View>
 
             <View style={styles.tagContainer}>
               <Text style={styles.inputLabel}>Solutions</Text>
-              <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Enter solutions"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <TouchableOpacity style={styles.addTagButton}>
-                  <Text style={styles.addTagText}>Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, styles.tagInput]}
+                placeholder="Enter solutions (comma-separated)"
+                placeholderTextColor={Colors.lightText + '80'}
+                value={formData.solutions.join(', ')}
+                onChangeText={(text) => setFormData({...formData, solutions: text.split(',').map(solution => solution.trim())})}
+              />
             </View>
 
             <View style={styles.tagContainer}>
               <Text style={styles.inputLabel}>Improvements</Text>
-              <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Enter improvements"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <TouchableOpacity style={styles.addTagButton}>
-                  <Text style={styles.addTagText}>Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, styles.tagInput]}
+                placeholder="Enter improvements (comma-separated)"
+                placeholderTextColor={Colors.lightText + '80'}
+                value={formData.improvements.join(', ')}
+                onChangeText={(text) => setFormData({...formData, improvements: text.split(',').map(improvement => improvement.trim())})}
+              />
             </View>
 
             <View style={styles.tagContainer}>
               <Text style={styles.inputLabel}>Key Features</Text>
-              <View style={styles.tagInputContainer}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder="Enter keyFeatures"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <TouchableOpacity style={styles.addTagButton}>
-                  <Text style={styles.addTagText}>Add</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[styles.input, styles.tagInput]}
+                placeholder="Enter key features (comma-separated)"
+                placeholderTextColor={Colors.lightText + '80'}
+                value={formData.keyFeatures.join(', ')}
+                onChangeText={(text) => setFormData({...formData, keyFeatures: text.split(',').map(feature => feature.trim())})}
+              />
             </View>
 
             <View style={styles.inputContainer}>
@@ -219,28 +279,38 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Release Date',
               formData.releaseDate,
-              (text) => setFormData({...formData, releaseDate: text}),
+              (text) => setFormData({...formData, releaseDate: text.trim()}),
               'gg.aa.yyyy',
             )}
 
             {renderInputField(
+              'Product Price',
+              formData.productPrice,
+              (text) => setFormData({...formData, productPrice: Number(text)}),
+              'Enter product price',
+              false,
+              undefined,
+              'numeric',
+            )}
+
+            {renderInputField(
               'Product Website',
-              formData.website,
-              (text) => setFormData({...formData, website: text}),
+              formData.productWebsite,
+              (text) => setFormData({...formData, productWebsite: text.trim()}),
               'Enter your product website',
             )}
 
             {renderInputField(
               'Product LinkedIn',
-              formData.linkedin,
-              (text) => setFormData({...formData, linkedin: text}),
+              formData.productLinkedIn,
+              (text) => setFormData({...formData, productLinkedIn: text.trim()}),
               'Enter your product LinkedIn',
             )}
 
             {renderInputField(
               'Product X (Twitter)',
-              formData.twitter,
-              (text) => setFormData({...formData, twitter: text}),
+              formData.productTwitter,
+              (text) => setFormData({...formData, productTwitter: text.trim()}),
               'Enter your product Twitter',
             )}
 
@@ -343,28 +413,8 @@ const styles = StyleSheet.create({
   tagContainer: {
     marginBottom: metrics.margin.md,
   },
-  tagInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   tagInput: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-    marginRight: metrics.margin.sm,
-  },
-  addTagButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
-  },
-  addTagText: {
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-    fontWeight: '500',
+    marginRight: 0,
   },
   pricingButton: {
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -389,6 +439,9 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 

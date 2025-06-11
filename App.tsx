@@ -51,7 +51,7 @@ export type RootStackParamList = {
   SubscriptionDetails: undefined;
   Favorites: undefined;
   CompanyDetails: undefined;
-  ProductDetails: undefined;
+  ProductDetails: {id: string};
   Settings: undefined;
   ContactUs: undefined;
   TermsOfService: undefined;

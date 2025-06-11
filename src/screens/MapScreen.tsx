@@ -17,7 +17,6 @@ import {
 import { Text, IconButton, Surface, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { Colors } from 'constants/colors';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { companyService, Company } from '../services/companyService';
 
@@ -229,28 +228,61 @@ const MapScreen = () => {
     };
 
     return (
-      <TouchableOpacity onPress={handleCardPress}>
-        <Surface style={[styles.card, isSelected && styles.selectedCard]}>
-          <Image 
-            source={{ uri: item.companyLogo }} 
-            style={styles.cardImage}
-            defaultSource={require('../assets/images/defaultCompanyLogo.png')}
-          />
-          <View style={styles.cardContent}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>{item.companyName}</Text>
-            </View>
-            <Text style={styles.cardSubtitle}>
-              {item.companyType} • {Array.isArray(item.companySector) ? item.companySector.join(', ') : 'N/A'}
-            </Text>
-            {isSelected && (
-              <>
-                <Text style={styles.cardDescription}>{item.companyInfo}</Text>
-                <Text style={styles.cardStage}>Location: {item.companyAddress}</Text>
-              </>
+      <TouchableOpacity 
+        onPress={handleCardPress}
+        style={[styles.card, isSelected && styles.selectedCard]}
+      >
+        <View style={styles.cardContent}>
+          <View style={styles.companyHeader}>
+            {item.companyLogo ? (
+              <Image 
+                source={{ uri: item.companyLogo }} 
+                style={styles.companyLogo}
+                defaultSource={require('../assets/images/defaultCompanyLogo.png')}
+              />
+            ) : (
+              <View style={styles.placeholderLogo}>
+                <Icon name="business" size={24} color="#666" />
+              </View>
             )}
+            <Text style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">{item.companyName}</Text>
           </View>
-        </Surface>
+          <View style={styles.detailsContainer}>
+            <View style={styles.detail}>
+              <Text style={styles.detailLabel}>Location</Text>
+              <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.companyAddress}
+              </Text>
+            </View>
+            <View style={styles.detail}>
+              <Text style={styles.detailLabel}>Sector</Text>
+              <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {Array.isArray(item.companySector) ? item.companySector.join(', ') : 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.detail}>
+              <Text style={styles.detailLabel}>Business Model</Text>
+              <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.businessModel || 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.detail}>
+              <Text style={styles.detailLabel}>Company Size</Text>
+              <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.companySize || 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.detail}>
+              <Text style={styles.detailLabel}>Business Scale</Text>
+              <Text style={styles.detailValue} numberOfLines={1} ellipsizeMode="tail">
+                {item.businessScale || 'N/A'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.description} numberOfLines={3} ellipsizeMode="tail">
+            {item.companyInfo}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -549,84 +581,96 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: '#2D3748',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    marginVertical: 12,
+    marginVertical: 16,
     width: SCREEN_WIDTH * 0.88,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
     marginRight: 8,
+    color: 'rgba(255,255,255,0.5)',
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 16,
-    color: '#E5E7EB',
-    fontWeight: '500',
+    color: '#fff',
     backgroundColor: 'transparent',
+    paddingRight: 10,
   },
   filterButton: { marginLeft: 8 },
   listContent: { paddingHorizontal: 12, paddingBottom: 20 },
   card: {
-    flexDirection: 'row',
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 16,
-    marginVertical: 8,
-    padding: 12,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    width: SCREEN_WIDTH - 32,
+    minHeight: 180,
+    marginBottom: 18,
+    alignSelf: 'center',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
+    marginTop: 18,
   },
   selectedCard: {
-    borderColor: Colors.border,
+    borderColor: '#3B82F7',
     borderWidth: 2,
-    backgroundColor: Colors.cardBackground,
   },
-  cardImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#3B82F640',
+  cardContent: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
-  cardContent: { flex: 1, justifyContent: 'center' },
-  cardHeader: {
+  companyHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 14,
   },
-  cardTitle: {
+  companyLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+  },
+  placeholderLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  companyName: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    color: '#F9FAFB',
-    maxWidth: '80%',
+    marginBottom: 14,
   },
-  cardSubtitle: {
+  detailsContainer: {
+    flexDirection: 'column',
+    marginBottom: 20,
+  },
+  detail: {
+    marginBottom: 12,
+  },
+  detailLabel: {
     fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 6,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#fff',
     fontWeight: '400',
   },
-  cardDescription: {
+  description: {
     fontSize: 14,
-    color: '#D1D5DB',
-    marginBottom: 6,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 15,
     lineHeight: 20,
-  },
-  cardStage: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
   },
   emptyContainer: {
     alignItems: 'center',

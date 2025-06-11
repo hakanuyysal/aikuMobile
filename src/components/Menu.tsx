@@ -108,25 +108,25 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
     handleClose();
     setTimeout(() => {
       if (title === 'Personal Details') {
-        navigation.navigate('UpdateProfile');
+        navigation.navigate({ name: 'UpdateProfile', params: undefined });
       } else if (title === 'Subscription Details') {
-        navigation.navigate('SubscriptionDetails');
+        navigation.navigate({ name: 'SubscriptionDetails', params: undefined });
       } else if (title === 'Favorites') {
-        navigation.navigate('Favorites');
+        navigation.navigate({ name: 'Favorites', params: undefined });
       } else if (title === 'Company Details') {
-        navigation.navigate('CompanyDetails');
+        navigation.navigate({ name: 'CompanyDetails', params: undefined });
       } else if (title === 'Product Details') {
-        navigation.navigate('ProductDetails');
+        navigation.navigate({ name: 'ProductDetails', params: undefined });
       } else if (title === 'Investment Details') {
-        navigation.navigate('InvestorMenuDetails');
+        navigation.navigate({ name: 'InvestmentDetails', params: undefined });
       } else if (title === 'Settings') {
-        navigation.navigate('Settings');
+        navigation.navigate({ name: 'Settings', params: undefined });
       } else if (title === 'Talent Pool') {
-        navigation.navigate('TalentPool');
+        navigation.navigate({ name: 'TalentPool', params: undefined });
       } else if (title === 'Investment Opportunities') {
-        navigation.navigate('InvestmentDetails');
+        navigation.navigate({ name: 'InvestmentDetails', params: undefined });
       } else if (title === 'How It Works') {
-        navigation.navigate('HowItWorks');
+        navigation.navigate({ name: 'HowItWorksScreen', params: undefined });
       } else {
         console.log(`${title} pressed`);
       }

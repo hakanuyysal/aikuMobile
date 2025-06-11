@@ -6,6 +6,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
+import { useFavoritesStore } from '../../store/favoritesStore';
+import { Colors } from '../../constants/colors';
 
 const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -16,6 +18,7 @@ const Startups = () => {
   const [startups, setStartups] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const { favorites, addToFavorites, removeFromFavorites, isFavorite } = useFavoritesStore();
   const [newStartup, setNewStartup] = useState<Partial<Company>>({
     companyName: '',
     companyInfo: '',
@@ -35,8 +38,17 @@ const Startups = () => {
     try {
       setLoading(true);
       const data = await companyService.getStartups();
-      data.forEach(item => console.log(`Company: ${item.companyName}, Logo: ${item.companyLogo}`));
-      setStartups(data);
+      const processedData = data.map(item => {
+        // Ensure _id is always defined. If not from backend, create a stable one for frontend use.
+        if (!item._id) {
+          console.warn(`Startup ${item.companyName} has undefined _id. Generating a stable temporary ID.`);
+          // Create a stable ID using companyName and companyWebsite for consistency across sessions
+          return { ...item, _id: `${item.companyName}-${item.companyWebsite || 'no-website'}` };
+        }
+        return item;
+      });
+      // processedData.forEach(item => console.log(`Fetched Startup (processed): ${item.companyName}, _id: ${item._id}`)); // Removed log
+      setStartups(processedData);
     } catch (error) {
       Alert.alert('Hata', 'Startup\'lar yüklenirken bir hata oluştu.');
       setStartups([]);
@@ -66,6 +78,27 @@ const Startups = () => {
     }
   };
 
+  const handleToggleFavorite = (startup: Company) => {
+    // Now startup._id is guaranteed to be defined due to processing in fetchStartups
+    const startupId = startup._id;
+
+    if (isFavorite(startupId)) {
+      // console.log(`Removing from favorites: ${startup.companyName}, ID: ${startupId}`); // Removed log
+      removeFromFavorites(startupId);
+    } else {
+      const favoriteStartupData = {
+        id: startupId,
+        name: startup.companyName,
+        description: startup.companyInfo,
+        logo: startup.companyLogo,
+        website: startup.companyWebsite,
+        isHighlighted: startup.isHighlighted,
+      };
+      // console.log(`Adding to favorites: ${startup.companyName}, ID: ${startupId}, isHighlighted: ${startup.isHighlighted}`); // Removed log
+      addToFavorites(favoriteStartupData);
+    }
+  };
+
   const filteredStartups = (startups || []).filter(item => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -78,12 +111,16 @@ const Startups = () => {
     return nameMatch || infoMatch || sectorMatch || locationMatch;
   });
 
-  const renderItem = ({ item }: { item: Company }) => (
-    <TouchableOpacity
-      style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}
-    >
-      <View style={styles.cardContent}>
-        <View style={styles.contentContainer}>
+  const renderItem = ({ item }: { item: Company }) => {
+    // item._id is now guaranteed to be defined due to processing in fetchStartups
+    const itemIdForFavoriteCheck = item._id;
+
+    // console.log(`Startups.tsx - Item for render: ${item.companyName}, _id (original): ${item._id}, ID for Favorite Check: ${itemIdForFavoriteCheck}, Is Favorite: ${isFavorite(itemIdForFavoriteCheck)}`); // Removed log
+
+    const isCurrentlyFavorite = isFavorite(itemIdForFavoriteCheck);
+    return (
+      <View style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
+        <View style={styles.cardContent}>
           <View style={styles.companyHeader}>
             {item.isHighlighted && (
               <View style={styles.highlightedBadge}>
@@ -111,42 +148,55 @@ const Startups = () => {
                 <Icon name="business" size={24} color="#666" />
               </View>
             )}
-            <PaperText style={styles.companyName}>{item.companyName}</PaperText>
-          </View>
-          <View style={styles.detailsContainer}>
-            <View style={styles.detail}>
-              <PaperText style={styles.detailLabel}>Location</PaperText>
-              <PaperText style={styles.detailValue}>
-                {item.companyAddress}
-              </PaperText>
-            </View>
-            <View style={styles.detail}>
-              <PaperText style={styles.detailLabel}>Sector</PaperText>
-              <PaperText style={styles.detailValue}>
-                {Array.isArray(item.companySector)
-                  ? item.companySector.length > 5
-                    ? item.companySector.slice(0, 5).join(', ') + '...'
-                    : item.companySector.join(', ')
-                  : item.companySector || 'N/A'}
-              </PaperText>
-            </View>
-            <View style={styles.detail}>
-              <PaperText style={styles.detailLabel}>Description</PaperText>
-              <PaperText style={styles.description}>
-                {item.companyInfo}
-              </PaperText>
+            <View style={styles.companyNameContainer}>
+              <PaperText style={styles.companyName}>{item.companyName}</PaperText>
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={() => {
+                  handleToggleFavorite(item);
+                }}
+              >
+                <Icon
+                  name={isCurrentlyFavorite ? "heart" : "heart-outline"}
+                  size={24}
+                  color={isCurrentlyFavorite ? Colors.primary : `${Colors.primary}70`}
+                />
+              </TouchableOpacity>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.visitButton}
-            onPress={() => Linking.openURL(item.companyWebsite)}
-          >
-            <PaperText style={styles.visitButtonText}>Visit</PaperText>
-          </TouchableOpacity>
+          
+          <View style={styles.detail}>
+            <PaperText style={styles.detailLabel}>Location</PaperText>
+            <PaperText style={styles.detailValue}>
+              {item.companyAddress}
+            </PaperText>
+          </View>
+          <View style={styles.detail}>
+            <PaperText style={styles.detailLabel}>Sector</PaperText>
+            <PaperText style={styles.detailValue}>
+              {Array.isArray(item.companySector)
+                ? item.companySector.length > 5
+                  ? item.companySector.slice(0, 5).join(', ') + '...'
+                  : item.companySector.join(', ')
+                : item.companySector || 'N/A'}
+            </PaperText>
+          </View>
+          <View style={styles.detail}>
+            <PaperText style={styles.detailLabel}>Description</PaperText>
+            <PaperText style={styles.description}>
+              {item.companyInfo}
+            </PaperText>
+          </View>
         </View>
+        <TouchableOpacity
+          style={styles.visitButton}
+          onPress={() => Linking.openURL(item.companyWebsite)}
+        >
+          <PaperText style={styles.visitButtonText}>Visit</PaperText>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <LinearGradient
@@ -185,6 +235,7 @@ const Startups = () => {
         showsVerticalScrollIndicator={false}
         refreshing={loading}
         onRefresh={fetchStartups}
+        extraData={favorites}
       />
 
       <Portal>
@@ -393,10 +444,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 14,
   },
-  detailsContainer: {
-    flexDirection: 'column',
-    marginBottom: 15,
-  },
   detail: {
     marginBottom: 12,
   },
@@ -487,6 +534,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   submitButton: {},
+  companyNameContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginLeft: 12,
+  },
+  favoriteButton: {
+    padding: 8,
+  },
 });
 
 export default Startups;

@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Dimensions,
   TouchableOpacity,
   TextInput,
@@ -13,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
+import metrics from '../constants/aikuMetric';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -48,9 +48,6 @@ const InvestmentScreen: React.FC = () => {
     <TouchableOpacity key={item.id} style={styles.cardContainer}>
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
-          <PaperText style={styles.type} numberOfLines={1} ellipsizeMode="tail">
-            Investment Opportunity
-          </PaperText>
           <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
             {item.company}
           </PaperText>
@@ -66,7 +63,7 @@ const InvestmentScreen: React.FC = () => {
           </View>
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progress, { width: item.funded }]} />
+              <View style={[styles.progress, { width: item.funded as `${number}%` }]} />
             </View>
             <View style={styles.progressDetails}>
               <PaperText style={styles.progressText}>
@@ -82,9 +79,9 @@ const InvestmentScreen: React.FC = () => {
 
   return (
     <LinearGradient
-      colors={['#1A1E29', '#3B82F740']}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <View style={styles.headerContainer}>
@@ -119,124 +116,120 @@ const InvestmentScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#1A1E29',
+    padding: metrics.padding.md,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: metrics.margin.md,
   },
   backButton: {
-    marginRight: 10,
+    marginRight: metrics.margin.sm,
   },
   header: {
-    fontSize: 20,
+    fontSize: metrics.fontSize.xl,
     fontWeight: 'bold',
     color: '#fff',
     marginLeft: '10%',
   },
   subtext: {
-    fontSize: 14,
+    fontSize: metrics.fontSize.sm,
     color: '#ccc',
-    marginBottom: 16,
+    marginBottom: metrics.margin.md,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    margin: 16,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    margin: metrics.margin.md,
+    marginBottom: metrics.margin.sm,
+    paddingHorizontal: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: metrics.margin.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 8,
-    fontSize: 16,
+    paddingVertical: metrics.padding.sm,
+    fontSize: metrics.fontSize.md,
     color: Colors.lightText,
   },
   cardContainer: {
-    width: SCREEN_WIDTH - 32, // Increased width by reducing margin
-    minHeight: 180, // Increased minHeight from 150 to 180
-    marginBottom: 18, // Slightly increased marginBottom
+    width: SCREEN_WIDTH - metrics.scale(32),
+    minHeight: metrics.verticalScale(180),
+    marginBottom: metrics.margin.md,
     alignSelf: 'center',
-    borderRadius: 14, // Slightly larger borderRadius
+    borderRadius: metrics.borderRadius.md,
     overflow: 'hidden',
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 10,
-    marginTop: 18, // Slightly increased marginTop
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: metrics.padding.md,
+    marginTop: metrics.margin.md,
   },
   contentContainer: {
-    padding: 20, // Increased padding from 16 to 20
+    padding: metrics.scale(20),
   },
   textContainer: {
     flex: 1,
   },
   type: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 20, // Increased from 18 to 20
+    color: '#fff',
+    fontSize: metrics.fontSize.xl,
     fontWeight: '600',
-    marginBottom: 4, // Increased from 2 to 4
+    marginBottom: metrics.verticalScale(14),
+    paddingLeft: metrics.scale(50),
   },
   companyName: {
     color: Colors.lightText,
-    fontSize: 15, // Increased from 16 to 18
-    marginBottom: 14, // Increased from 12 to 14
+    fontSize: metrics.fontSize.md,
+    marginBottom: metrics.verticalScale(14),
   },
   detailsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20, // Increased from 16 to 20
+    marginBottom: metrics.verticalScale(20),
   },
   detail: {
     flex: 1,
   },
   detailLabel: {
-    fontSize: 14, // Increased from 12 to 14
+    fontSize: metrics.fontSize.sm,
     color: 'rgba(255,255,255,0.5)',
-    marginBottom: 4, // Increased from 2 to 4
+    marginBottom: metrics.verticalScale(4),
   },
   detailValue: {
-    fontSize: 18, // Increased from 16 to 18
+    fontSize: metrics.fontSize.lg,
     color: Colors.lightText,
     fontWeight: '600',
   },
   progressContainer: {
-    marginTop: 10, // Increased from 8 to 10
+    marginTop: metrics.verticalScale(10),
   },
   progressBar: {
-    height: 6, // Increased from 4 to 6
+    height: metrics.verticalScale(6),
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 3, // Increased from 2 to 3
-    marginBottom: 10, // Increased from 8 to 10
+    borderRadius: metrics.scale(3),
+    marginBottom: metrics.verticalScale(10),
   },
   progress: {
     height: '100%',
     backgroundColor: Colors.primary,
-    borderRadius: 3, // Increased from 2 to 3
+    borderRadius: metrics.scale(3),
   },
   progressDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   progressText: {
-    fontSize: 14, // Increased from 12 to 14
+    fontSize: metrics.fontSize.sm,
     color: 'rgba(255,255,255,0.6)',
   },
   fundedText: {
-    fontSize: 14, // Increased from 12 to 14
+    fontSize: metrics.fontSize.sm,
     color: Colors.primary,
     fontWeight: '600',
   },
