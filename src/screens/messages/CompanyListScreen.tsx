@@ -21,9 +21,12 @@ import chatApi from '../../api/chatApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Company {
-  id: string;
-  name: string;
-  avatar: string;
+  _id?: string;
+  id?: string;
+  companyName: string;
+  companyLogo: string;
+  companyType: string;
+  acceptMessages: boolean;
 }
 
 const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
@@ -33,11 +36,19 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
+  // setupUser fonksiyonunu güncelleyelim
   const setupUser = useCallback(async () => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) {
-        setCurrentUserId(userId);
+        // Önce şirket bilgisini alalım
+        const companyId = await fetchCurrentCompany(userId);
+        if (companyId) {
+          setCurrentUserId(companyId);
+        } else {
+          Alert.alert('Hata', 'Şirket bilgisi bulunamadı');
+          navigation.getParent()?.navigate('Auth');
+        }
       } else {
         Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
@@ -47,13 +58,32 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
       navigation.getParent()?.navigate('Auth');
     }
-  }, [navigation]);
+  }, [navigation, fetchCurrentCompany]);
 
+  // Şirket listesi yüklenirken
   const loadCompanies = useCallback(async () => {
     try {
       setRefreshing(true);
+      console.log('Mevcut kullanıcı şirketi ID:', currentUserId);
+      
       const response = await chatApi.getCompanies();
-      setCompanies(response);
+      console.log('Gelen şirketler:', response);
+      
+      const filteredCompanies = response.filter(company => {
+        const companyId = company._id || company.id;
+        console.log('Filtrelenen şirket:', {
+          id: companyId,
+          name: company.companyName,
+          type: company.companyType
+        });
+        return (
+          companyId !== currentUserId &&
+          company.acceptMessages !== false &&
+          ["Startup", "Business", "Investor"].includes(company.companyType)
+        );
+      });
+      
+      setCompanies(filteredCompanies);
     } catch (error) {
       console.error('Şirketler yüklenirken hata:', error);
       Alert.alert('Hata', 'Şirket listesi yüklenemedi');
@@ -61,7 +91,7 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       setRefreshing(false);
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     setupUser();
@@ -73,22 +103,73 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     }
   }, [currentUserId, loadCompanies]);
 
+  const fetchCurrentCompany = async (userId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token);
+      console.log('UserId:', userId);
+
+      if (!token) {
+        console.error('Token bulunamadı');
+        return null;
+      }
+
+      const response = await fetch(
+        `https://api.aikuaiplatform.com/api/company/current?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log('Company API Response Status:', response.status);
+      const data = await response.json();
+      console.log('Company API Response:', data);
+
+      if (data.success && data.companies.length > 0) {
+        const companyId = data.companies[0].id;
+        console.log('Seçilen Company ID:', companyId);
+        setCurrentUserId(companyId);
+        return companyId;
+      }
+      console.error('Şirket bulunamadı veya API yanıtı başarısız');
+      return null;
+    } catch (error) {
+      console.error('Şirket bilgisi alınırken hata:', error);
+      return null;
+    }
+  };
+
+  // handleCompanyPress fonksiyonunu güncelleyelim
   const handleCompanyPress = async (company: Company) => {
     try {
+      console.log('Seçilen şirket:', company);
+      console.log('Mevcut kullanıcı şirketi:', currentUserId);
+
+      if (!currentUserId) {
+        Alert.alert('Hata', 'Kullanıcı şirket bilgisi bulunamadı');
+        return;
+      }
+
       const chatSession = await chatApi.createChatSession({
         initiatorCompanyId: currentUserId,
-        targetCompanyId: company.id,
-        title: company.name,
+        targetCompanyId: company._id || company.id,
+        title: `${company.companyName} ile sohbet`
       });
+
+      console.log('Oluşturulan sohbet:', chatSession);
+
       navigation.navigate('ChatDetail', {
-        chatId: chatSession.id,
-        name: company.name,
-        receiverId: company.id,
+        chatSessionId: chatSession._id,
+        receiverId: company._id || company.id,
+        receiverName: company.companyName,
         companyId: currentUserId,
       });
     } catch (error) {
       console.error('Sohbet oturumu oluşturulurken hata:', error);
-      Alert.alert('Hata', 'Sohbet oturumu oluşturulamadı');
+      Alert.alert('Hata', 'Sohbet oturumu oluşturulamadı: ' + error.message);
     }
   };
 
@@ -109,13 +190,17 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     >
       <View style={styles.avatar}>
         <Image 
-          source={{ uri: item.avatar }} 
+          source={{ 
+            uri: item.companyLogo?.startsWith('/uploads')
+              ? `https://api.aikuaiplatform.com${item.companyLogo}`
+              : item.companyLogo || 'default_avatar_url_here'
+          }} 
           style={styles.avatarImage} 
           resizeMode="contain"
         />
       </View>
       <View style={styles.companyInfo}>
-        <Text style={styles.companyName}>{item.name}</Text>
+        <Text style={styles.companyName}>{item.companyName}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -159,10 +244,10 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
         </View>
         <FlatList
           data={companies.filter(company =>
-            company.name.toLowerCase().includes(searchQuery.toLowerCase())
+            company.companyName.toLowerCase().includes(searchQuery.toLowerCase())
           )}
           renderItem={renderItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item._id || item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

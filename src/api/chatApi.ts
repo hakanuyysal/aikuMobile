@@ -8,7 +8,7 @@ import socketService from '../services/socketService';
 // Gerçek cihaz veya iOS simülatörü için: Bilgisayarınızın yerel IP adresi (örn: http://192.168.1.XX:3004/api)
 const API_URL = __DEV__ 
   ? 'http://10.0.2.2:3004/api'  // Android emülatör için localhost
-  : Config.API_URL || 'https://api.aikuaiplatform.com/api';
+  : Config.API_URL || 'https://api.aikuaiplatform.com';
 
 const SOCKET_URL = __DEV__
   ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
@@ -69,11 +69,22 @@ api.interceptors.response.use(
   }
 );
 
+// Update or add these interfaces
+interface Company {
+  _id?: string;
+  id?: string;
+  companyName: string;
+  companyLogo: string;
+  companyType: string;
+  acceptMessages: boolean;
+}
+
 const chatApi = {
+  // Update getChatSessions function to match web implementation
   getChatSessions: async (companyId: string): Promise<ChatSession[]> => {
     try {
       const response = await api.get(`/chat/sessions/${companyId}`);
-      return response.data.sessions || [];
+      return response.data;
     } catch (error) {
       console.error('Sohbet oturumları alınırken hata:', error);
       throw error;
@@ -127,16 +138,54 @@ const chatApi = {
     }
   },
 
+  // Update createChatSession to match backend implementation
   createChatSession: async (data: {
     initiatorCompanyId: string;
     targetCompanyId: string;
     title: string;
   }): Promise<ChatSession> => {
     try {
-      const response = await api.post('/chat/sessions', data);
-      return response.data;
+      // Input validation
+      if (!data.initiatorCompanyId || !data.targetCompanyId || !data.title) {
+        throw new Error('Başlatıcı şirket ID, hedef şirket ID ve başlık alanları zorunludur');
+      }
+
+      // Check if trying to chat with self
+      if (data.initiatorCompanyId === data.targetCompanyId) {
+        throw new Error('Bir şirket kendisiyle sohbet başlatamaz');
+      }
+
+      const response = await api.post('/chat/sessions', {
+        initiatorCompanyId: data.initiatorCompanyId,
+        targetCompanyId: data.targetCompanyId,
+        title: data.title
+      });
+
+      // Backend success response check
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Sohbet oturumu oluşturulamadı');
+      }
+
+      // Return chat session data
+      return response.data.data;
+
     } catch (error) {
       console.error('Sohbet oturumu oluşturulurken hata:', error);
+      
+      // Handle specific error cases from backend
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            throw new Error(error.response.data.message || 'Geçersiz istek');
+          case 404:
+            throw new Error('Bir veya her iki şirket bulunamadı');
+          case 403:
+            throw new Error('Bu işlem için yetkiniz yok');
+          default:
+            throw new Error(error.response.data.message || 'Sohbet oturumu oluşturulurken bir hata oluştu');
+        }
+      }
+
       throw error;
     }
   },
@@ -170,10 +219,21 @@ const chatApi = {
   },
 
   // getCompanies endpoint'i
-  getCompanies: async (): Promise<any[]> => {
+  getCompanies: async (): Promise<Company[]> => {
     try {
-      const response = await api.get('/auth/companies/current');
-      return response.data.companies || [];
+      const response = await api.get('/company/all');
+      const companies = response.data.companies || response.data;
+      
+      // Filter companies based on criteria
+      const allowedTypes = ["Startup", "Business", "Investor"];
+      const filteredCompanies = companies.filter(company => {
+        return (
+          company.acceptMessages !== false &&
+          allowedTypes.includes(company.companyType)
+        );
+      });
+      
+      return filteredCompanies;
     } catch (error) {
       console.error('Şirketler alınırken hata:', error);
       return [];
@@ -235,6 +295,32 @@ const chatApi = {
       socket.off('message', callback);
     }
   },
+
+  // Add new functions for chat session management
+  archiveChat: async (chatSessionId: string, data: { 
+    companyId: string;
+    archive: boolean;
+  }): Promise<any> => {
+    try {
+      const response = await api.patch(`/chat/archive/${chatSessionId}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Sohbet arşivlenirken hata:', error);
+      throw error;
+    }
+  },
+
+  deleteChat: async (chatSessionId: string, companyId: string): Promise<any> => {
+    try {
+      const response = await api.delete(`/chat/sessions/${chatSessionId}`, {
+        data: { companyId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Sohbet silinirken hata:', error);
+      throw error;
+    }
+  },
 };
 
-export default chatApi; 
+export default chatApi;
