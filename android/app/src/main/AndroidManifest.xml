@@ -21,6 +21,14 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="yourapp" android:host="auth" android:pathPrefix="/linkedin-callback" />
+            <data android:scheme="https" android:host="api.aikuaiplatform.com" android:pathPrefix="/auth/linkedin-callback" />
+            <data android:scheme="http" android:host="localhost" android:port="8081" android:pathPrefix="/auth/linkedin-callback" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>

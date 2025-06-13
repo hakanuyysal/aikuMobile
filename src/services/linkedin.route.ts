@@ -18,11 +18,12 @@ const supabase_1 = require("../config/supabase");
 const linkedInService_1 = require("../services/linkedInService");
 const router = express_1.default.Router();
 
-// LinkedIn oturum açma URL'si al (Supabase üzerinden)
 router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const redirectTo = req.query.from === 'mobile' ? 'https://aikuaiplatform.com/auth/social-callback' : `${process.env.CLIENT_URL}/auth/callback`;
-        console.log('[LinkedIn Auth] Initiating OAuth', { redirectTo, from: req.query.from });
+        const isMobile = req.query.from === 'mobile';
+        const redirectTo = isMobile ? 'yourapp://auth/linkedin-callback' : `${process.env.CLIENT_URL}/auth/callback`;
+        
+        console.log('[LinkedIn Auth] Initiating OAuth', { redirectTo, isMobile });
 
         const { data, error } = yield supabase_1.supabase.auth.signInWithOAuth({
             provider: 'linkedin_oidc',
@@ -30,7 +31,7 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
                 redirectTo,
                 queryParams: {
                     prompt: 'consent',
-                    from: req.query.from || 'web',
+                    from: isMobile ? 'mobile' : 'web',
                 },
             },
         });
@@ -45,7 +46,6 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 }));
 
-// LinkedIn callback endpoint'i (Supabase üzerinden)
 router.get('/auth/linkedin/callback', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { code, state, from } = req.query;
     console.log('[LinkedIn Callback] Received:', { code, state, from });
@@ -61,14 +61,13 @@ router.get('/auth/linkedin/callback', (req, res) => __awaiter(void 0, void 0, vo
 
         console.log('[LinkedIn Callback] Session exchanged:', { userId: data.user?.id });
 
-        // MongoDB ile senkronizasyon
         const linkedInService = new linkedInService_1.LinkedInService();
         const authResult = yield linkedInService.handleAuth(data);
 
-        // Determine redirect based on 'from' query param
         const isMobile = from === 'mobile';
-        const redirectBase = isMobile ? 'myapp://auth/callback' : `${process.env.CLIENT_URL}/auth/callback`;
-        const redirectUrl = `${redirectBase}?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${state || ''}`;
+        const redirectUrl = isMobile 
+            ? `http://10.0.2.2:8081/auth/linkedin-callback?code=${code}&state=${state || ''}`
+            : `${process.env.CLIENT_URL}/auth/callback?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${state || ''}`;
 
         console.log('[LinkedIn Callback] Redirecting to:', redirectUrl);
         res.redirect(redirectUrl);
@@ -78,7 +77,6 @@ router.get('/auth/linkedin/callback', (req, res) => __awaiter(void 0, void 0, vo
     }
 }));
 
-// Eski POST endpointi - eski entegrasyonlar için korundu
 router.post('/auth/linkedin/callback', linkedinAuth_controller_1.default.handleLinkedInCallback);
 
 exports.default = router;

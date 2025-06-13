@@ -4,10 +4,7 @@ import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 import { Linking } from 'react-native';
-import {
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 interface UserData {
   email: string;
@@ -53,18 +50,13 @@ class AuthService {
       },
     });
 
-    // Configure Google Sign-In
     GoogleSignin.configure({
-      webClientId:
-        Config.GOOGLE_CLIENT_ID ||
-        '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
-      iosClientId:
-        '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
+      webClientId: Config.GOOGLE_CLIENT_ID || '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
+      iosClientId: '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
       offlineAccess: false,
       scopes: ['profile', 'email'],
     });
 
-    // Token interceptor
     this.axios.interceptors.request.use(async config => {
       const token = await AsyncStorage.getItem('token');
       if (token) {
@@ -73,9 +65,7 @@ class AuthService {
       return config;
     });
 
-    // Setup deep link listener
     Linking.addEventListener('url', this.handleDeepLink.bind(this));
-    // Handle initial URL (e.g., if app was closed)
     Linking.getInitialURL().then(url => {
       if (url) this.handleDeepLink({ url });
     });
@@ -85,35 +75,54 @@ class AuthService {
     console.log('[DeepLink] Received URL:', event.url);
     const url = event.url;
 
-    if (url.includes('/auth/callback') || url.includes('/auth/social-callback')) {
-      const urlParams = new URLSearchParams(url.split('?')[1]);
-      const token = urlParams.get('token');
-      const user = urlParams.get('user');
-      const state = urlParams.get('state');
+    if (!url.startsWith('yourapp://')) {
+      console.warn('[DeepLink] Invalid URL scheme:', url);
+      return;
+    }
+
+    const urlObj = new URL(url);
+    console.log('[DeepLink] Parsed URL:', {
+      protocol: urlObj.protocol,
+      host: urlObj.host,
+      pathname: urlObj.pathname,
+      searchParams: Object.fromEntries(urlObj.searchParams),
+    });
+
+    if (urlObj.pathname === '/auth/linkedin-callback') {
+      const code = urlObj.searchParams.get('code');
+      const state = urlObj.searchParams.get('state');
       const storedState = await AsyncStorage.getItem('linkedin_state');
 
-      console.log('[DeepLink] Parsed params:', { token, user, state, storedState });
+      console.log('[DeepLink] LinkedIn callback params:', { code, state, storedState });
 
       if (state !== storedState) {
         console.error('[DeepLink] State mismatch:', { received: state, expected: storedState });
         return;
       }
 
-      if (token && user) {
+      if (code) {
         try {
-          await AsyncStorage.setItem('token', token);
-          const userData = JSON.parse(decodeURIComponent(user));
-          await AsyncStorage.setItem('user', JSON.stringify(userData));
-          await AsyncStorage.setItem('user_id', userData.id);
-          console.log('[DeepLink] Authenticated user:', { token, user: userData });
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+
+          console.log('[DeepLink] Session:', { userId: data.user?.id });
+
+          if (data.session?.access_token) {
+            await AsyncStorage.setItem('token', data.session.access_token);
+            if (data.user?.id) {
+              await AsyncStorage.setItem('user_id', data.user.id);
+              await AsyncStorage.setItem('user', JSON.stringify(data.user));
+            }
+            console.log('[DeepLink] Successfully authenticated user:', { user: data.user });
+          }
         } catch (error) {
-          console.error('[DeepLink] Processing error:', error);
+          console.error('[DeepLink] Error processing auth data:', error);
         }
       } else {
-        console.error('[DeepLink] Missing token or user:', { token, user });
+        console.error('[DeepLink] Missing code:', urlObj.searchParams);
       }
     } else {
-      console.warn('[DeepLink] Unhandled URL:', url);
+      console.warn('[DeepLink] Unhandled path:', urlObj.pathname);
     }
   }
 
@@ -271,18 +280,20 @@ class AuthService {
       const state = Math.random().toString(36).substring(2, 15);
       await AsyncStorage.setItem('linkedin_state', state);
 
-      const clientId = '77sndgcd7twnio';
-      const redirectUri = 'https://aikuaiplatform.com/auth/social-callback';
-      const scope = 'openid profile email';
-
-      console.log('[LinkedIn] OAuth Config:', { clientId, redirectUri, scope, state });
+      const redirectUri = 'yourapp://auth/linkedin-callback';
+      console.log('[LinkedIn] OAuth Config:', {
+        clientId: '77sndgcd7twnio',
+        redirectUri,
+        scope: 'openid profile email',
+        state,
+      });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
           redirectTo: redirectUri,
           queryParams: {
-            scope,
+            scope: 'openid profile email',
             state,
             prompt: 'consent',
             from: 'mobile',
@@ -290,10 +301,7 @@ class AuthService {
         },
       });
 
-      if (error) {
-        console.error('[LinkedIn] Supabase OAuth error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('[LinkedIn] OAuth URL:', data.url);
       await Linking.openURL(data.url);
@@ -320,11 +328,7 @@ class AuthService {
         throw new Error('State mismatch');
       }
 
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'linkedin_oidc',
-        token: code,
-      });
-
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) throw error;
 
       console.log('[LinkedIn Callback] Session:', { userId: data.user?.id });
