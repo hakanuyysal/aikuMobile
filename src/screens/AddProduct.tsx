@@ -23,22 +23,23 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
 interface FormData {
   productName: string;
-  productLogo: string;
   productCategory: string;
+  companyName: string;
   productDescription: string;
+  pricingModel: string;
+  releaseDate: string;
+  productWebsite: string;
+  // Opsiyonel alanlar
+  productLogo: string;
   detailedDescription: string;
   tags: string[];
   problems: string[];
   solutions: string[];
   improvements: string[];
   keyFeatures: string[];
-  pricingModel: string;
-  releaseDate: string;
   productPrice: number;
-  productWebsite: string;
   productLinkedIn: string;
   productTwitter: string;
-  companyName: string;
   companyId: string;
 }
 
@@ -46,39 +47,60 @@ const AddProduct = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     productName: '',
-    productLogo: '',
     productCategory: '',
+    companyName: '',
     productDescription: '',
+    pricingModel: 'Free',
+    releaseDate: '',
+    productWebsite: '',
+    // Opsiyonel alanlar için varsayılan değerler
+    productLogo: '',
     detailedDescription: '',
     tags: [],
     problems: [],
     solutions: [],
     improvements: [],
     keyFeatures: [],
-    pricingModel: 'Free',
-    releaseDate: '',
     productPrice: 0,
-    productWebsite: '',
     productLinkedIn: '',
     productTwitter: '',
-    companyName: '',
     companyId: '',
   });
 
-  const handleAddProduct = async () => {
-    console.log('Form data:', formData);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-    // Client-side validation
-    if (
-      !formData.productName ||
-      !formData.productCategory ||
-      !formData.productDescription ||
-      !formData.companyId
-    ) {
-      Alert.alert(
-        'Eksik Bilgi',
-        'Lütfen tüm zorunlu alanları doldurun: Ürün Adı, Kategori, Açıklama, Şirket ID'
-      );
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    
+    if (!formData.productName.trim()) {
+      newErrors.productName = 'Ürün adı zorunludur';
+    }
+    if (!formData.productCategory.trim()) {
+      newErrors.productCategory = 'Kategori seçimi zorunludur';
+    }
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Şirket adı zorunludur';
+    }
+    if (!formData.productDescription.trim()) {
+      newErrors.productDescription = 'Ürün açıklaması zorunludur';
+    }
+    if (!formData.pricingModel.trim()) {
+      newErrors.pricingModel = 'Fiyatlandırma modeli zorunludur';
+    }
+    if (!formData.releaseDate.trim()) {
+      newErrors.releaseDate = 'Yayın tarihi zorunludur';
+    }
+    if (!formData.productWebsite.trim()) {
+      newErrors.productWebsite = 'Ürün websitesi zorunludur';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddProduct = async () => {
+    if (!validateForm()) {
+      Alert.alert('Eksik Bilgi', 'Lütfen tüm zorunlu alanları doldurun.');
       return;
     }
 
@@ -109,19 +131,32 @@ const AddProduct = ({navigation}: Props) => {
     multiline: boolean = false,
     maxLength?: number,
     keyboardType: 'default' | 'numeric' | 'email-address' | 'phone-pad' = 'default',
+    fieldName?: keyof FormData,
   ) => (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
-        style={[styles.input, multiline && styles.multilineInput]}
+        style={[
+          styles.input,
+          multiline && styles.multilineInput,
+          fieldName && errors[fieldName] && styles.inputError,
+        ]}
         value={String(value)}
-        onChangeText={(text) => onChangeText(text.trim())}
+        onChangeText={(text) => {
+          onChangeText(text.trim());
+          if (fieldName && errors[fieldName]) {
+            setErrors(prev => ({...prev, [fieldName]: undefined}));
+          }
+        }}
         placeholder={placeholder}
         placeholderTextColor={Colors.lightText + '80'}
         multiline={multiline}
         maxLength={maxLength}
         keyboardType={keyboardType}
       />
+      {fieldName && errors[fieldName] && (
+        <Text style={styles.errorText}>{errors[fieldName]}</Text>
+      )}
       {maxLength && (
         <Text style={styles.characterCount}>
           {String(value).length}/{maxLength}
@@ -165,6 +200,10 @@ const AddProduct = ({navigation}: Props) => {
               formData.productName,
               (text) => setFormData({...formData, productName: text.trim()}),
               'Enter your product name',
+              false,
+              undefined,
+              'default',
+              'productName'
             )}
 
             {renderInputField(
@@ -179,6 +218,10 @@ const AddProduct = ({navigation}: Props) => {
               formData.productCategory,
               (text) => setFormData({...formData, productCategory: text.trim()}),
               'Select a category',
+              false,
+              undefined,
+              'default',
+              'productCategory'
             )}
 
             {renderInputField(
@@ -186,6 +229,10 @@ const AddProduct = ({navigation}: Props) => {
               formData.companyName,
               (text) => setFormData({...formData, companyName: text.trim()}),
               'Select your company',
+              false,
+              undefined,
+              'default',
+              'companyName'
             )}
 
             {renderInputField(
@@ -202,6 +249,8 @@ const AddProduct = ({navigation}: Props) => {
               'Brief description of your product',
               true,
               500,
+              'default',
+              'productDescription'
             )}
 
             {renderInputField(
@@ -220,7 +269,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter tags (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.tags.join(', ')}
-                onChangeText={(text) => setFormData({...formData, tags: text.split(',').map(tag => tag.trim())})}
+                onChangeText={(text) => setFormData({...formData, tags: text.split(',').map(tag => tag.trim()).filter(Boolean)})}
               />
             </View>
 
@@ -231,7 +280,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter problems (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.problems.join(', ')}
-                onChangeText={(text) => setFormData({...formData, problems: text.split(',').map(problem => problem.trim())})}
+                onChangeText={(text) => setFormData({...formData, problems: text.split(',').map(problem => problem.trim()).filter(Boolean)})}
               />
             </View>
 
@@ -242,7 +291,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter solutions (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.solutions.join(', ')}
-                onChangeText={(text) => setFormData({...formData, solutions: text.split(',').map(solution => solution.trim())})}
+                onChangeText={(text) => setFormData({...formData, solutions: text.split(',').map(solution => solution.trim()).filter(Boolean)})}
               />
             </View>
 
@@ -253,7 +302,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter improvements (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.improvements.join(', ')}
-                onChangeText={(text) => setFormData({...formData, improvements: text.split(',').map(improvement => improvement.trim())})}
+                onChangeText={(text) => setFormData({...formData, improvements: text.split(',').map(improvement => improvement.trim()).filter(Boolean)})}
               />
             </View>
 
@@ -264,7 +313,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter key features (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.keyFeatures.join(', ')}
-                onChangeText={(text) => setFormData({...formData, keyFeatures: text.split(',').map(feature => feature.trim())})}
+                onChangeText={(text) => setFormData({...formData, keyFeatures: text.split(',').map(feature => feature.trim()).filter(Boolean)})}
               />
             </View>
 
@@ -281,6 +330,10 @@ const AddProduct = ({navigation}: Props) => {
               formData.releaseDate,
               (text) => setFormData({...formData, releaseDate: text.trim()}),
               'gg.aa.yyyy',
+              false,
+              undefined,
+              'default',
+              'releaseDate'
             )}
 
             {renderInputField(
@@ -298,6 +351,10 @@ const AddProduct = ({navigation}: Props) => {
               formData.productWebsite,
               (text) => setFormData({...formData, productWebsite: text.trim()}),
               'Enter your product website',
+              false,
+              undefined,
+              'default',
+              'productWebsite'
             )}
 
             {renderInputField(
@@ -442,6 +499,15 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  inputError: {
+    borderColor: 'red',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: metrics.fontSize.sm,
+    marginTop: metrics.margin.xs,
   },
 });
 

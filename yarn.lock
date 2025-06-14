@@ -6472,13 +6472,6 @@ react-native-crypto@^2.2.0:
     public-encrypt "^4.0.0"
     randomfill "^1.0.3"
 
-react-native-document-picker@^9.3.1:
-  version "9.3.1"
-  resolved "https://registry.yarnpkg.com/react-native-document-picker/-/react-native-document-picker-9.3.1.tgz#f2c33237a906fd0893130e0605c8f18a3aef1605"
-  integrity sha512-Vcofv9wfB0j67zawFjfq9WQPMMzXxOZL9kBmvWDpjVuEcVK73ndRmlXHlkeFl5ZHVsv4Zb6oZYhqm9u5omJOPA==
-  dependencies:
-    invariant "^2.2.4"
-
 react-native-drawer-layout@^4.1.6:
   version "4.1.6"
   resolved "https://registry.yarnpkg.com/react-native-drawer-layout/-/react-native-drawer-layout-4.1.6.tgz#4a806a83a812a366d042543fa66a3a345a217843"
@@ -6492,6 +6485,11 @@ react-native-fetch-api@^3.0.0:
   integrity sha512-g2rtqPjdroaboDKTsJCTlcmtw54E25OjyaunUP0anOZn4Fuo2IKs8BVfe02zVggA/UysbmfSnRJIqtNkAgggNA==
   dependencies:
     p-defer "^3.0.0"
+
+react-native-file-picker@^0.0.21:
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/react-native-file-picker/-/react-native-file-picker-0.0.21.tgz#b539a7fa72a19029a2fc707029dc6a287d4a9dad"
+  integrity sha512-qsvdqYmDjjgPFNlabBXFNU+h1Yndl35aEsGlnPVV070qRYuCOaDx6VQYHLBqMequppb98Gb82zIGjvekbILMXQ==
 
 react-native-geolocation-service@^5.3.1:
   version "5.3.1"

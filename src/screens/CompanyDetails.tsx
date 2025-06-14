@@ -22,7 +22,7 @@ import { RootStackParamList } from '../../App';
 import { Picker } from '@react-native-picker/picker';
 import baseServiceInstance from '../services/BaseService';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import DocumentPicker from 'react-native-document-picker';
+import DocumentPicker from 'react-native-file-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
