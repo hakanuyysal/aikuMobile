@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -18,105 +19,121 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {productService} from '../services/api';
 import {AxiosError} from 'axios';
+import * as ImagePicker from 'react-native-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
 interface FormData {
   productName: string;
+  productLogo: string | null;
   productCategory: string;
-  companyName: string;
   productDescription: string;
-  pricingModel: string;
-  releaseDate: string;
-  productWebsite: string;
-  // Opsiyonel alanlar
-  productLogo: string;
   detailedDescription: string;
   tags: string[];
   problems: string[];
   solutions: string[];
   improvements: string[];
   keyFeatures: string[];
-  productPrice: number;
+  pricingModel: string;
+  releaseDate: string;
+  productWebsite: string;
   productLinkedIn: string;
   productTwitter: string;
+  companyName: string;
   companyId: string;
 }
 
 const AddProduct = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showAIOptions, setShowAIOptions] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [urlError, setUrlError] = useState('');
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
   const [formData, setFormData] = useState<FormData>({
     productName: '',
+    productLogo: null,
     productCategory: '',
-    companyName: '',
     productDescription: '',
-    pricingModel: 'Free',
-    releaseDate: '',
-    productWebsite: '',
-    // Opsiyonel alanlar için varsayılan değerler
-    productLogo: '',
     detailedDescription: '',
     tags: [],
     problems: [],
     solutions: [],
     improvements: [],
     keyFeatures: [],
-    productPrice: 0,
+    pricingModel: 'Free',
+    releaseDate: '',
+    productWebsite: '',
     productLinkedIn: '',
     productTwitter: '',
+    companyName: '',
     companyId: '',
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [inputValues, setInputValues] = useState({
+    tags: '',
+    problems: '',
+    solutions: '',
+    improvements: '',
+    keyFeatures: '',
+  });
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
-    
-    if (!formData.productName.trim()) {
-      newErrors.productName = 'Ürün adı zorunludur';
-    }
-    if (!formData.productCategory.trim()) {
-      newErrors.productCategory = 'Kategori seçimi zorunludur';
-    }
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Şirket adı zorunludur';
-    }
-    if (!formData.productDescription.trim()) {
-      newErrors.productDescription = 'Ürün açıklaması zorunludur';
-    }
-    if (!formData.pricingModel.trim()) {
-      newErrors.pricingModel = 'Fiyatlandırma modeli zorunludur';
-    }
-    if (!formData.releaseDate.trim()) {
-      newErrors.releaseDate = 'Yayın tarihi zorunludur';
-    }
-    if (!formData.productWebsite.trim()) {
-      newErrors.productWebsite = 'Ürün websitesi zorunludur';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleImagePicker = () => {
+    ImagePicker.launchImageLibrary({
+      mediaType: 'photo',
+      includeBase64: true,
+      maxHeight: 500,
+      maxWidth: 500,
+    }, (response) => {
+      if (response.didCancel) {
+        return;
+      }
+      if (response.errorCode) {
+        Alert.alert('Hata', 'Resim seçilirken bir hata oluştu.');
+        return;
+      }
+      if (response.assets && response.assets[0]) {
+        setFormData(prev => ({
+          ...prev,
+          productLogo: response.assets[0].uri || null,
+        }));
+      }
+    });
   };
 
-  const handleAddProduct = async () => {
-    if (!validateForm()) {
-      Alert.alert('Eksik Bilgi', 'Lütfen tüm zorunlu alanları doldurun.');
-      return;
+  const addItem = (field: string) => {
+    if (inputValues[field].trim() !== '') {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field], inputValues[field].trim()],
+      }));
+      setInputValues(prev => ({...prev, [field]: ''}));
     }
+  };
+
+  const removeItem = (index: number, field: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setFormErrors([]);
 
     try {
-      setLoading(true);
       const response = await productService.createProduct(formData);
       Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
       navigation.navigate('ProductDetails', {id: response.product.id});
     } catch (error: unknown) {
-      Alert.alert('Hata', 'Ürün eklenirken bir hata oluştu.');
-      console.error('Ürün ekleme hatası:', error);
-      if (error instanceof AxiosError) {
-        console.error('API Hatası Durumu:', error.response?.status);
-        console.error('API Hatası Verisi:', error.response?.data);
-      } else if (error instanceof Error) {
-        console.error('Genel Hata Mesajı:', error.message);
+      if (error instanceof AxiosError && error.response?.data?.errors) {
+        const msgs = error.response.data.errors.map((e: any) => e.msg);
+        setFormErrors(msgs);
+      } else {
+        Alert.alert('Hata', 'Ürün eklenirken bir hata oluştu.');
       }
     } finally {
       setLoading(false);
@@ -131,37 +148,68 @@ const AddProduct = ({navigation}: Props) => {
     multiline: boolean = false,
     maxLength?: number,
     keyboardType: 'default' | 'numeric' | 'email-address' | 'phone-pad' = 'default',
-    fieldName?: keyof FormData,
+    required: boolean = false,
   ) => (
     <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>{label}</Text>
+      <Text style={styles.inputLabel}>
+        {label} {required && <Text style={styles.requiredStar}>*</Text>}
+      </Text>
       <TextInput
-        style={[
-          styles.input,
-          multiline && styles.multilineInput,
-          fieldName && errors[fieldName] && styles.inputError,
-        ]}
+        style={[styles.input, multiline && styles.multilineInput]}
         value={String(value)}
-        onChangeText={(text) => {
-          onChangeText(text.trim());
-          if (fieldName && errors[fieldName]) {
-            setErrors(prev => ({...prev, [fieldName]: undefined}));
-          }
-        }}
+        onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={Colors.lightText + '80'}
         multiline={multiline}
         maxLength={maxLength}
         keyboardType={keyboardType}
       />
-      {fieldName && errors[fieldName] && (
-        <Text style={styles.errorText}>{errors[fieldName]}</Text>
-      )}
       {maxLength && (
         <Text style={styles.characterCount}>
           {String(value).length}/{maxLength}
         </Text>
       )}
+    </View>
+  );
+
+  const renderTagInput = (
+    label: string,
+    field: string,
+    items: string[],
+    placeholder: string,
+  ) => (
+    <View style={styles.tagContainer}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <View style={styles.tagInputContainer}>
+        <TextInput
+          style={[styles.input, styles.tagInput]}
+          placeholder={placeholder}
+          placeholderTextColor={Colors.lightText + '80'}
+          value={inputValues[field]}
+          onChangeText={(text) =>
+            setInputValues(prev => ({...prev, [field]: text}))
+          }
+          onSubmitEditing={() => addItem(field)}
+        />
+        <TouchableOpacity
+          style={styles.addTagButton}
+          onPress={() => addItem(field)}
+          disabled={!inputValues[field].trim()}>
+          <Text style={styles.addTagButtonText}>Ekle</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.tagList}>
+        {items.map((item, index) => (
+          <View key={index} style={styles.tagItem}>
+            <Text style={styles.tagText}>{item}</Text>
+            <TouchableOpacity
+              onPress={() => removeItem(index, field)}
+              style={styles.removeTagButton}>
+              <Icon name="close" size={16} color={Colors.lightText} />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
     </View>
   );
 
@@ -179,200 +227,196 @@ const AddProduct = ({navigation}: Props) => {
             onPress={() => navigation.goBack()}>
             <Icon name="chevron-back" size={24} color={Colors.lightText} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add New Product</Text>
-          <TouchableOpacity 
-            style={[styles.saveButton, loading && styles.disabledButton]} 
-            onPress={handleAddProduct}
+          <Text style={styles.headerTitle}>Yeni Ürün Ekle</Text>
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.disabledButton]}
+            onPress={handleSubmit}
             disabled={loading}>
             {loading ? (
               <ActivityIndicator color={Colors.primary} />
             ) : (
-              <Text style={styles.saveButtonText}>Save</Text>
+              <Text style={styles.saveButtonText}>Kaydet</Text>
             )}
           </TouchableOpacity>
         </View>
+
         <ScrollView style={styles.content}>
           <View style={styles.formContainer}>
-            <Text style={styles.sectionTitle}>Product Information</Text>
-            
+            <TouchableOpacity
+              style={styles.aiButton}
+              onPress={() => setShowAIOptions(!showAIOptions)}>
+              <Icon name="bulb-outline" size={24} color={Colors.primary} />
+              <Text style={styles.aiButtonText}>AI ile Doldur</Text>
+            </TouchableOpacity>
+
+            {showAIOptions && (
+              <View style={styles.aiOptionsContainer}>
+                <TouchableOpacity
+                  style={styles.aiOption}
+                  onPress={() => {
+                    setShowAIOptions(false);
+                    // Website analizi için modal göster
+                  }}>
+                  <Text style={styles.aiOptionText}>Websiteden Doldur</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.aiOption}
+                  onPress={() => {
+                    setShowAIOptions(false);
+                    // Doküman analizi için dosya seçici göster
+                  }}>
+                  <Text style={styles.aiOptionText}>Dokümandan Doldur</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {renderInputField(
-              'Product Name',
+              'Ürün Adı',
               formData.productName,
-              (text) => setFormData({...formData, productName: text.trim()}),
-              'Enter your product name',
+              (text) => setFormData({...formData, productName: text}),
+              'Ürün adını girin',
               false,
               undefined,
               'default',
-              'productName'
+              true,
             )}
 
-            {renderInputField(
-              'Product Logo URL',
-              formData.productLogo,
-              (text) => setFormData({...formData, productLogo: text.trim()}),
-              'Enter product logo URL',
-            )}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Ürün Logosu</Text>
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={handleImagePicker}>
+                {formData.productLogo ? (
+                  <Image
+                    source={{uri: formData.productLogo}}
+                    style={styles.productLogo}
+                  />
+                ) : (
+                  <View style={styles.placeholderLogo}>
+                    <Icon name="image-outline" size={32} color={Colors.lightText} />
+                    <Text style={styles.placeholderText}>Logo Seç</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>
+                Kategori <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <View style={styles.selectContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={formData.productCategory}
+                  onChangeText={(text) =>
+                    setFormData({...formData, productCategory: text})
+                  }
+                  placeholder="Kategori seçin"
+                  placeholderTextColor={Colors.lightText + '80'}
+                />
+                <Icon name="chevron-down" size={24} color={Colors.lightText} />
+              </View>
+            </View>
 
             {renderInputField(
-              'Product Category',
-              formData.productCategory,
-              (text) => setFormData({...formData, productCategory: text.trim()}),
-              'Select a category',
-              false,
-              undefined,
-              'default',
-              'productCategory'
-            )}
-
-            {renderInputField(
-              'Company Name',
-              formData.companyName,
-              (text) => setFormData({...formData, companyName: text.trim()}),
-              'Select your company',
-              false,
-              undefined,
-              'default',
-              'companyName'
-            )}
-
-            {renderInputField(
-              'Company ID',
-              formData.companyId,
-              (text) => setFormData({...formData, companyId: text.trim()}),
-              'Enter company ID',
-            )}
-
-            {renderInputField(
-              'Product Description',
+              'Kısa Açıklama',
               formData.productDescription,
-              (text) => setFormData({...formData, productDescription: text.trim()}),
-              'Brief description of your product',
+              (text) => setFormData({...formData, productDescription: text}),
+              'Ürününüz hakkında kısa açıklama',
               true,
               500,
               'default',
-              'productDescription'
+              true,
             )}
 
             {renderInputField(
-              'Detailed Description',
+              'Detaylı Açıklama',
               formData.detailedDescription,
-              (text) => setFormData({...formData, detailedDescription: text.trim()}),
-              'Provide more details about your product',
+              (text) => setFormData({...formData, detailedDescription: text}),
+              'Ürününüz hakkında detaylı açıklama',
               true,
               3000,
             )}
 
-            <View style={styles.tagContainer}>
-              <Text style={styles.inputLabel}>Tags</Text>
-              <TextInput
-                style={[styles.input, styles.tagInput]}
-                placeholder="Enter tags (comma-separated)"
-                placeholderTextColor={Colors.lightText + '80'}
-                value={formData.tags.join(', ')}
-                onChangeText={(text) => setFormData({...formData, tags: text.split(',').map(tag => tag.trim()).filter(Boolean)})}
-              />
-            </View>
-
-            <View style={styles.tagContainer}>
-              <Text style={styles.inputLabel}>Problems</Text>
-              <TextInput
-                style={[styles.input, styles.tagInput]}
-                placeholder="Enter problems (comma-separated)"
-                placeholderTextColor={Colors.lightText + '80'}
-                value={formData.problems.join(', ')}
-                onChangeText={(text) => setFormData({...formData, problems: text.split(',').map(problem => problem.trim()).filter(Boolean)})}
-              />
-            </View>
-
-            <View style={styles.tagContainer}>
-              <Text style={styles.inputLabel}>Solutions</Text>
-              <TextInput
-                style={[styles.input, styles.tagInput]}
-                placeholder="Enter solutions (comma-separated)"
-                placeholderTextColor={Colors.lightText + '80'}
-                value={formData.solutions.join(', ')}
-                onChangeText={(text) => setFormData({...formData, solutions: text.split(',').map(solution => solution.trim()).filter(Boolean)})}
-              />
-            </View>
-
-            <View style={styles.tagContainer}>
-              <Text style={styles.inputLabel}>Improvements</Text>
-              <TextInput
-                style={[styles.input, styles.tagInput]}
-                placeholder="Enter improvements (comma-separated)"
-                placeholderTextColor={Colors.lightText + '80'}
-                value={formData.improvements.join(', ')}
-                onChangeText={(text) => setFormData({...formData, improvements: text.split(',').map(improvement => improvement.trim()).filter(Boolean)})}
-              />
-            </View>
-
-            <View style={styles.tagContainer}>
-              <Text style={styles.inputLabel}>Key Features</Text>
-              <TextInput
-                style={[styles.input, styles.tagInput]}
-                placeholder="Enter key features (comma-separated)"
-                placeholderTextColor={Colors.lightText + '80'}
-                value={formData.keyFeatures.join(', ')}
-                onChangeText={(text) => setFormData({...formData, keyFeatures: text.split(',').map(feature => feature.trim()).filter(Boolean)})}
-              />
-            </View>
+            {renderTagInput('Etiketler', 'tags', formData.tags, 'Etiket ekleyin')}
+            {renderTagInput('Problemler', 'problems', formData.problems, 'Problem ekleyin')}
+            {renderTagInput('Çözümler', 'solutions', formData.solutions, 'Çözüm ekleyin')}
+            {renderTagInput('İyileştirmeler', 'improvements', formData.improvements, 'İyileştirme ekleyin')}
+            {renderTagInput('Özellikler', 'keyFeatures', formData.keyFeatures, 'Özellik ekleyin')}
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Pricing Model</Text>
-              <TouchableOpacity style={styles.pricingButton}>
-                <Text style={styles.pricingButtonText}>Free</Text>
-                <Icon name="chevron-down" size={20} color={Colors.lightText} />
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>
+                Fiyatlandırma Modeli <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <View style={styles.selectContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={formData.pricingModel}
+                  onChangeText={(text) =>
+                    setFormData({...formData, pricingModel: text})
+                  }
+                  placeholder="Fiyatlandırma modeli seçin"
+                  placeholderTextColor={Colors.lightText + '80'}
+                />
+                <Icon name="chevron-down" size={24} color={Colors.lightText} />
+              </View>
             </View>
 
             {renderInputField(
-              'Release Date',
+              'Yayın Tarihi',
               formData.releaseDate,
-              (text) => setFormData({...formData, releaseDate: text.trim()}),
+              (text) => setFormData({...formData, releaseDate: text}),
               'gg.aa.yyyy',
               false,
               undefined,
               'default',
-              'releaseDate'
+              true,
             )}
 
             {renderInputField(
-              'Product Price',
-              formData.productPrice,
-              (text) => setFormData({...formData, productPrice: Number(text)}),
-              'Enter product price',
-              false,
-              undefined,
-              'numeric',
-            )}
-
-            {renderInputField(
-              'Product Website',
+              'Ürün Websitesi',
               formData.productWebsite,
-              (text) => setFormData({...formData, productWebsite: text.trim()}),
-              'Enter your product website',
+              (text) => setFormData({...formData, productWebsite: text}),
+              'Ürün websitesini girin',
               false,
               undefined,
               'default',
-              'productWebsite'
+              true,
             )}
 
             {renderInputField(
-              'Product LinkedIn',
+              'LinkedIn',
               formData.productLinkedIn,
-              (text) => setFormData({...formData, productLinkedIn: text.trim()}),
-              'Enter your product LinkedIn',
+              (text) => setFormData({...formData, productLinkedIn: text}),
+              'LinkedIn profilini girin',
             )}
 
             {renderInputField(
-              'Product X (Twitter)',
+              'Twitter',
               formData.productTwitter,
-              (text) => setFormData({...formData, productTwitter: text.trim()}),
-              'Enter your product Twitter',
+              (text) => setFormData({...formData, productTwitter: text}),
+              'Twitter profilini girin',
             )}
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddProduct}>
-              <Text style={styles.submitButtonText}>Submit Product</Text>
+            {formErrors.length > 0 && (
+              <View style={styles.errorContainer}>
+                {formErrors.map((error, index) => (
+                  <Text key={index} style={styles.errorText}>
+                    • {error}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.disabledButton]}
+              onPress={handleSubmit}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color={Colors.lightText} />
+              ) : (
+                <Text style={styles.submitButtonText}>Ürünü Kaydet</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -426,12 +470,6 @@ const styles = StyleSheet.create({
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
   },
-  sectionTitle: {
-    fontSize: metrics.fontSize.xl,
-    color: Colors.lightText,
-    fontWeight: 'bold',
-    marginBottom: metrics.margin.lg,
-  },
   inputContainer: {
     marginBottom: metrics.margin.md,
   },
@@ -439,6 +477,9 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
     marginBottom: metrics.margin.sm,
+  },
+  requiredStar: {
+    color: 'red',
   },
   input: {
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -457,38 +498,119 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: metrics.margin.xs,
   },
-  fileUploadButton: {
+  selectContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
+    paddingRight: metrics.padding.md,
+  },
+  imagePickerButton: {
+    width: 100,
+    height: 100,
+    borderRadius: metrics.borderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  productLogo: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  placeholderLogo: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  fileUploadText: {
+  placeholderText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
+    marginTop: metrics.margin.xs,
   },
   tagContainer: {
     marginBottom: metrics.margin.md,
   },
-  tagInput: {
-    marginRight: 0,
-  },
-  pricingButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
+  tagInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  pricingButtonText: {
+  tagInput: {
+    flex: 1,
+    marginRight: metrics.margin.sm,
+  },
+  addTagButton: {
+    backgroundColor: Colors.primary,
+    padding: metrics.padding.sm,
+    borderRadius: metrics.borderRadius.md,
+  },
+  addTagButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.sm,
+  },
+  tagList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: metrics.margin.sm,
+  },
+  tagItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.sm,
+    marginRight: metrics.margin.sm,
+    marginBottom: metrics.margin.sm,
+  },
+  tagText: {
+    color: Colors.lightText,
+    marginRight: metrics.margin.xs,
+  },
+  removeTagButton: {
+    padding: metrics.padding.xs,
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  aiButtonText: {
+    color: Colors.primary,
+    marginLeft: metrics.margin.sm,
+    fontSize: metrics.fontSize.md,
+  },
+  aiOptionsContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+    overflow: 'hidden',
+  },
+  aiOption: {
+    padding: metrics.padding.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  aiOptionText: {
     color: Colors.lightText,
     fontSize: metrics.fontSize.md,
   },
+  errorContainer: {
+    backgroundColor: 'rgba(255,0,0,0.1)',
+    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: metrics.fontSize.sm,
+    marginBottom: metrics.margin.xs,
+  },
   submitButton: {
     backgroundColor: Colors.primary,
-    borderRadius: metrics.borderRadius.md,
     padding: metrics.padding.lg,
+    borderRadius: metrics.borderRadius.md,
     alignItems: 'center',
     marginTop: metrics.margin.lg,
   },
@@ -499,15 +621,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  inputError: {
-    borderColor: 'red',
-    borderWidth: 1,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: metrics.fontSize.sm,
-    marginTop: metrics.margin.xs,
   },
 });
 
