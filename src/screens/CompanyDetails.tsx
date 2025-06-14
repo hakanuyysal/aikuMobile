@@ -408,10 +408,20 @@ const CompanyDetails = ({navigation}: Props) => {
         if (!aiWebsite.trim()) {
           setAiError('Please enter a website URL.');
           setAiLoading(false);
+          setAiTab('website');
           clearInterval(interval);
           return;
         }
+        // URL format kontrolü
+        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i;
         let url = aiWebsite.trim();
+        if (!urlPattern.test(url)) {
+          setAiError('Invalid URL format.');
+          setAiLoading(false);
+          setAiTab('website');
+          clearInterval(interval);
+          return;
+        }
         if (!/^https?:\/\//i.test(url)) {
           url = aiProtocol + url;
         }
@@ -587,7 +597,7 @@ const CompanyDetails = ({navigation}: Props) => {
                           flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          borderWidth: 2,
+                          borderWidth: 1,
                           borderColor: Colors.primary,
                           borderRadius: 14,
                           paddingVertical: 8,
