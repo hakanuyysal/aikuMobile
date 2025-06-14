@@ -577,10 +577,13 @@ const CompanyDetails = ({ navigation }: Props) => {
                           {aiTab !== 'select' && (
                             <>
                               <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                                <TouchableOpacity onPress={() => setAiTab('select')} style={{ marginRight: 10, padding: 4 }}>
+                                <TouchableOpacity onPress={() => setAiTab('select')} style={{ width: 40, alignItems: 'flex-start' }}>
                                   <Ionicons name="chevron-back" size={28} color={Colors.lightText} />
                                 </TouchableOpacity>
-                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>Auto-fill with AI</Text>
+                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>
+                                  Auto-fill with AI
+                                </Text>
+                                <View style={{ width: 40 }} />
                               </View>
                               {aiTab === 'website' && (
                                 <View style={{ width: '100%', alignItems: 'center' }}>
@@ -630,7 +633,7 @@ const CompanyDetails = ({ navigation }: Props) => {
                                     onPress={handlePickFile}
                                     disabled={aiLoading}
                                   >
-                                    <Text style={{ color: Colors.lightText, fontWeight: '600' }}>{aiFile ? 'Change File' : 'Select File (.pdf, .doc, .docx)'}</Text>
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600' }}>{aiFile ? 'Change File' : 'Select File'}</Text>
                                   </TouchableOpacity>
                                   {aiFile && (
                                     <Text style={{ color: Colors.lightText, marginBottom: 10, textAlign: 'center', fontSize: 15 }}>{aiFile.name}</Text>
