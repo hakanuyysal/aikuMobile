@@ -29,14 +29,37 @@ const SubscriptionDetails = ({navigation}: Props) => {
   const [updatingAutoRenewal, setUpdatingAutoRenewal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const planFeatures = [
-    'List AI solutions',
-    'Get investor access',
-    'Use premium AI tools',
-    'Access to all features',
-    'Priority support',
-    'Custom AI integration',
-  ];
+  const getPlanFeatures = (plan: string) => {
+    switch (plan) {
+      case 'startup':
+        return [
+          'List AI solutions',
+          'Get investor access',
+          'Use premium AI tools',
+          'Chat with businesses and investors',
+        ];
+      case 'business':
+        return [
+          'AI discovery',
+          'API integrations',
+          'Exclusive tools',
+          'Chat with all companies',
+        ];
+      case 'investor':
+        return [
+          'AI startup deal flow',
+          'Analytics',
+          'AI-powered investment insights',
+          'Chat with all companies',
+        ];
+      default:
+        return [
+          'List AI solutions',
+          'Get investor access',
+          'Use premium AI tools',
+        ];
+    }
+  };
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -174,6 +197,8 @@ const SubscriptionDetails = ({navigation}: Props) => {
     );
   }
 
+  const dynamicPlanFeatures = getPlanFeatures(planInfo?.subscriptionPlan);
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -257,7 +282,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
           {/* Features Card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Plan Features</Text>
-            {planFeatures.map((feature, index) => (
+            {dynamicPlanFeatures.map((feature, index) => (
               <View key={index} style={styles.featureRow}>
                 <MaterialCommunityIcons
                   name="check"
