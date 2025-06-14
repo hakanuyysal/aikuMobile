@@ -20,6 +20,9 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { Picker } from '@react-native-picker/picker';
+import baseServiceInstance from '../services/BaseService';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import DocumentPicker from 'react-native-document-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
@@ -89,6 +92,14 @@ const CompanyDetails = ({ navigation }: Props) => {
 
   const [slideAnim] = useState(new Animated.Value(0));
   const [visibleSteps, setVisibleSteps] = useState(5);
+
+  const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [aiWebsite, setAiWebsite] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>('https://');
+  const [aiTab, setAiTab] = useState<'select' | 'website' | 'file'>('select');
+  const [aiFile, setAiFile] = useState<any>(null);
 
   const formSteps = [
     {
@@ -355,6 +366,110 @@ const CompanyDetails = ({ navigation }: Props) => {
     }
   };
 
+  // AI ile doldurma fonksiyonu
+  const handleAIFill = async () => {
+    setAiError('');
+    setAiLoading(true);
+    try {
+      if (aiTab === 'website') {
+        if (!aiWebsite.trim()) {
+          setAiError('Please enter a website URL.');
+          setAiLoading(false);
+          return;
+        }
+        let url = aiWebsite.trim();
+        if (!/^https?:\/\//i.test(url)) {
+          url = aiProtocol + url;
+        }
+        url = url.replace(/^(https?:\/\/)+(https?:\/\/)/i, '$1');
+        const response = await baseServiceInstance.axios.post('/ai/analyze-website', { url });
+        if (response.data) {
+          setFormData((prev) => ({
+            ...prev,
+            companyLogo: response.data.companyLogo || prev.companyLogo,
+            companyName: response.data.companyName || prev.companyName,
+            summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
+            detailedInfo: response.data.detailedInfo || prev.detailedInfo,
+            companySector: response.data.companySector || prev.companySector,
+            companySize: response.data.companySize || prev.companySize,
+            businessModel: response.data.businessModel || prev.businessModel,
+            businessScale: response.data.businessScale || prev.businessScale,
+            companyEmail: response.data.companyEmail || prev.companyEmail,
+            companyPhone: response.data.companyPhone || prev.companyPhone,
+            companyAddress: response.data.companyAddress || prev.companyAddress,
+            companyWebsite: response.data.companyWebsite || prev.companyWebsite,
+            companyLinkedIn: response.data.companyLinkedIn || prev.companyLinkedIn,
+            companyInstagram: response.data.companyInstagram || prev.companyInstagram,
+            companyTwitter: response.data.companyTwitter || prev.companyTwitter,
+          }));
+          setAiModalVisible(false);
+          setAiWebsite('');
+          setAiFile(null);
+        } else {
+          setAiError('Auto-fill failed.');
+        }
+      } else if (aiTab === 'file') {
+        if (!aiFile) {
+          setAiError('Please select a file.');
+          setAiLoading(false);
+          return;
+        }
+        const formData = new FormData();
+        formData.append('document', {
+          uri: aiFile.uri,
+          type: aiFile.type,
+          name: aiFile.name,
+        });
+        const response = await baseServiceInstance.axios.post('/ai/analyze-document', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (response.data) {
+          setFormData((prev) => ({
+            ...prev,
+            companyLogo: response.data.companyLogo || prev.companyLogo,
+            companyName: response.data.companyName || prev.companyName,
+            summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
+            detailedInfo: response.data.detailedInfo || prev.detailedInfo,
+            companySector: response.data.companySector || prev.companySector,
+            companySize: response.data.companySize || prev.companySize,
+            businessModel: response.data.businessModel || prev.businessModel,
+            businessScale: response.data.businessScale || prev.businessScale,
+            companyEmail: response.data.companyEmail || prev.companyEmail,
+            companyPhone: response.data.companyPhone || prev.companyPhone,
+            companyAddress: response.data.companyAddress || prev.companyAddress,
+            companyWebsite: response.data.companyWebsite || prev.companyWebsite,
+            companyLinkedIn: response.data.companyLinkedIn || prev.companyLinkedIn,
+            companyInstagram: response.data.companyInstagram || prev.companyInstagram,
+            companyTwitter: response.data.companyTwitter || prev.companyTwitter,
+          }));
+          setAiModalVisible(false);
+          setAiWebsite('');
+          setAiFile(null);
+        } else {
+          setAiError('Auto-fill failed.');
+        }
+      }
+    } catch (err) {
+      setAiError('Could not connect to AI service.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handlePickFile = async () => {
+    setAiError('');
+    try {
+      const res = await DocumentPicker.pickSingle({
+        type: [DocumentPicker.types.pdf, DocumentPicker.types.doc, DocumentPicker.types.docx],
+      });
+      setAiFile(res);
+    } catch (err) {
+      if (!DocumentPicker.isCancel(err)) {
+        setAiError('File selection failed.');
+      }
+    }
+  };
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -416,13 +531,140 @@ const CompanyDetails = ({ navigation }: Props) => {
                 <SafeAreaView style={styles.modalSafeArea}>
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Company Form</Text>
-                    <TouchableOpacity
-                      onPress={() => setModalVisible(false)}
-                      style={styles.closeButton}
-                    >
-                      <Icon name="close" size={24} color={Colors.lightText} />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity
+                        style={{ marginRight: 8 }}
+                        onPress={() => setAiModalVisible(true)}
+                      >
+                        <Ionicons name="bulb-outline" size={22} color={Colors.primary} />
+                        <Text style={{ color: Colors.primary, fontSize: 12 }}>Auto-fill with AI</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setModalVisible(false)}
+                        style={styles.closeButton}
+                      >
+                        <Icon name="close" size={24} color={Colors.lightText} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
+                  {/* AI Modal */}
+                  <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={aiModalVisible}
+                    onRequestClose={() => setAiModalVisible(false)}
+                  >
+                    <View style={styles.modalBackdrop}>
+                      <View style={[styles.modalWrapper, { justifyContent: 'center', alignItems: 'center' }]}> 
+                        <View style={{ backgroundColor: '#23283A', borderRadius: 20, padding: 28, width: 350, alignItems: 'center' }}>
+                          {aiTab === 'select' && (
+                            <>
+                              <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, marginBottom: 28, textAlign: 'center' }}>Auto-fill with AI</Text>
+                              <TouchableOpacity
+                                style={{ width: '100%', backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 18, marginBottom: 18, alignItems: 'center' }}
+                                onPress={() => setAiTab('website')}
+                              >
+                                <Text style={{ color: Colors.lightText, fontWeight: '700', fontSize: 18 }}>From Website</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={{ width: '100%', backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 18, alignItems: 'center' }}
+                                onPress={() => setAiTab('file')}
+                              >
+                                <Text style={{ color: Colors.lightText, fontWeight: '700', fontSize: 18 }}>From File</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
+                          {aiTab !== 'select' && (
+                            <>
+                              <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                                <TouchableOpacity onPress={() => setAiTab('select')} style={{ marginRight: 10, padding: 4 }}>
+                                  <Ionicons name="chevron-back" size={28} color={Colors.lightText} />
+                                </TouchableOpacity>
+                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>Auto-fill with AI</Text>
+                              </View>
+                              {aiTab === 'website' && (
+                                <View style={{ width: '100%', alignItems: 'center' }}>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, width: '100%' }}>
+                                    <TouchableOpacity
+                                      style={{
+                                        backgroundColor: aiProtocol === 'https://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                        borderRadius: 8,
+                                        paddingHorizontal: 18,
+                                        paddingVertical: 7,
+                                        marginRight: 8,
+                                      }}
+                                      onPress={() => setAiProtocol('https://')}
+                                    >
+                                      <Text style={{ color: aiProtocol === 'https://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>https://</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={{
+                                        backgroundColor: aiProtocol === 'http://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                        borderRadius: 8,
+                                        paddingHorizontal: 18,
+                                        paddingVertical: 7,
+                                      }}
+                                      onPress={() => setAiProtocol('http://')}
+                                    >
+                                      <Text style={{ color: aiProtocol === 'http://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>http://</Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                  <TextInput
+                                    style={[styles.input, { marginBottom: 10, width: '100%', textAlign: 'center' }]}
+                                    placeholder="example.com"
+                                    placeholderTextColor={Colors.lightText}
+                                    value={aiWebsite}
+                                    onChangeText={text => {
+                                      let clean = text.replace(/^https?:\/\//i, '');
+                                      setAiWebsite(clean);
+                                    }}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                  />
+                                </View>
+                              )}
+                              {aiTab === 'file' && (
+                                <View style={{ width: '100%', alignItems: 'center' }}>
+                                  <TouchableOpacity
+                                    style={{ backgroundColor: Colors.primary, borderRadius: 10, padding: 14, marginBottom: 10, alignItems: 'center', width: '100%' }}
+                                    onPress={handlePickFile}
+                                    disabled={aiLoading}
+                                  >
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600' }}>{aiFile ? 'Change File' : 'Select File (.pdf, .doc, .docx)'}</Text>
+                                  </TouchableOpacity>
+                                  {aiFile && (
+                                    <Text style={{ color: Colors.lightText, marginBottom: 10, textAlign: 'center', fontSize: 15 }}>{aiFile.name}</Text>
+                                  )}
+                                </View>
+                              )}
+                              {aiError ? <Text style={{ color: 'red', marginBottom: 10, textAlign: 'center' }}>{aiError}</Text> : null}
+                              <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, width: '100%' }}>
+                                <TouchableOpacity
+                                  style={{ marginRight: 16, paddingVertical: 10, paddingHorizontal: 22, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.10)' }}
+                                  onPress={() => setAiModalVisible(false)}
+                                  disabled={aiLoading}
+                                >
+                                  <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{ backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 28, paddingVertical: 10 }}
+                                  onPress={handleAIFill}
+                                  disabled={aiLoading}
+                                >
+                                  {aiLoading ? (
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Loading...</Text>
+                                  ) : (
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Analyze</Text>
+                                  )}
+                                </TouchableOpacity>
+                              </View>
+                            </>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </Modal>
+                  {/* AI Modal Sonu */}
                   <Animated.View style={[styles.modalContent]}>
                     <View style={styles.progressContainer}>
                       {Array(Math.ceil(formSteps.length / 5)).fill(0).map((_, idx) => (
