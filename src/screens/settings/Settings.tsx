@@ -84,6 +84,12 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
             if (updateUser) {
               updateUser({} as any);
             }
+            setTimeout(() => {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Auth' }],
+              });
+            }, 1000);
           } catch (error) {
             console.error('Logout error:', error);
             Alert.alert(
