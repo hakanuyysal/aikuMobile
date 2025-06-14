@@ -1,7 +1,7 @@
 import { storage } from '../storage/mmkv';
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = 'https://api.aikuaiplatform.com/api'; // API URL'nizi buraya ekleyin
+const API_URL = 'https://api.aikuaiplatform.com/api';
 
 export class BaseService {
   private static instance: BaseService;

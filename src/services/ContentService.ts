@@ -4,7 +4,7 @@ class ContentService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = 'http://localhost:3004';
+    this.baseURL = 'https://api.aikuaiplatform.com';
   }
 
   // Featured Products

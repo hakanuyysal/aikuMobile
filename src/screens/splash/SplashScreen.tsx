@@ -16,6 +16,7 @@ import {NavigationProp, ParamListBase} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 // @ts-ignore
 import {version as APP_VERSION} from '../../../package.json';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Props {
   navigation?: NavigationProp<ParamListBase>;
@@ -151,11 +152,13 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
   useEffect(() => {
     startAnimations();
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (navigation) {
+        // Token kontrolü
+        const token = await AsyncStorage.getItem('token');
         navigation.reset({
           index: 0,
-          routes: [{name: 'Auth'}],
+          routes: [{name: token ? 'Main' : 'Auth'}],
         });
       }
     }, 10500);

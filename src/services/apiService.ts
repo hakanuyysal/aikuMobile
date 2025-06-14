@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SearchResult } from './searchService';
 
-const API_URL = 'http://localhost:3004/api';
+const API_URL = 'https://api.aikuaiplatform.com/api';
 
 const apiService = axios.create({
   baseURL: API_URL,

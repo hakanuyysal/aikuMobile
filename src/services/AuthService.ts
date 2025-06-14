@@ -215,19 +215,25 @@ class AuthService {
 
   async googleLogin(): Promise<GoogleSignInResponse> {
     try {
+      console.error('[GoogleLogin] Çıkış yapılıyor...');
       await GoogleSignin.signOut();
       const isPlayServicesAvailable = await GoogleSignin.hasPlayServices();
+      console.error('[GoogleLogin] Play Services:', isPlayServicesAvailable);
       if (!isPlayServicesAvailable) {
         throw new Error('Google Play Servisleri kullanılamıyor');
       }
+      console.error('[GoogleLogin] GoogleSignin.signIn çağrılıyor...');
       const userInfo = await GoogleSignin.signIn();
-      console.log('[GoogleAuth] Sign in successful:', userInfo);
+      console.error('[GoogleLogin] Google userInfo:', userInfo);
 
-      const idToken = userInfo.idToken;
+      const idToken = (userInfo as any).data?.idToken;
+      console.error('[GoogleLogin] idToken:', idToken);
       if (!idToken) {
         throw new Error('Google ID token alınamadı');
       }
+      console.error('[GoogleLogin] Backend isteği atılıyor...');
       const response = await this.axios.post('/auth/google/login', { idToken });
+      console.error('[GoogleLogin] Backend response:', response.data);
       if (response.data && response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
         if (response.data.user) {
@@ -236,11 +242,6 @@ class AuthService {
             JSON.stringify(response.data.user),
           );
           if (response.data.user.id) {
-            console.error(response.data.user);
-            console.error(
-              'Google login sonrası kayıt edilecek user_id:',
-              response.data.user.id,
-            );
             await AsyncStorage.setItem('user_id', response.data.user.id);
           }
         }
@@ -255,6 +256,7 @@ class AuthService {
         error: 'Beklenmeyen yanıt formatı',
       };
     } catch (error: any) {
+      console.error('[GoogleLogin] Hata:', error);
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         return {
           success: false,
@@ -273,7 +275,7 @@ class AuthService {
       }
       return {
         success: false,
-        error: 'Google authentication error',
+        error: error.message || 'Google authentication error',
         errorCode: error.code || 'unknown_error',
       };
     }

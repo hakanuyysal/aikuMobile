@@ -57,7 +57,6 @@ const Login = ({navigation}: Props) => {
         });
       } else {
         console.error('Google Login Error:', response?.error);
-        Alert.alert('Google Giriş Hatası', response?.error || 'Google login failed');
       }
     } catch (error) {
       console.error('Google Login Exception:', error);
