@@ -42,13 +42,14 @@ const Login = ({navigation}: Props) => {
 
   const handleGoogleLogin = async () => {
     try {
-      const token = 'google-token';
-      const response = await googleLogin(token);
+      const response = await googleLogin();
       if (response?.success && response?.user) {
         navigation.reset({
           index: 0,
           routes: [{name: 'Main'}],
         });
+      } else {
+        Alert.alert('Google Giriş Hatası', response?.error || 'Google login failed');
       }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');

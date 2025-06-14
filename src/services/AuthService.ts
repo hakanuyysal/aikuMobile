@@ -51,8 +51,9 @@ class AuthService {
     });
 
     GoogleSignin.configure({
+<<<<<<< Updated upstream
       webClientId: Config.GOOGLE_CLIENT_ID || '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
-      iosClientId: '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
+      iosClientId: Config.IOS_GOOGLE_CLIENT_ID || '974504980015-2e15l52tr86h8o42v8puf36lrtaamjqc.apps.googleusercontent.com',
       offlineAccess: false,
       scopes: ['profile', 'email'],
     });
@@ -179,7 +180,7 @@ class AuthService {
         }
         return null;
       } catch (error) {
-        if (error.response?.status === 401) {
+        if ((error as any).response?.status === 401) {
           await this.clearAuth();
         }
         return null;
@@ -222,6 +223,8 @@ class AuthService {
         throw new Error('Google Play Servisleri kullanılamıyor');
       }
       const userInfo = await GoogleSignin.signIn();
+      console.log('[GoogleAuth] Sign in successful:', userInfo);
+
       const idToken = userInfo.idToken;
       if (!idToken) {
         throw new Error('Google ID token alınamadı');
@@ -230,8 +233,15 @@ class AuthService {
       if (response.data && response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
         if (response.data.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          await AsyncStorage.setItem(
+            'user',
+            JSON.stringify(response.data.user),
+          );
           if (response.data.user.id) {
+            console.log(
+              'Google login sonrası kayıt edilecek user_id:',
+              response.data.user.id,
+            );
             await AsyncStorage.setItem('user_id', response.data.user.id);
           }
         }
@@ -244,32 +254,27 @@ class AuthService {
       return {
         success: false,
         error: 'Beklenmeyen yanıt formatı',
-        details: 'Sunucu yanıtı token içermiyor',
       };
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         return {
           success: false,
           error: 'Google girişi iptal edildi',
-          details: 'Kullanıcı giriş işlemi iptal edildi',
         };
       } else if (error.code === statusCodes.IN_PROGRESS) {
         return {
           success: false,
           error: 'Google girişi zaten devam ediyor',
-          details: 'Başka bir giriş işlemi sürüyor',
         };
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         return {
           success: false,
           error: 'Google Play Servisleri kullanılamıyor',
-          details: 'Cihazda Google Play Servisleri mevcut değil',
         };
       }
       return {
         success: false,
         error: 'Google authentication error',
-        details: error.message || 'Authentication failed',
         errorCode: error.code || 'unknown_error',
       };
     }
@@ -336,6 +341,10 @@ class AuthService {
       if (data.session?.access_token) {
         await AsyncStorage.setItem('token', data.session.access_token);
         if (data.user?.id) {
+          console.log(
+            'LinkedIn login sonrası kayıt edilecek user_id:',
+            data.user.id,
+          );
           await AsyncStorage.setItem('user_id', data.user.id);
           await AsyncStorage.setItem('user', JSON.stringify(data.user));
         }

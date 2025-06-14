@@ -15,8 +15,8 @@ interface AuthContextType {
   loading: boolean;
   updateUser: (data: Partial<User>) => void;
   login: (email: string, password: string) => Promise<void>;
-  googleLogin: (token: string) => Promise<void>;
-  linkedInLogin: () => Promise<void>;
+  googleLogin: () => Promise<any>;
+  linkedInLogin: () => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -80,9 +80,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     }
   };
 
-  const googleLogin = async (token: string) => {
+  const googleLogin = async () => {
     try {
-      const response = await AuthService.googleLogin(token);
+      const response = await AuthService.googleLogin();
       if (response.success && response.user) {
         setUser(response.user);
       }

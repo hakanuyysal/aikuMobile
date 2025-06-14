@@ -2,18 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>765516329920-n4vhk35cbdj4r1aol2lmc061matpcqds.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.765516329920-n4vhk35cbdj4r1aol2lmc061matpcqds</string>
 	<key>API_KEY</key>
-	<string>AIzaSyA_uPtYoHb4eCb5KEBmwgrPgetb_GgUZiA</string>
+	<string>AIzaSyAwH6GF0Juw8uwbKMAVmPLVx2Mne8zFIx4</string>
 	<key>GCM_SENDER_ID</key>
-	<string>940825068315</string>
+	<string>765516329920</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.aikumobile.app</string>
+	<string>com.aikumobile</string>
 	<key>PROJECT_ID</key>
-	<string>aiku-ai-platform-77896</string>
+	<string>aiku-84985</string>
 	<key>STORAGE_BUCKET</key>
-	<string>aiku-ai-platform-77896.firebasestorage.app</string>
+	<string>aiku-84985.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,10 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:940825068315:ios:882936cc1716caa44e09be</string>
-	<key>CLIENT_ID</key>
-	<string>940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q</string>
+	<string>1:765516329920:ios:80a594f53bbf2d04470e25</string>
 </dict>
 </plist>
