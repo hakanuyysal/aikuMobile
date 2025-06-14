@@ -21,9 +21,10 @@ export const useAppInitialization = (): AppInitializationState => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const [onboardingCompleted, token] = await Promise.all([
+        const [onboardingCompleted, token, hasLaunched] = await Promise.all([
           AsyncStorage.getItem('onboardingCompleted'),
           AsyncStorage.getItem('token'),
+          AsyncStorage.getItem('hasLaunched'),
         ]);
 
         let initialRoute: 'Onboarding' | 'Auth' | 'Main' = 'Auth';
@@ -33,17 +34,27 @@ export const useAppInitialization = (): AppInitializationState => {
           initialRoute = 'Main';
         }
 
-        setState({
-          isLoading: false,
-          showSplash: true,
-          showOnboarding: !onboardingCompleted,
-          initialRoute,
-        });
+        if (!hasLaunched) {
+          await AsyncStorage.setItem('hasLaunched', 'true');
+          setState({
+            isLoading: false,
+            showSplash: true,
+            showOnboarding: !onboardingCompleted,
+            initialRoute,
+          });
+        } else {
+          setState({
+            isLoading: false,
+            showSplash: false,
+            showOnboarding: !onboardingCompleted,
+            initialRoute,
+          });
+        }
       } catch (error) {
         console.error('App initialization error:', error);
         setState({
           isLoading: false,
-          showSplash: true,
+          showSplash: false,
           showOnboarding: false,
           initialRoute: 'Auth',
         });
