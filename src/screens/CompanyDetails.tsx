@@ -594,10 +594,10 @@ const CompanyDetails = ({navigation}: Props) => {
                     <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <TouchableOpacity
                         style={{
-                          flexDirection: 'column',
+                          flexDirection: 'row',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          borderWidth: 1,
+                          borderWidth: 2,
                           borderColor: Colors.primary,
                           borderRadius: 14,
                           paddingVertical: 8,
@@ -611,9 +611,9 @@ const CompanyDetails = ({navigation}: Props) => {
                           name="bulb-outline"
                           size={22}
                           color={Colors.primary}
-                          style={{ marginBottom: 2 }}
+                          style={{ marginRight: 8 }}
                         />
-                        <Text style={{ color: Colors.primary, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
+                        <Text style={{ color: Colors.primary, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
                           Auto-fill AI
                         </Text>
                       </TouchableOpacity>
