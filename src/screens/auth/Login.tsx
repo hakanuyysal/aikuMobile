@@ -20,6 +20,12 @@ import {RootStackParamList} from '../../types';
 
 type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
+interface LoginResponse {
+  user: any;
+  success?: boolean;
+  error?: string;
+}
+
 const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +34,7 @@ const Login = ({navigation}: Props) => {
 
   const handleLogin = async () => {
     try {
-      const response = await login(email, password);
+      const response = await login(email, password) as LoginResponse;
       if (response?.user) {
         navigation.reset({
           index: 0,
@@ -43,15 +49,18 @@ const Login = ({navigation}: Props) => {
   const handleGoogleLogin = async () => {
     try {
       const response = await googleLogin();
+      console.error('Google Login Response:', response);
       if (response?.success && response?.user) {
         navigation.reset({
           index: 0,
           routes: [{name: 'Main'}],
         });
       } else {
+        console.error('Google Login Error:', response?.error);
         Alert.alert('Google Giriş Hatası', response?.error || 'Google login failed');
       }
     } catch (error) {
+      console.error('Google Login Exception:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
     }
   };

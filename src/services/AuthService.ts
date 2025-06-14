@@ -51,8 +51,6 @@ class AuthService {
     });
 
     GoogleSignin.configure({
-<<<<<<< Updated upstream
-      webClientId: Config.GOOGLE_CLIENT_ID || '940825068315-qqvvmj2v7dlj4gmf9tq5f7l7vt6gvp8q.apps.googleusercontent.com',
       iosClientId: Config.IOS_GOOGLE_CLIENT_ID || '974504980015-2e15l52tr86h8o42v8puf36lrtaamjqc.apps.googleusercontent.com',
       offlineAccess: false,
       scopes: ['profile', 'email'],
@@ -238,7 +236,8 @@ class AuthService {
             JSON.stringify(response.data.user),
           );
           if (response.data.user.id) {
-            console.log(
+            console.error(response.data.user);
+            console.error(
               'Google login sonrası kayıt edilecek user_id:',
               response.data.user.id,
             );

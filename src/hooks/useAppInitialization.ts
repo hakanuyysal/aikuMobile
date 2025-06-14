@@ -35,7 +35,7 @@ export const useAppInitialization = (): AppInitializationState => {
 
         setState({
           isLoading: false,
-          showSplash: false,
+          showSplash: true,
           showOnboarding: !onboardingCompleted,
           initialRoute,
         });
@@ -43,7 +43,7 @@ export const useAppInitialization = (): AppInitializationState => {
         console.error('App initialization error:', error);
         setState({
           isLoading: false,
-          showSplash: false,
+          showSplash: true,
           showOnboarding: false,
           initialRoute: 'Auth',
         });
@@ -59,7 +59,7 @@ export const useAppInitialization = (): AppInitializationState => {
     if (!state.isLoading && state.showSplash) {
       const timer = setTimeout(() => {
         setState(prev => ({...prev, showSplash: false}));
-      }, 9000);
+      }, 10500);
       return () => clearTimeout(timer);
     }
   }, [state.isLoading, state.showSplash]);
