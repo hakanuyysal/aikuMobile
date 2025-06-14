@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   Text,
   StyleSheet,
@@ -11,15 +11,16 @@ import {
   TextInput,
   FlatList,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { Colors } from '../constants/colors';
+import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
-import { Picker } from '@react-native-picker/picker';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../App';
+import {Picker} from '@react-native-picker/picker';
 import baseServiceInstance from '../services/BaseService';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DocumentPicker from 'react-native-file-picker';
@@ -64,7 +65,7 @@ const sectors = [
   'Transportation & Logistics',
 ];
 
-const CompanyDetails = ({ navigation }: Props) => {
+const CompanyDetails = ({navigation}: Props) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -97,9 +98,16 @@ const CompanyDetails = ({ navigation }: Props) => {
   const [aiWebsite, setAiWebsite] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
-  const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>('https://');
-  const [aiTab, setAiTab] = useState<'select' | 'website' | 'file'>('select');
+  const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>(
+    'https://',
+  );
+  const [aiTab, setAiTab] = useState<'select' | 'website' | 'file' | 'loading'>(
+    'select',
+  );
   const [aiFile, setAiFile] = useState<any>(null);
+
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
 
   const formSteps = [
     {
@@ -118,7 +126,7 @@ const CompanyDetails = ({ navigation }: Props) => {
       label: 'Company Type',
       key: 'companyType',
       type: 'picker',
-      options: ['Startup', ],
+      options: ['Startup'],
     },
     {
       label: 'Open for Investments',
@@ -242,7 +250,7 @@ const CompanyDetails = ({ navigation }: Props) => {
   };
 
   const handleInputChange = (key, value) => {
-    setFormData({ ...formData, [key]: value });
+    setFormData({...formData, [key]: value});
   };
 
   const renderStep = () => {
@@ -257,13 +265,9 @@ const CompanyDetails = ({ navigation }: Props) => {
             const isActive = actualIndex === currentStep;
 
             return (
-              <View 
-                key={step.key} 
-                style={[
-                  styles.stepContainer,
-                  isActive && styles.activeStep
-                ]}
-              >
+              <View
+                key={step.key}
+                style={[styles.stepContainer, isActive && styles.activeStep]}>
                 <Text style={[styles.label, isActive && styles.activeLabel]}>
                   {step.label}
                 </Text>
@@ -288,7 +292,7 @@ const CompanyDetails = ({ navigation }: Props) => {
             placeholder={step.placeholder}
             placeholderTextColor={Colors.lightText}
             value={formData[step.key]}
-            onChangeText={(text) => handleInputChange(step.key, text)}
+            onChangeText={text => handleInputChange(step.key, text)}
             maxLength={step.maxLength}
             multiline={step.maxLength > 500}
           />
@@ -298,9 +302,8 @@ const CompanyDetails = ({ navigation }: Props) => {
           <Picker
             selectedValue={formData[step.key]}
             style={styles.picker}
-            onValueChange={(value) => handleInputChange(step.key, value)}
-          >
-            {step.options.map((option) => (
+            onValueChange={value => handleInputChange(step.key, value)}>
+            {step.options.map(option => (
               <Picker.Item key={option} label={option} value={option} />
             ))}
           </Picker>
@@ -309,10 +312,11 @@ const CompanyDetails = ({ navigation }: Props) => {
         return (
           <TouchableOpacity
             style={styles.checkbox}
-            onPress={() => handleInputChange(step.key, !formData[step.key])}
-          >
+            onPress={() => handleInputChange(step.key, !formData[step.key])}>
             <MaterialIcons
-              name={formData[step.key] ? 'check-box' : 'check-box-outline-blank'}
+              name={
+                formData[step.key] ? 'check-box' : 'check-box-outline-blank'
+              }
               size={24}
               color={Colors.primary}
             />
@@ -326,18 +330,17 @@ const CompanyDetails = ({ navigation }: Props) => {
           <View style={styles.multiSelectContainer}>
             <FlatList
               data={step.options}
-              keyExtractor={(item) => item}
+              keyExtractor={item => item}
               nestedScrollEnabled={true}
-              renderItem={({ item }) => (
+              renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.checkbox}
                   onPress={() => {
                     const updatedSectors = formData[step.key].includes(item)
-                      ? formData[step.key].filter((sector) => sector !== item)
+                      ? formData[step.key].filter(sector => sector !== item)
                       : [...formData[step.key], item];
                     handleInputChange(step.key, updatedSectors);
-                  }}
-                >
+                  }}>
                   <MaterialIcons
                     name={
                       formData[step.key].includes(item)
@@ -366,18 +369,59 @@ const CompanyDetails = ({ navigation }: Props) => {
     }
   };
 
-  // AI ile doldurma fonksiyonu
+  // Analiz mesajı fonksiyonu
+  const getAnalysisMessage = (progress: number, method: 'website' | 'file') => {
+    if (progress < 25) {
+      return method === 'website'
+        ? 'Analyzing website...'
+        : 'Reading document...';
+    } else if (progress < 50) {
+      return method === 'website'
+        ? 'Extracting product information...'
+        : 'Extracting content...';
+    } else if (progress < 75) {
+      return 'Processing your information...';
+    } else if (progress < 90) {
+      return 'Almost done...';
+    } else {
+      return 'Optimizing company details...';
+    }
+  };
+
   const handleAIFill = async () => {
     setAiError('');
     setAiLoading(true);
+    setAiTab('loading');
+    setAiProgress(0);
+    setAiMethod(prev => (prev === 'website' || prev === 'file') ? prev : 'website');
+    let progress = 0;
+    const intervalStep = 250; // ms
+    const totalDuration = 4000; // toplam loading süresi (ms)
+    const steps = Math.floor(totalDuration / intervalStep);
+    const progressStep = 100 / steps;
+    const interval = setInterval(() => {
+      progress += progressStep;
+      setAiProgress(Math.min(progress, 100));
+    }, intervalStep);
     try {
       if (aiTab === 'website') {
         if (!aiWebsite.trim()) {
           setAiError('Please enter a website URL.');
           setAiLoading(false);
+          setAiTab('website');
+          clearInterval(interval);
           return;
         }
+        // URL format kontrolü
+        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i;
         let url = aiWebsite.trim();
+        if (!urlPattern.test(url)) {
+          setAiError('Invalid URL format.');
+          setAiLoading(false);
+          setAiTab('website');
+          clearInterval(interval);
+          return;
+        }
         if (!/^https?:\/\//i.test(url)) {
           url = aiProtocol + url;
         }
@@ -405,13 +449,16 @@ const CompanyDetails = ({ navigation }: Props) => {
           setAiModalVisible(false);
           setAiWebsite('');
           setAiFile(null);
+          clearInterval(interval);
         } else {
           setAiError('Auto-fill failed.');
+          clearInterval(interval);
         }
       } else if (aiTab === 'file') {
         if (!aiFile) {
           setAiError('Please select a file.');
           setAiLoading(false);
+          clearInterval(interval);
           return;
         }
         const formData = new FormData();
@@ -445,14 +492,21 @@ const CompanyDetails = ({ navigation }: Props) => {
           setAiModalVisible(false);
           setAiWebsite('');
           setAiFile(null);
+          clearInterval(interval);
         } else {
           setAiError('Auto-fill failed.');
+          clearInterval(interval);
         }
       }
     } catch (err) {
       setAiError('Could not connect to AI service.');
+      clearInterval(interval);
     } finally {
       setAiLoading(false);
+      setTimeout(() => {
+        setAiProgress(0);
+        setAiTab('select');
+      }, 500);
     }
   };
 
@@ -460,7 +514,11 @@ const CompanyDetails = ({ navigation }: Props) => {
     setAiError('');
     try {
       const res = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf, DocumentPicker.types.doc, DocumentPicker.types.docx],
+        type: [
+          DocumentPicker.types.pdf,
+          DocumentPicker.types.doc,
+          DocumentPicker.types.docx,
+        ],
       });
       setAiFile(res);
     } catch (err) {
@@ -474,24 +532,25 @@ const CompanyDetails = ({ navigation }: Props) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
-      style={styles.container}
-    >
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
+      style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+            onPress={() => navigation.goBack()}>
             <Icon name="chevron-back" size={24} color={Colors.lightText} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Company Details</Text>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+            onPress={() => setModalVisible(true)}>
+            <MaterialIcons
+              name="add-business"
+              size={24}
+              color={Colors.primary}
+            />
           </TouchableOpacity>
         </View>
         <ScrollView style={styles.content}>
@@ -507,9 +566,12 @@ const CompanyDetails = ({ navigation }: Props) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.addCompanyCard}
-            onPress={() => setModalVisible(true)}
-          >
-            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+            onPress={() => setModalVisible(true)}>
+            <MaterialIcons
+              name="add-business"
+              size={24}
+              color={Colors.primary}
+            />
             <Text style={styles.addCompanyText}>Add New Company</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -517,32 +579,47 @@ const CompanyDetails = ({ navigation }: Props) => {
           animationType="fade"
           transparent={true}
           visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
+          onRequestClose={() => setModalVisible(false)}>
           <View style={styles.modalBackdrop}>
             <View style={styles.modalWrapper}>
               <LinearGradient
                 colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
                 locations={[0, 0.3, 0.6, 0.9]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 2, y: 1 }}
-                style={styles.modalContainer}
-              >
+                start={{x: 0, y: 0}}
+                end={{x: 2, y: 1}}
+                style={styles.modalContainer}>
                 <SafeAreaView style={styles.modalSafeArea}>
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Company Form</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <TouchableOpacity
-                        style={{ marginRight: 8 }}
-                        onPress={() => setAiModalVisible(true)}
-                      >
-                        <Ionicons name="bulb-outline" size={22} color={Colors.primary} />
-                        <Text style={{ color: Colors.primary, fontSize: 12 }}>Auto-fill with AI</Text>
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: 2,
+                          borderColor: Colors.primary,
+                          borderRadius: 14,
+                          paddingVertical: 8,
+                          paddingHorizontal: 16,
+                          marginRight: 8,
+                          backgroundColor: 'transparent',
+                          minWidth: 110,
+                        }}
+                        onPress={() => setAiModalVisible(true)}>
+                        <Ionicons
+                          name="bulb-outline"
+                          size={22}
+                          color={Colors.primary}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={{ color: Colors.primary, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
+                          Auto-fill AI
+                        </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => setModalVisible(false)}
-                        style={styles.closeButton}
-                      >
+                        style={styles.closeButton}>
                         <Icon name="close" size={24} color={Colors.lightText} />
                       </TouchableOpacity>
                     </View>
@@ -552,73 +629,212 @@ const CompanyDetails = ({ navigation }: Props) => {
                     animationType="fade"
                     transparent={true}
                     visible={aiModalVisible}
-                    onRequestClose={() => setAiModalVisible(false)}
-                  >
+                    onRequestClose={() => setAiModalVisible(false)}>
                     <View style={styles.modalBackdrop}>
-                      <View style={[styles.modalWrapper, { justifyContent: 'center', alignItems: 'center' }]}> 
-                        <View style={{ backgroundColor: '#23283A', borderRadius: 20, padding: 28, width: 350, alignItems: 'center' }}>
-                          {aiTab === 'select' && (
+                      <View
+                        style={[
+                          styles.modalWrapper,
+                          {justifyContent: 'center', alignItems: 'center'},
+                        ]}>
+                        <View
+                          style={{
+                            backgroundColor: '#23283A',
+                            borderRadius: 32,
+                            padding: 28,
+                            width: 350,
+                            alignItems: 'center',
+                            position: 'relative',
+                            borderWidth: 1.5,
+                            borderColor: Colors.primary,
+                            shadowColor: Colors.primary,
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.5,
+                            shadowRadius: 16,
+                            elevation: 12,
+                          }}>
+                          {/* Sağ üst köşe çarpı */}
+                          <TouchableOpacity
+                            style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}
+                            onPress={() => setAiModalVisible(false)}>
+                            <Ionicons name="close" size={26} color={Colors.lightText} />
+                          </TouchableOpacity>
+                          {aiTab === 'loading' ? (
+                            <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 180 }}>
+                              <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 18 }} />
+                              <Text style={{ color: Colors.lightText, fontSize: 17, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
+                                {getAnalysisMessage(aiProgress, aiMethod)}
+                              </Text>
+                              <View style={{ width: '80%', height: 8, backgroundColor: '#333', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
+                                <View style={{ width: `${aiProgress}%`, height: 8, backgroundColor: Colors.primary, borderRadius: 4 }} />
+                              </View>
+                            </View>
+                          ) : aiTab === 'select' && (
                             <>
-                              <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, marginBottom: 28, textAlign: 'center' }}>Auto-fill with AI</Text>
-                              <TouchableOpacity
-                                style={{ width: '100%', backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 18, marginBottom: 18, alignItems: 'center' }}
-                                onPress={() => setAiTab('website')}
-                              >
-                                <Text style={{ color: Colors.lightText, fontWeight: '700', fontSize: 18 }}>From Website</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={{ width: '100%', backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 18, alignItems: 'center' }}
-                                onPress={() => setAiTab('file')}
-                              >
-                                <Text style={{ color: Colors.lightText, fontWeight: '700', fontSize: 18 }}>From File</Text>
-                              </TouchableOpacity>
+                              <Text
+                                style={{
+                                  color: Colors.lightText,
+                                  fontWeight: 'bold',
+                                  fontSize: 20,
+                                  marginBottom: 28,
+                                  textAlign: 'center',
+                                }}>
+                                Auto-fill with AI
+                              </Text>
+                              <View style={{ width: '100%', flexDirection: 'row', gap: 16 }}>
+                                <TouchableOpacity
+                                  style={{
+                                    flex: 1,
+                                    borderWidth: 2,
+                                    borderColor: Colors.primary,
+                                    borderRadius: 16,
+                                    paddingVertical: 18,
+                                    alignItems: 'center',
+                                    backgroundColor: 'transparent',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    marginRight: 8,
+                                  }}
+                                  onPress={() => setAiTab('website')}>
+                                  <MaterialIcons name="language" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <Text
+                                    style={{
+                                      color: Colors.primary,
+                                      fontWeight: '700',
+                                      fontSize: 18,
+                                    }}>
+                                    From Web
+                                  </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={{
+                                    flex: 1,
+                                    borderWidth: 2,
+                                    borderColor: Colors.primary,
+                                    borderRadius: 16,
+                                    paddingVertical: 18,
+                                    alignItems: 'center',
+                                    backgroundColor: 'transparent',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    marginLeft: 8,
+                                  }}
+                                  onPress={() => setAiTab('file')}>
+                                  <MaterialIcons name="insert-drive-file" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <Text
+                                    style={{
+                                      color: Colors.primary,
+                                      fontWeight: '700',
+                                      fontSize: 18,
+                                    }}>
+                                    From File
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
                             </>
                           )}
-                          {aiTab !== 'select' && (
+                          {aiTab !== 'select' && aiTab !== 'loading' && (
                             <>
-                              <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                                <TouchableOpacity onPress={() => setAiTab('select')} style={{ width: 40, alignItems: 'flex-start' }}>
-                                  <Ionicons name="chevron-back" size={28} color={Colors.lightText} />
+                              <View
+                                style={{
+                                  width: '100%',
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  marginBottom: 10,
+                                  justifyContent: 'center',
+                                }}>
+                                <TouchableOpacity
+                                  onPress={() => setAiTab('select')}
+                                  style={{width: 40, alignItems: 'flex-start'}}>
+                                  <Ionicons
+                                    name="chevron-back"
+                                    size={28}
+                                    color={Colors.lightText}
+                                  />
                                 </TouchableOpacity>
-                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>
+                                <Text
+                                  style={{
+                                    color: Colors.lightText,
+                                    fontWeight: 'bold',
+                                    fontSize: 20,
+                                    flex: 1,
+                                    textAlign: 'center',
+                                  }}>
                                   Auto-fill with AI
                                 </Text>
-                                <View style={{ width: 40 }} />
+                                <View style={{width: 40}} />
                               </View>
                               {aiTab === 'website' && (
-                                <View style={{ width: '100%', alignItems: 'center' }}>
-                                  <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, width: '100%' }}>
+                                <View style={{width: '100%', alignItems: 'center'}}>
+                                  <View
+                                    style={{
+                                      flexDirection: 'row',
+                                      justifyContent: 'center',
+                                      marginBottom: 10,
+                                      width: '100%',
+                                    }}>
                                     <TouchableOpacity
                                       style={{
-                                        backgroundColor: aiProtocol === 'https://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                        backgroundColor:
+                                          aiProtocol === 'https://'
+                                            ? Colors.primary
+                                            : 'rgba(255,255,255,0.10)',
                                         borderRadius: 8,
                                         paddingHorizontal: 18,
                                         paddingVertical: 7,
                                         marginRight: 8,
                                       }}
-                                      onPress={() => setAiProtocol('https://')}
-                                    >
-                                      <Text style={{ color: aiProtocol === 'https://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>https://</Text>
+                                      onPress={() => setAiProtocol('https://')}>
+                                      <Text
+                                        style={{
+                                          color:
+                                            aiProtocol === 'https://'
+                                              ? Colors.lightText
+                                              : Colors.lightText,
+                                          fontWeight: '500',
+                                        }}>
+                                        https://
+                                      </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                       style={{
-                                        backgroundColor: aiProtocol === 'http://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                        backgroundColor:
+                                          aiProtocol === 'http://'
+                                            ? Colors.primary
+                                            : 'rgba(255,255,255,0.10)',
                                         borderRadius: 8,
                                         paddingHorizontal: 18,
                                         paddingVertical: 7,
                                       }}
-                                      onPress={() => setAiProtocol('http://')}
-                                    >
-                                      <Text style={{ color: aiProtocol === 'http://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>http://</Text>
+                                      onPress={() => setAiProtocol('http://')}>
+                                      <Text
+                                        style={{
+                                          color:
+                                            aiProtocol === 'http://'
+                                              ? Colors.lightText
+                                              : Colors.lightText,
+                                          fontWeight: '500',
+                                        }}>
+                                        http://
+                                      </Text>
                                     </TouchableOpacity>
                                   </View>
                                   <TextInput
-                                    style={[styles.input, { marginBottom: 10, width: '100%', textAlign: 'center' }]}
+                                    style={[
+                                      styles.input,
+                                      {
+                                        marginBottom: 10,
+                                        width: '100%',
+                                        textAlign: 'center',
+                                      },
+                                    ]}
                                     placeholder="example.com"
                                     placeholderTextColor={Colors.lightText}
                                     value={aiWebsite}
                                     onChangeText={text => {
-                                      let clean = text.replace(/^https?:\/\//i, '');
+                                      let clean = text.replace(
+                                        /^https?:\/\//i,
+                                        '',
+                                      );
                                       setAiWebsite(clean);
                                     }}
                                     autoCapitalize="none"
@@ -627,38 +843,92 @@ const CompanyDetails = ({ navigation }: Props) => {
                                 </View>
                               )}
                               {aiTab === 'file' && (
-                                <View style={{ width: '100%', alignItems: 'center' }}>
+                                <View style={{width: '100%', alignItems: 'center'}}>
                                   <TouchableOpacity
-                                    style={{ backgroundColor: Colors.primary, borderRadius: 10, padding: 14, marginBottom: 10, alignItems: 'center', width: '100%' }}
+                                    style={{
+                                      backgroundColor: Colors.primary,
+                                      borderRadius: 10,
+                                      padding: 14,
+                                      marginBottom: 10,
+                                      alignItems: 'center',
+                                      width: '100%',
+                                    }}
                                     onPress={handlePickFile}
-                                    disabled={aiLoading}
-                                  >
-                                    <Text style={{ color: Colors.lightText, fontWeight: '600' }}>{aiFile ? 'Change File' : 'Select File'}</Text>
+                                    disabled={aiLoading}>
+                                    <Text
+                                      style={{
+                                        color: Colors.lightText,
+                                        fontWeight: '600',
+                                      }}>
+                                      {aiFile ? 'Change File' : 'Select File'}
+                                    </Text>
                                   </TouchableOpacity>
                                   {aiFile && (
-                                    <Text style={{ color: Colors.lightText, marginBottom: 10, textAlign: 'center', fontSize: 15 }}>{aiFile.name}</Text>
+                                    <Text
+                                      style={{
+                                        color: Colors.lightText,
+                                        marginBottom: 10,
+                                        textAlign: 'center',
+                                        fontSize: 15,
+                                      }}>
+                                      {aiFile.name}
+                                    </Text>
                                   )}
                                 </View>
                               )}
-                              {aiError ? <Text style={{ color: 'red', marginBottom: 10, textAlign: 'center' }}>{aiError}</Text> : null}
-                              <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, width: '100%' }}>
+                              {aiError ? (
+                                <Text
+                                  style={{
+                                    color: 'red',
+                                    marginBottom: 10,
+                                    textAlign: 'center',
+                                  }}>
+                                  {aiError}
+                                </Text>
+                              ) : null}
+                              <View
+                                style={{
+                                  flexDirection: 'row',
+                                  justifyContent: 'center',
+                                  marginTop: 10,
+                                  width: '100%',
+                                }}>
                                 <TouchableOpacity
-                                  style={{ marginRight: 16, paddingVertical: 10, paddingHorizontal: 22, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.10)' }}
+                                  style={{
+                                    marginRight: 16,
+                                    paddingVertical: 10,
+                                    paddingHorizontal: 22,
+                                    borderRadius: 8,
+                                    backgroundColor: 'rgba(255,255,255,0.10)',
+                                  }}
                                   onPress={() => setAiModalVisible(false)}
-                                  disabled={aiLoading}
-                                >
-                                  <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
+                                  disabled={aiLoading}>
+                                  <Text
+                                    style={{
+                                      color: Colors.lightText,
+                                      fontWeight: '600',
+                                      fontSize: 16,
+                                    }}>
+                                    Cancel
+                                  </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                  style={{ backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 28, paddingVertical: 10 }}
+                                  style={{
+                                    backgroundColor: Colors.primary,
+                                    borderRadius: 8,
+                                    paddingHorizontal: 28,
+                                    paddingVertical: 10,
+                                  }}
                                   onPress={handleAIFill}
-                                  disabled={aiLoading}
-                                >
-                                  {aiLoading ? (
-                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Loading...</Text>
-                                  ) : (
-                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Analyze</Text>
-                                  )}
+                                  disabled={aiLoading}>
+                                  <Text
+                                    style={{
+                                      color: Colors.lightText,
+                                      fontWeight: '600',
+                                      fontSize: 16,
+                                    }}>
+                                    Analyze
+                                  </Text>
                                 </TouchableOpacity>
                               </View>
                             </>
@@ -670,15 +940,18 @@ const CompanyDetails = ({ navigation }: Props) => {
                   {/* AI Modal Sonu */}
                   <Animated.View style={[styles.modalContent]}>
                     <View style={styles.progressContainer}>
-                      {Array(Math.ceil(formSteps.length / 5)).fill(0).map((_, idx) => (
-                        <View
-                          key={idx}
-                          style={[
-                            styles.progressDot,
-                            Math.floor(currentStep / 5) === idx && styles.activeProgressDot
-                          ]}
-                        />
-                      ))}
+                      {Array(Math.ceil(formSteps.length / 5))
+                        .fill(0)
+                        .map((_, idx) => (
+                          <View
+                            key={idx}
+                            style={[
+                              styles.progressDot,
+                              Math.floor(currentStep / 5) === idx &&
+                                styles.activeProgressDot,
+                            ]}
+                          />
+                        ))}
                     </View>
                     {renderStep()}
                   </Animated.View>
@@ -686,17 +959,17 @@ const CompanyDetails = ({ navigation }: Props) => {
                     {currentStep > 0 && (
                       <TouchableOpacity
                         style={styles.navButton}
-                        onPress={handleBack}
-                      >
+                        onPress={handleBack}>
                         <Text style={styles.navButtonText}>Back</Text>
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity
                       style={styles.navButton}
-                      onPress={handleNext}
-                    >
+                      onPress={handleNext}>
                       <Text style={styles.navButtonText}>
-                        {currentStep === formSteps.length - 1 ? 'Submit' : 'Next'}
+                        {currentStep === formSteps.length - 1
+                          ? 'Submit'
+                          : 'Next'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -782,7 +1055,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalWrapper: {
     flex: 1,
@@ -930,7 +1203,7 @@ const styles = StyleSheet.create({
   },
   multiSelectContainer: {
     maxHeight: 200, // Limit the height of the multi-select container
-  }
+  },
 });
 
 export default CompanyDetails;

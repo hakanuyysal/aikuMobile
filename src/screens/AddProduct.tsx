@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -41,16 +42,28 @@ interface FormData {
   productTwitter: string;
   companyName: string;
   companyId: string;
+  [key: string]: string | string[] | null;
+}
+
+interface InputValues {
+  tags: string;
+  problems: string;
+  solutions: string;
+  improvements: string;
+  keyFeatures: string;
+  [key: string]: string;
 }
 
 const AddProduct = ({navigation}: Props) => {
   const [loading, setLoading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showAIOptions, setShowAIOptions] = useState(false);
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [urlError, setUrlError] = useState('');
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [inputValues, setInputValues] = useState<InputValues>({
+    tags: '',
+    problems: '',
+    solutions: '',
+    improvements: '',
+    keyFeatures: '',
+  });
 
   const [formData, setFormData] = useState<FormData>({
     productName: '',
@@ -72,13 +85,15 @@ const AddProduct = ({navigation}: Props) => {
     companyId: '',
   });
 
-  const [inputValues, setInputValues] = useState({
-    tags: '',
-    problems: '',
-    solutions: '',
-    improvements: '',
-    keyFeatures: '',
-  });
+  // AI Modal state'leri
+  const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [aiWebsite, setAiWebsite] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>('https://');
+  const [aiTab, setAiTab] = useState<'select' | 'website' | 'file' | 'loading'>('select');
+  const [aiFile, setAiFile] = useState<any>(null);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
 
   const handleImagePicker = () => {
     ImagePicker.launchImageLibrary({
@@ -94,29 +109,31 @@ const AddProduct = ({navigation}: Props) => {
         Alert.alert('Hata', 'Resim seçilirken bir hata oluştu.');
         return;
       }
-      if (response.assets && response.assets[0]) {
+      const uri = response.assets?.[0]?.uri;
+      if (uri) {
         setFormData(prev => ({
           ...prev,
-          productLogo: response.assets[0].uri || null,
+          productLogo: uri,
         }));
       }
     });
   };
 
-  const addItem = (field: string) => {
+  const addItem = (field: keyof InputValues) => {
     if (inputValues[field].trim() !== '') {
+      const fieldName = field as keyof FormData;
       setFormData(prev => ({
         ...prev,
-        [field]: [...prev[field], inputValues[field].trim()],
+        [fieldName]: [...(prev[fieldName] as string[]), inputValues[field].trim()],
       }));
       setInputValues(prev => ({...prev, [field]: ''}));
     }
   };
 
-  const removeItem = (index: number, field: string) => {
+  const removeItem = (index: number, field: keyof FormData) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
+      [field]: (prev[field] as string[]).filter((_, i: number) => i !== index),
     }));
   };
 
@@ -125,7 +142,10 @@ const AddProduct = ({navigation}: Props) => {
     setFormErrors([]);
 
     try {
-      const response = await productService.createProduct(formData);
+      const response = await productService.createProduct({
+        ...formData,
+        productLogo: formData.productLogo || undefined,
+      });
       Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
       navigation.navigate('ProductDetails', {id: response.product.id});
     } catch (error: unknown) {
@@ -137,6 +157,146 @@ const AddProduct = ({navigation}: Props) => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // AI modalı için analiz mesajı fonksiyonu
+  const getAnalysisMessage = (progress: number, method: 'website' | 'file') => {
+    if (progress < 25) {
+      return method === 'website' ? 'Website analiz ediliyor...' : 'Doküman okunuyor...';
+    } else if (progress < 50) {
+      return method === 'website' ? 'Ürün bilgileri çıkarılıyor...' : 'İçerik çıkarılıyor...';
+    } else if (progress < 75) {
+      return 'Bilgileriniz işleniyor...';
+    } else if (progress < 90) {
+      return 'Neredeyse tamamlandı...';
+    } else {
+      return 'Ürün detayları optimize ediliyor...';
+    }
+  };
+
+  // AI ile doldurma fonksiyonu
+  const handleAIFill = async () => {
+    setAiError('');
+    setAiTab('loading');
+    setAiProgress(0);
+    setAiMethod(prev => (prev === 'website' || prev === 'file') ? prev : 'website');
+    let progress = 0;
+    const intervalStep = 250;
+    const totalDuration = 4000;
+    const steps = Math.floor(totalDuration / intervalStep);
+    const progressStep = 100 / steps;
+    const interval = setInterval(() => {
+      progress += progressStep;
+      setAiProgress(Math.min(progress, 100));
+    }, intervalStep);
+    try {
+      if (aiTab === 'website') {
+        if (!aiWebsite.trim()) {
+          setAiError('Lütfen bir website URL\'si girin.');
+          setAiTab('website');
+          clearInterval(interval);
+          return;
+        }
+        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i;
+        let url = aiWebsite.trim();
+        if (!urlPattern.test(url)) {
+          setAiError('Geçersiz URL formatı.');
+          setAiTab('website');
+          clearInterval(interval);
+          return;
+        }
+        if (!/^https?:\/\//i.test(url)) {
+          url = aiProtocol + url;
+        }
+        url = url.replace(/^(https?:\/\/)+(https?:\/\/)/i, '$1');
+        const response = await fetch('/ai/analyze-website', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+        const data = await response.json();
+        if (data) {
+          setFormData((prev) => ({
+            ...prev,
+            productLogo: data.productLogo || prev.productLogo,
+            productName: data.productName || prev.productName,
+            productDescription: data.productDescription || prev.productDescription,
+            detailedDescription: data.detailedDescription || prev.detailedDescription,
+            productCategory: data.productCategory || prev.productCategory,
+            productWebsite: data.productWebsite || prev.productWebsite,
+            productLinkedIn: data.productLinkedIn || prev.productLinkedIn,
+            productTwitter: data.productTwitter || prev.productTwitter,
+            companyName: data.companyName || prev.companyName,
+            companyId: data.companyId || prev.companyId,
+          }));
+          setAiModalVisible(false);
+          setAiWebsite('');
+          setAiFile(null);
+          clearInterval(interval);
+        } else {
+          setAiError('Otomatik doldurma başarısız oldu.');
+          clearInterval(interval);
+        }
+      } else if (aiTab === 'file') {
+        if (!aiFile) {
+          setAiError('Lütfen bir dosya seçin.');
+          setAiTab('file');
+          clearInterval(interval);
+          return;
+        }
+        const formDataFile = new FormData();
+        formDataFile.append('document', aiFile);
+        const response = await fetch('/ai/analyze-document', {
+          method: 'POST',
+          body: formDataFile,
+        });
+        const data = await response.json();
+        if (data) {
+          setFormData((prev) => ({
+            ...prev,
+            productLogo: data.productLogo || prev.productLogo,
+            productName: data.productName || prev.productName,
+            productDescription: data.productDescription || prev.productDescription,
+            detailedDescription: data.detailedDescription || prev.detailedDescription,
+            productCategory: data.productCategory || prev.productCategory,
+            productWebsite: data.productWebsite || prev.productWebsite,
+            productLinkedIn: data.productLinkedIn || prev.productLinkedIn,
+            productTwitter: data.productTwitter || prev.productTwitter,
+            companyName: data.companyName || prev.companyName,
+            companyId: data.companyId || prev.companyId,
+          }));
+          setAiModalVisible(false);
+          setAiWebsite('');
+          setAiFile(null);
+          clearInterval(interval);
+        } else {
+          setAiError('Otomatik doldurma başarısız oldu.');
+          clearInterval(interval);
+        }
+      }
+    } catch (error) {
+      setAiError('Bir hata oluştu. Lütfen tekrar deneyin.');
+      clearInterval(interval);
+    } finally {
+      setAiTab('select');
+    }
+  };
+
+  const handlePickFile = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibrary({
+        mediaType: 'mixed',
+        includeBase64: true,
+      });
+      if (result.assets && result.assets[0]) {
+        setAiFile(result.assets[0]);
+        setAiTab('file');
+      }
+    } catch (err) {
+      Alert.alert('Hata', 'Dosya seçilirken bir hata oluştu.');
     }
   };
 
@@ -189,11 +349,11 @@ const AddProduct = ({navigation}: Props) => {
           onChangeText={(text) =>
             setInputValues(prev => ({...prev, [field]: text}))
           }
-          onSubmitEditing={() => addItem(field)}
+          onSubmitEditing={() => addItem(field as keyof InputValues)}
         />
         <TouchableOpacity
           style={styles.addTagButton}
-          onPress={() => addItem(field)}
+          onPress={() => addItem(field as keyof InputValues)}
           disabled={!inputValues[field].trim()}>
           <Text style={styles.addTagButtonText}>Ekle</Text>
         </TouchableOpacity>
@@ -203,7 +363,7 @@ const AddProduct = ({navigation}: Props) => {
           <View key={index} style={styles.tagItem}>
             <Text style={styles.tagText}>{item}</Text>
             <TouchableOpacity
-              onPress={() => removeItem(index, field)}
+              onPress={() => removeItem(index, field as keyof FormData)}
               style={styles.removeTagButton}>
               <Icon name="close" size={16} color={Colors.lightText} />
             </TouchableOpacity>
@@ -244,31 +404,10 @@ const AddProduct = ({navigation}: Props) => {
           <View style={styles.formContainer}>
             <TouchableOpacity
               style={styles.aiButton}
-              onPress={() => setShowAIOptions(!showAIOptions)}>
+              onPress={() => setAiModalVisible(true)}>
               <Icon name="bulb-outline" size={24} color={Colors.primary} />
               <Text style={styles.aiButtonText}>AI ile Doldur</Text>
             </TouchableOpacity>
-
-            {showAIOptions && (
-              <View style={styles.aiOptionsContainer}>
-                <TouchableOpacity
-                  style={styles.aiOption}
-                  onPress={() => {
-                    setShowAIOptions(false);
-                    // Website analizi için modal göster
-                  }}>
-                  <Text style={styles.aiOptionText}>Websiteden Doldur</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.aiOption}
-                  onPress={() => {
-                    setShowAIOptions(false);
-                    // Doküman analizi için dosya seçici göster
-                  }}>
-                  <Text style={styles.aiOptionText}>Dokümandan Doldur</Text>
-                </TouchableOpacity>
-              </View>
-            )}
 
             {renderInputField(
               'Ürün Adı',
@@ -420,6 +559,140 @@ const AddProduct = ({navigation}: Props) => {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        <Modal
+          visible={aiModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAiModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>AI ile Doldur</Text>
+                <TouchableOpacity
+                  onPress={() => setAiModalVisible(false)}
+                  style={styles.modalCloseButton}>
+                  <Icon name="close" size={24} color={Colors.lightText} />
+                </TouchableOpacity>
+              </View>
+
+              {aiTab === 'select' && (
+                <View style={styles.modalBody}>
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => setAiTab('website')}>
+                    <Icon name="globe-outline" size={24} color={Colors.primary} />
+                    <Text style={styles.modalOptionText}>Websiteden Doldur</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={handlePickFile}>
+                    <Icon name="document-outline" size={24} color={Colors.primary} />
+                    <Text style={styles.modalOptionText}>Dokümandan Doldur</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {aiTab === 'website' && (
+                <View style={styles.modalBody}>
+                  <View style={styles.urlInputContainer}>
+                    <TouchableOpacity
+                      style={styles.protocolButton}
+                      onPress={() =>
+                        setAiProtocol(prev =>
+                          prev === 'https://' ? 'http://' : 'https://',
+                        )
+                      }>
+                      <Text style={styles.protocolButtonText}>{aiProtocol}</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.urlInput}
+                      value={aiWebsite}
+                      onChangeText={setAiWebsite}
+                      placeholder="example.com"
+                      placeholderTextColor={Colors.lightText + '80'}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                  {aiError && (
+                    <Text style={styles.errorText}>{aiError}</Text>
+                  )}
+                  <View style={styles.modalFooter}>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={() => setAiTab('select')}>
+                      <Text style={styles.modalButtonText}>Geri</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.modalButtonPrimary]}
+                      onPress={handleAIFill}
+                      disabled={!aiWebsite.trim()}>
+                      <Text style={styles.modalButtonText}>Analiz Et</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {aiTab === 'file' && (
+                <View style={styles.modalBody}>
+                  {aiFile ? (
+                    <View style={styles.fileInfo}>
+                      <Icon name="document" size={24} color={Colors.primary} />
+                      <Text style={styles.fileName}>{aiFile.name}</Text>
+                      <TouchableOpacity
+                        onPress={() => setAiFile(null)}
+                        style={styles.removeFileButton}>
+                        <Icon name="close" size={20} color={Colors.lightText} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.filePickerButton}
+                      onPress={handlePickFile}>
+                      <Icon name="add-circle-outline" size={24} color={Colors.primary} />
+                      <Text style={styles.filePickerText}>Dosya Seç</Text>
+                    </TouchableOpacity>
+                  )}
+                  {aiError && (
+                    <Text style={styles.errorText}>{aiError}</Text>
+                  )}
+                  <View style={styles.modalFooter}>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={() => setAiTab('select')}>
+                      <Text style={styles.modalButtonText}>Geri</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.modalButtonPrimary]}
+                      onPress={handleAIFill}
+                      disabled={!aiFile}>
+                      <Text style={styles.modalButtonText}>Analiz Et</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {aiTab === 'loading' && (
+                <View style={styles.modalBody}>
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {width: `${aiProgress}%`},
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressText}>
+                      {getAnalysisMessage(aiProgress, aiMethod)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -581,21 +854,6 @@ const styles = StyleSheet.create({
     marginLeft: metrics.margin.sm,
     fontSize: metrics.fontSize.md,
   },
-  aiOptionsContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
-    overflow: 'hidden',
-  },
-  aiOption: {
-    padding: metrics.padding.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  aiOptionText: {
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-  },
   errorContainer: {
     backgroundColor: 'rgba(255,0,0,0.1)',
     padding: metrics.padding.md,
@@ -621,6 +879,140 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#1A1E29',
+    borderRadius: metrics.borderRadius.lg,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: metrics.padding.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    fontSize: metrics.fontSize.lg,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+  },
+  modalCloseButton: {
+    padding: metrics.padding.xs,
+  },
+  modalBody: {
+    padding: metrics.padding.lg,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: metrics.padding.md,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  modalOptionText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    marginLeft: metrics.margin.sm,
+  },
+  urlInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  protocolButton: {
+    padding: metrics.padding.md,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255,255,255,0.1)',
+  },
+  protocolButtonText: {
+    color: Colors.primary,
+    fontSize: metrics.fontSize.md,
+  },
+  urlInput: {
+    flex: 1,
+    padding: metrics.padding.md,
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: metrics.margin.sm,
+    marginTop: metrics.margin.md,
+  },
+  modalButton: {
+    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  modalButtonPrimary: {
+    backgroundColor: Colors.primary,
+  },
+  modalButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+  },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  fileName: {
+    flex: 1,
+    color: Colors.lightText,
+    marginLeft: metrics.margin.sm,
+  },
+  removeFileButton: {
+    padding: metrics.padding.xs,
+  },
+  filePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: metrics.padding.lg,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    marginBottom: metrics.margin.md,
+  },
+  filePickerText: {
+    color: Colors.primary,
+    fontSize: metrics.fontSize.md,
+    marginLeft: metrics.margin.sm,
+  },
+  progressContainer: {
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: metrics.margin.md,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+  },
+  progressText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.sm,
+    textAlign: 'center',
   },
 });
 
