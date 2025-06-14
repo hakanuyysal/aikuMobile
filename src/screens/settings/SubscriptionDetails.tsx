@@ -17,6 +17,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../App';
 import BaseService from '../../services/BaseService';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionDetails'>;
 
@@ -47,13 +48,28 @@ const SubscriptionDetails = ({navigation}: Props) => {
     fetchData();
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const user = await BaseService.getCurrentUser();
-      setPlanInfo(user.subscription || {});
-      setIsAutoRenewalEnabled(!!user.subscription?.autoRenewal);
+      console.log('Kullanıcı verisi:', user);
+      if (user.user) {
+        setPlanInfo(user.user);
+        setIsAutoRenewalEnabled(!!user.user.autoRenewal);
+      } else if (user.subscription) {
+        setPlanInfo(user.subscription);
+        setIsAutoRenewalEnabled(!!user.subscription.autoRenewal);
+      } else {
+        setPlanInfo(user);
+        setIsAutoRenewalEnabled(!!user.autoRenewal);
+      }
     } catch (err: any) {
       setError(err?.message || 'Bir hata oluştu');
     } finally {
@@ -118,7 +134,12 @@ const SubscriptionDetails = ({navigation}: Props) => {
   }
 
   // Abonelik yoksa özel ekran
-  if (!planInfo || !planInfo.status) {
+  if (
+    !planInfo ||
+    !planInfo.subscriptionStatus ||
+    planInfo.subscriptionStatus === 'inactive' ||
+    planInfo.subscriptionStatus === 'canceled'
+  ) {
     return (
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -181,18 +202,18 @@ const SubscriptionDetails = ({navigation}: Props) => {
               <Text style={styles.infoLabel}>Status:</Text>
               <View style={styles.statusContainer}>
                 <MaterialCommunityIcons
-                  name={planInfo?.status === 'active' ? 'check-circle' : 'close-circle'}
+                  name={planInfo?.subscriptionStatus === 'active' ? 'check-circle' : 'close-circle'}
                   size={20}
-                  color={planInfo?.status === 'active' ? '#4CAF50' : 'red'}
+                  color={planInfo?.subscriptionStatus === 'active' ? '#4CAF50' : 'red'}
                 />
-                <Text style={[styles.infoValue, planInfo?.status === 'active' ? styles.activeText : {color:'red'}]}>
-                  {planInfo?.status === 'active' ? 'Active' : 'Inactive'}
+                <Text style={[styles.infoValue, planInfo?.subscriptionStatus === 'active' ? styles.activeText : {color:'red'}]}>
+                  {planInfo?.subscriptionStatus === 'active' ? 'Active' : (planInfo?.subscriptionStatus ? planInfo.subscriptionStatus.charAt(0).toUpperCase() + planInfo.subscriptionStatus.slice(1) : 'Inactive')}
                 </Text>
               </View>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Start Date:</Text>
-              <Text style={styles.infoValue}>{planInfo?.startDate ? new Date(planInfo.startDate).toLocaleDateString() : '-'}</Text>
+              <Text style={styles.infoValue}>{planInfo?.subscriptionStartDate ? new Date(planInfo.subscriptionStartDate).toLocaleDateString() : '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Auto Renewal:</Text>
@@ -229,7 +250,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Subscription Plan:</Text>
-              <Text style={styles.infoValue}>{planInfo?.planName || '-'}</Text>
+              <Text style={styles.infoValue}>{planInfo?.subscriptionPlan || '-'}</Text>
             </View>
           </View>
 
