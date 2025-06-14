@@ -117,6 +117,42 @@ const SubscriptionDetails = ({navigation}: Props) => {
     );
   }
 
+  // Abonelik yoksa özel ekran
+  if (!planInfo || !planInfo.status) {
+    return (
+      <LinearGradient
+        colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+        locations={[0, 0.3, 0.6, 0.9]}
+        start={{x: 0, y: 0}}
+        end={{x: 2, y: 1}}
+        style={{flex:1}}>
+        <SafeAreaView style={{flex:1}}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}>
+              <MaterialCommunityIcons
+                name="chevron-left"
+                size={30}
+                color={Colors.lightText}
+              />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Subscription Details</Text>
+          </View>
+          <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+            <Text style={{color:'#fff', fontSize:16, fontWeight:'500', marginBottom:16, textAlign:'center'}}>You do not have any subscription.</Text>
+            <TouchableOpacity
+              style={{backgroundColor: Colors.primary, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 32}}
+              onPress={() => navigation.navigate('Cart')}
+            >
+              <Text style={{color:'#fff', fontSize:18, fontWeight:'bold'}}>Subscribe Now</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}

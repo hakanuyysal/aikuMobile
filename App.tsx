@@ -42,6 +42,7 @@ import {
   useAppInitialization,
   markOnboardingComplete,
 } from './src/hooks/useAppInitialization';
+import CartScreen from './src/screens/subscriptions/CartScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -73,6 +74,7 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
+  Cart: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -280,6 +282,11 @@ function AppContent(): React.JSX.Element {
           <RootStack.Screen
             name="Chat"
             component={ChatScreen}
+            options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="Cart"
+            component={CartScreen}
             options={{headerShown: false}}
           />
         </RootStack.Navigator>
