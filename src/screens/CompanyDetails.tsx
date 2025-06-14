@@ -583,15 +583,28 @@ const CompanyDetails = ({navigation}: Props) => {
                     <Text style={styles.modalTitle}>Company Form</Text>
                     <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <TouchableOpacity
-                        style={{marginRight: 8}}
+                        style={{
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: 2,
+                          borderColor: Colors.primary,
+                          borderRadius: 14,
+                          paddingVertical: 8,
+                          paddingHorizontal: 16,
+                          marginRight: 8,
+                          backgroundColor: 'transparent',
+                          minWidth: 110,
+                        }}
                         onPress={() => setAiModalVisible(true)}>
                         <Ionicons
                           name="bulb-outline"
                           size={22}
                           color={Colors.primary}
+                          style={{ marginBottom: 2 }}
                         />
-                        <Text style={{color: Colors.primary, fontSize: 12}}>
-                          Auto-fill with AI
+                        <Text style={{ color: Colors.primary, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
+                          Auto-fill AI
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -616,11 +629,25 @@ const CompanyDetails = ({navigation}: Props) => {
                         <View
                           style={{
                             backgroundColor: '#23283A',
-                            borderRadius: 20,
+                            borderRadius: 32,
                             padding: 28,
                             width: 350,
                             alignItems: 'center',
+                            position: 'relative',
+                            borderWidth: 1.5,
+                            borderColor: Colors.primary,
+                            shadowColor: Colors.primary,
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.5,
+                            shadowRadius: 16,
+                            elevation: 12,
                           }}>
+                          {/* Sağ üst köşe çarpı */}
+                          <TouchableOpacity
+                            style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}
+                            onPress={() => setAiModalVisible(false)}>
+                            <Ionicons name="close" size={26} color={Colors.lightText} />
+                          </TouchableOpacity>
                           {aiTab === 'loading' ? (
                             <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 180 }}>
                               <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 18 }} />
@@ -643,43 +670,56 @@ const CompanyDetails = ({navigation}: Props) => {
                                 }}>
                                 Auto-fill with AI
                               </Text>
-                              <TouchableOpacity
-                                style={{
-                                  width: '100%',
-                                  backgroundColor: Colors.primary,
-                                  borderRadius: 14,
-                                  paddingVertical: 18,
-                                  marginBottom: 18,
-                                  alignItems: 'center',
-                                }}
-                                onPress={() => setAiTab('website')}>
-                                <Text
+                              <View style={{ width: '100%', flexDirection: 'row', gap: 16 }}>
+                                <TouchableOpacity
                                   style={{
-                                    color: Colors.lightText,
-                                    fontWeight: '700',
-                                    fontSize: 18,
-                                  }}>
-                                  From Website
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={{
-                                  width: '100%',
-                                  backgroundColor: Colors.primary,
-                                  borderRadius: 14,
-                                  paddingVertical: 18,
-                                  alignItems: 'center',
-                                }}
-                                onPress={() => setAiTab('file')}>
-                                <Text
+                                    flex: 1,
+                                    borderWidth: 2,
+                                    borderColor: Colors.primary,
+                                    borderRadius: 16,
+                                    paddingVertical: 18,
+                                    alignItems: 'center',
+                                    backgroundColor: 'transparent',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    marginRight: 8,
+                                  }}
+                                  onPress={() => setAiTab('website')}>
+                                  <MaterialIcons name="language" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <Text
+                                    style={{
+                                      color: Colors.primary,
+                                      fontWeight: '700',
+                                      fontSize: 18,
+                                    }}>
+                                    From Web
+                                  </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
                                   style={{
-                                    color: Colors.lightText,
-                                    fontWeight: '700',
-                                    fontSize: 18,
-                                  }}>
-                                  From File
-                                </Text>
-                              </TouchableOpacity>
+                                    flex: 1,
+                                    borderWidth: 2,
+                                    borderColor: Colors.primary,
+                                    borderRadius: 16,
+                                    paddingVertical: 18,
+                                    alignItems: 'center',
+                                    backgroundColor: 'transparent',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    marginLeft: 8,
+                                  }}
+                                  onPress={() => setAiTab('file')}>
+                                  <MaterialIcons name="insert-drive-file" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <Text
+                                    style={{
+                                      color: Colors.primary,
+                                      fontWeight: '700',
+                                      fontSize: 18,
+                                    }}>
+                                    From File
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
                             </>
                           )}
                           {aiTab !== 'select' && aiTab !== 'loading' && (
@@ -1005,7 +1045,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalWrapper: {
     flex: 1,
