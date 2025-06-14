@@ -16,11 +16,17 @@ import metrics from '../../constants/aikuMetric';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../App';
+import BaseService from '../../services/BaseService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionDetails'>;
 
 const SubscriptionDetails = ({navigation}: Props) => {
   const [isAutoRenewalEnabled, setIsAutoRenewalEnabled] = useState(true);
+  const [planInfo, setPlanInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingAutoRenewal, setUpdatingAutoRenewal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const planFeatures = [
     'List AI solutions',
@@ -37,10 +43,34 @@ const SubscriptionDetails = ({navigation}: Props) => {
     });
   }, [navigation]);
 
-  const handleAutoRenewalToggle = (value: boolean) => {
-    setIsAutoRenewalEnabled(value);
-    // Add API call here to update auto renewal status
-    console.log('Auto renewal toggled:', value);
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const user = await BaseService.getCurrentUser();
+      setPlanInfo(user.subscription || {});
+      setIsAutoRenewalEnabled(!!user.subscription?.autoRenewal);
+    } catch (err: any) {
+      setError(err?.message || 'Bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoRenewalToggle = async (value: boolean) => {
+    setUpdatingAutoRenewal(true);
+    try {
+      await BaseService.toggleAutoRenewal(value);
+      setIsAutoRenewalEnabled(value);
+    } catch (err: any) {
+      Alert.alert('Hata', err?.message || 'Otomatik yenileme güncellenemedi');
+    } finally {
+      setUpdatingAutoRenewal(false);
+    }
   };
 
   const handleCancelSubscription = () => {
@@ -55,14 +85,37 @@ const SubscriptionDetails = ({navigation}: Props) => {
         {
           text: 'Yes, Cancel',
           style: 'destructive',
-          onPress: () => {
-            // Add cancellation logic here
-            console.log('Subscription cancellation confirmed');
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await BaseService.cancelSubscription();
+              Alert.alert('Başarılı', 'Aboneliğiniz iptal edildi.');
+              fetchData();
+            } catch (err: any) {
+              Alert.alert('Hata', err?.message || 'Abonelik iptal edilemedi');
+            } finally {
+              setCancelling(false);
+            }
           },
         },
       ],
     );
   };
+
+  if (loading) {
+    return (
+      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <Text style={{color:'#fff'}}>Yükleniyor...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <Text style={{color:'red'}}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <LinearGradient
@@ -92,18 +145,18 @@ const SubscriptionDetails = ({navigation}: Props) => {
               <Text style={styles.infoLabel}>Status:</Text>
               <View style={styles.statusContainer}>
                 <MaterialCommunityIcons
-                  name="check-circle"
+                  name={planInfo?.status === 'active' ? 'check-circle' : 'close-circle'}
                   size={20}
-                  color="#4CAF50"
+                  color={planInfo?.status === 'active' ? '#4CAF50' : 'red'}
                 />
-                <Text style={[styles.infoValue, styles.activeText]}>
-                  Active
+                <Text style={[styles.infoValue, planInfo?.status === 'active' ? styles.activeText : {color:'red'}]}>
+                  {planInfo?.status === 'active' ? 'Active' : 'Inactive'}
                 </Text>
               </View>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Start Date:</Text>
-              <Text style={styles.infoValue}>4/25/2025</Text>
+              <Text style={styles.infoValue}>{planInfo?.startDate ? new Date(planInfo.startDate).toLocaleDateString() : '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Auto Renewal:</Text>
@@ -117,6 +170,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
                   ios_backgroundColor={Colors.inactive}
                   onValueChange={handleAutoRenewalToggle}
                   value={isAutoRenewalEnabled}
+                  disabled={updatingAutoRenewal}
                   style={Platform.select({
                     ios: {transform: [{scale: 0.8}]},
                     android: {transform: [{scale: 0.9}]},
@@ -131,15 +185,15 @@ const SubscriptionDetails = ({navigation}: Props) => {
             <Text style={styles.cardTitle}>Payment Information</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Payment Method:</Text>
-              <Text style={styles.infoValue}>Credit Card</Text>
+              <Text style={styles.infoValue}>{planInfo?.paymentMethod || '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Last Payment Date:</Text>
-              <Text style={styles.infoValue}>4/25/2025</Text>
+              <Text style={styles.infoValue}>{planInfo?.lastPaymentDate ? new Date(planInfo.lastPaymentDate).toLocaleDateString() : '-'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Subscription Plan:</Text>
-              <Text style={styles.infoValue}>Startup Plan</Text>
+              <Text style={styles.infoValue}>{planInfo?.planName || '-'}</Text>
             </View>
           </View>
 
@@ -161,8 +215,10 @@ const SubscriptionDetails = ({navigation}: Props) => {
           {/* Cancel Button */}
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={handleCancelSubscription}>
-            <Text style={styles.cancelButtonText}>Cancel Subscription</Text>
+            onPress={handleCancelSubscription}
+            disabled={cancelling}
+          >
+            <Text style={styles.cancelButtonText}>{cancelling ? 'İptal Ediliyor...' : 'Cancel Subscription'}</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
