@@ -17,6 +17,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/AuthNavigator';
 import {RootStackParamList} from '../../types';
+import LinkedInWebView from '../../components/LinkedInWebView';
 
 type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
@@ -24,7 +25,8 @@ const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const {login, loading, googleLogin, linkedInLogin} = useAuth();
+  const [showLinkedInWebView, setShowLinkedInWebView] = useState(false);
+  const {login, loading, googleLogin} = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -56,17 +58,24 @@ const Login = ({navigation}: Props) => {
   };
 
   const handleLinkedInLogin = async () => {
+    setShowLinkedInWebView(true);
+  };
+
+  const handleLinkedInSuccess = async (data: any) => {
     try {
-      const response = await linkedInLogin();
-      if (response?.user) {
+      if (data && data.user) {
         navigation.reset({
           index: 0,
           routes: [{name: 'Main'}],
         });
       }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
+      Alert.alert('Hata', error instanceof Error ? error.message : 'LinkedIn girişi başarısız oldu');
     }
+  };
+
+  const handleLinkedInError = (error: any) => {
+    Alert.alert('Hata', error instanceof Error ? error.message : 'LinkedIn girişi başarısız oldu');
   };
 
   return (
@@ -195,6 +204,13 @@ const Login = ({navigation}: Props) => {
               </TouchableOpacity>
             </View>
           </View>
+
+          <LinkedInWebView
+            visible={showLinkedInWebView}
+            onClose={() => setShowLinkedInWebView(false)}
+            onSuccess={handleLinkedInSuccess}
+            onError={handleLinkedInError}
+          />
         </View>
       </SafeAreaView>
     </LinearGradient>

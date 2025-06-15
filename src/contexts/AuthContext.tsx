@@ -1,5 +1,6 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
 import AuthService from '../services/AuthService';
+import linkedinAuthService from '../services/linkedinAuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
@@ -8,14 +9,15 @@ interface User {
   name?: string;
   photoURL?: string;
   role?: string;
+  subscriptionPlan?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   updateUser: (data: Partial<User>) => void;
-  login: (email: string, password: string) => Promise<void>;
-  googleLogin: (token: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user: User | null; session: any }>;
+  googleLogin: (token: string) => Promise<{ success: boolean; user: User | null; session: any }>;
   linkedInLogin: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -94,11 +96,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const linkedInLogin = async () => {
     try {
-      const response = await AuthService.signInWithLinkedIn();
-      if (response.user) {
-        setUser(response.user);
-      }
-      return response;
+      await linkedinAuthService.signInWithLinkedIn();
     } catch (error) {
       throw error;
     }

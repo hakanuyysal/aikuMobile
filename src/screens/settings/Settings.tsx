@@ -70,13 +70,13 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Çıkış', 'Çıkış yapmak istediğinizden emin misiniz?', [
       {
         text: 'Cancel',
         style: 'cancel',
       },
       {
-        text: 'Logout',
+        text: 'logout',
         style: 'destructive',
         onPress: async () => {
           try {
@@ -84,11 +84,15 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
             if (updateUser) {
               updateUser({} as any);
             }
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Auth' }],
+            });
           } catch (error) {
-            console.error('Logout error:', error);
+            console.error('Çıkış hatası:', error);
             Alert.alert(
               'Error',
-              'An error occurred while logging out. Please try again.',
+              'Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.',
             );
           }
         },

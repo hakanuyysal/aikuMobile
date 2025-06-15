@@ -7,12 +7,12 @@ import {TabParamList} from '../types';
 import {Colors} from '../constants/colors';
 import MapScreen from '../screens/MapScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import CartScreen from '../screens/subscriptions/CartScreen';
 import ChatListScreen from '../screens/messages/ChatListScreen';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import ChatDetailScreen from '../screens/messages/ChatDetailScreen';
 import CompanyListScreen from '../screens/messages/CompanyListScreen';
 import { NavigationState } from '@react-navigation/native';
+import SubscriptionNavigator from './SubscriptionNavigator';
 
 interface TabNavigatorProps {
   onMenuOpen: () => void;
@@ -73,7 +73,7 @@ const TabNavigator: React.FC<TabNavigatorProps> = ({onMenuOpen}) => {
       <Tab.Screen name="Message" component={MessageNavigator} />
       <Tab.Screen
         name="Cart"
-        component={CartScreen}
+        component={SubscriptionNavigator}
         options={{
           title: 'Abonelikler',
         }}

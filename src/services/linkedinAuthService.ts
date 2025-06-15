@@ -1,92 +1,184 @@
 import { supabase } from '../config/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
 
-
+interface LinkedInAuthState {
+  state: string;
+  timestamp: number;
+  platform: 'mobile' | 'web';
+}
 
 class LinkedInAuthService {
+  private authPromise: Promise<any> | null = null;
+  private resolveAuth: ((value: any) => void) | null = null;
+  private rejectAuth: ((error: any) => void) | null = null;
+  private readonly STATE_EXPIRY = 15 * 60 * 1000; // 15 dakika
+
   /**
    * LinkedIn kimlik doğrulama URL'sini oluşturur
    */
-  getLinkedInAuthURL() {
-    const clientId = process.env.REACT_APP_LINKEDIN_CLIENT_ID;
-    const redirectUri = process.env.REACT_APP_LINKEDIN_REDIRECT_URI || 'aikuaiplatform://auth/social-callback'; // Deep link URL'i
-    
-    // Client ID'nin tanımlı olduğundan emin olalım
-    if (!clientId) {
-      console.error('LinkedIn Client ID is not defined in environment variables.');
-      throw new Error('LinkedIn Client ID configuration error.');
-    }
-
-    const scope = 'r_liteprofile r_emailaddress';
-    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
-    // State değerini AsyncStorage'a kaydet
-    AsyncStorage.setItem('linkedin_state', state);
-    
-    return `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
-  }
-
-  /**
-   * LinkedIn code değerini kullanarak token alır
-   * @param {string} code - LinkedIn callback'ten alınan code değeri
-   */
-  async getTokenFromCode(code: string) {
+  async getLinkedInAuthURL() {
+    console.log('getLinkedInAuthURL çağrıldı');
     try {
-      // Auth code'u ile Supabase'e istekte bulun
-      // Not: Bu kısım, aslında backend tarafında yapılır ve token doğrudan Supabase'e gönderilir
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'linkedin',
-        token: code,
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('LinkedIn token alma hatası:', error);
-      throw error;
-    }
-  }
+      const state = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+      const authState: LinkedInAuthState = {
+        state,
+        timestamp: Date.now(),
+        platform: 'mobile'
+      };
 
-  /**
-   * Token kullanarak LinkedIn kullanıcı bilgilerini alır
-   * @param {string} accessToken - LinkedIn access token
-   */
-  async getUserInfo(accessToken: string | object | undefined) {
-    try {
-      // Bu kısım normalde backend tarafında yapılır,
-      // ancak Supabase kullanıldığında bu adıma gerek yoktur çünkü
-      // Supabase doğrudan user bilgilerini döndürür
-      return accessToken; // Supabase zaten kullanıcı bilgilerini içerecektir
-    } catch (error) {
-     //  console.error('LinkedIn kullanıcı bilgisi alma hatası:', error);
-      throw error;
-    }
-  }
+      await AsyncStorage.setItem('linkedin_auth_state', JSON.stringify(authState));
 
-  /**
-   * LinkedIn bilgileriyle Supabase'e giriş yapar veya yeni kullanıcı oluşturur
-   * @param {string} code - LinkedIn'den alınan code değeri
-   */
-  async signInWithLinkedIn(code: string) {
-    try {
-      // LinkedIn OAuth işlemini Supabase üzerinden başlat
-      // Supabase, LinkedIn doğrulamasını otomatik olarak yönetir
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
+        provider: 'linkedin_oidc',
         options: {
-          redirectTo: 'aikuaiplatform://auth/social-callback',
+          redirectTo: `${Config.API_URL || 'https://api.aikuaiplatform.com/api'}/auth/linkedin/callback`,
           queryParams: {
-            code: code
-          }
+            prompt: 'consent',
+            state: `${state}|mobile`,
+            scope: 'r_liteprofile r_emailaddress'
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (!data.url) throw new Error('Auth URL alınamadı');
+
+      return data.url;
+    } catch (error) {
+      console.error('LinkedIn auth URL oluşturma hatası:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * LinkedIn ile giriş işlemini başlatır
+   * Bu metod artık sadece promise'i yönetiyor, URL'yi döndürmüyor. URL, doğrudan WebView tarafından alınacak.
+   */
+  async signInWithLinkedIn(): Promise<any> {
+    if (this.authPromise) {
+      return this.authPromise;
+    }
+
+    this.authPromise = new Promise((resolve, reject) => {
+      this.resolveAuth = resolve;
+      this.rejectAuth = reject;
+    });
+
+    return this.authPromise; // Promise'i döndür, URL'yi WebView yönetecek
+  }
+
+  /**
+   * LinkedIn callback'ini işler
+   */
+  async handleCallback(code: string, state: string) {
+    try {
+      const storedStateStr = await AsyncStorage.getItem('linkedin_auth_state');
+      if (!storedStateStr) {
+        throw new Error('State bilgisi bulunamadı');
+      }
+
+      const storedState: LinkedInAuthState = JSON.parse(storedStateStr);
+      
+      // State süresini kontrol et
+      if (Date.now() - storedState.timestamp > this.STATE_EXPIRY) {
+        throw new Error('State süresi dolmuş');
+      }
+
+      // State eşleşmesini kontrol et
+      if (state !== storedState.state) {
+        throw new Error('State uyuşmazlığı');
+      }
+
+      // Supabase ile oturum değişimi
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+
+      // LinkedIn profil bilgilerini al
+      const profileData = await this.fetchLinkedInProfile(data.session?.access_token);
+      
+      // Analiz sonuçlarını al
+      const analysisResult = await this.analyzeLinkedInData(profileData);
+
+      const result = {
+        ...data,
+        profile: profileData,
+        analysis: analysisResult
+      };
+
+      if (this.resolveAuth) {
+        this.resolveAuth(result);
+      }
+
+      return result;
+    } catch (error) {
+      if (this.rejectAuth) {
+        this.rejectAuth(error);
+      }
+      throw error;
+    } finally {
+      this.clearAuthPromise();
+      await AsyncStorage.removeItem('linkedin_auth_state');
+    }
+  }
+
+  /**
+   * LinkedIn profil bilgilerini çeker
+   */
+  private async fetchLinkedInProfile(accessToken: string | undefined) {
+    if (!accessToken) {
+      throw new Error('Access token bulunamadı');
+    }
+
+    try {
+      const response = await fetch('https://api.linkedin.com/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'cache-control': 'no-cache',
+          'X-Restli-Protocol-Version': '2.0.0'
         }
       });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        throw new Error('LinkedIn profil bilgileri alınamadı');
+      }
+
+      return await response.json();
     } catch (error) {
-      console.error('LinkedIn ile giriş hatası:', error);
+      console.error('LinkedIn profil bilgisi alma hatası:', error);
       throw error;
     }
+  }
+
+  /**
+   * LinkedIn verilerini analiz eder
+   */
+  async analyzeLinkedInData(linkedInData: any) {
+    try {
+      const response = await fetch(`${Config.API_URL || 'https://api.aikuaiplatform.com/api'}/analyze-linkedin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await AsyncStorage.getItem('token')}`
+        },
+        body: JSON.stringify(linkedInData),
+      });
+
+      if (!response.ok) {
+        throw new Error('LinkedIn veri analizi başarısız');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('LinkedIn veri analizi hatası:', error);
+      throw error;
+    }
+  }
+
+  private clearAuthPromise() {
+    this.authPromise = null;
+    this.resolveAuth = null;
+    this.rejectAuth = null;
   }
 }
 

@@ -17,16 +17,6 @@ interface LoginCredentials {
   password: string;
 }
 
-interface LinkedInResponse {
-  provider: Provider;
-  url: string;
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-  };
-}
-
 interface GoogleSignInResponse {
   success: boolean;
   user?: any;
@@ -65,7 +55,15 @@ class AuthService {
       return config;
     });
 
+    // Deep link listener'ı initialize et
+    this.initializeDeepLinkListener();
+  }
+
+  private initializeDeepLinkListener() {
+    // Uygulama açıkken gelen deep link'leri dinle
     Linking.addEventListener('url', this.handleDeepLink.bind(this));
+    
+    // Uygulama kapalıyken gelen deep link'leri kontrol et
     Linking.getInitialURL().then(url => {
       if (url) this.handleDeepLink({ url });
     });
@@ -88,47 +86,10 @@ class AuthService {
       searchParams: Object.fromEntries(urlObj.searchParams),
     });
 
-    if (urlObj.pathname === '/auth/linkedin-callback') {
-      const code = urlObj.searchParams.get('code');
-      const state = urlObj.searchParams.get('state');
-      const storedState = await AsyncStorage.getItem('linkedin_state');
-
-      console.log('[DeepLink] LinkedIn callback params:', { code, state, storedState });
-
-      if (state !== storedState) {
-        console.error('[DeepLink] State mismatch:', { received: state, expected: storedState });
-        return;
-      }
-
-      if (code) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-
-          console.log('[DeepLink] Session:', { userId: data.user?.id });
-
-          if (data.session?.access_token) {
-            await AsyncStorage.setItem('token', data.session.access_token);
-            if (data.user?.id) {
-              await AsyncStorage.setItem('user_id', data.user.id);
-              await AsyncStorage.setItem('user', JSON.stringify(data.user));
-            }
-            console.log('[DeepLink] Successfully authenticated user:', { user: data.user });
-          }
-        } catch (error) {
-          console.error('[DeepLink] Error processing auth data:', error);
-        }
-      } else {
-        console.error('[DeepLink] Missing code:', urlObj.searchParams);
-      }
-    } else {
-      console.warn('[DeepLink] Unhandled path:', urlObj.pathname);
-    }
-  }
-
-  private extractCodeFromUrl(url: string): string | null {
-    const urlParams = new URLSearchParams(url.split('?')[1]);
-    return urlParams.get('code');
+    // LinkedIn deep link'lerinin burada işlenmemesi gerektiğini belirttik
+    // Bu kısım artık LinkedInWebView tarafından yönetiliyor.
+    // Bu nedenle burada LinkedIn callback URL'sini işlemiyoruz.
+    console.warn('[DeepLink] Unhandled path:', urlObj.pathname);
   }
 
   async register(userData: UserData) {
@@ -159,7 +120,8 @@ class AuthService {
           console.warn('Logout API error:', error);
         }
       }
-      await AsyncStorage.multiRemove(['token', 'user', 'user_id']);
+      // LinkedIn için kullanılan 'linkedin_auth_state' de temizlenmeli
+      await AsyncStorage.multiRemove(['token', 'user', 'user_id', 'linkedin_auth_state']);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -206,7 +168,8 @@ class AuthService {
 
   async clearAuth() {
     try {
-      await AsyncStorage.multiRemove(['token', 'user', 'user_id']);
+      // LinkedIn için kullanılan 'linkedin_auth_state' de temizlenmeli
+      await AsyncStorage.multiRemove(['token', 'user', 'user_id', 'linkedin_auth_state']);
       delete this.axios.defaults.headers.common['Authorization'];
     } catch (error) {
       console.error('Token silme hatası:', error);
@@ -275,79 +238,6 @@ class AuthService {
     }
   }
 
-  async signInWithLinkedIn(): Promise<LinkedInResponse> {
-    try {
-      const state = Math.random().toString(36).substring(2, 15);
-      await AsyncStorage.setItem('linkedin_state', state);
-
-      const redirectUri = 'yourapp://auth/linkedin-callback';
-      console.log('[LinkedIn] OAuth Config:', {
-        clientId: '77sndgcd7twnio',
-        redirectUri,
-        scope: 'openid profile email',
-        state,
-      });
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin_oidc',
-        options: {
-          redirectTo: redirectUri,
-          queryParams: {
-            scope: 'openid profile email',
-            state,
-            prompt: 'consent',
-            from: 'mobile',
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      console.log('[LinkedIn] OAuth URL:', data.url);
-      await Linking.openURL(data.url);
-
-      return {
-        provider: 'linkedin_oidc' as Provider,
-        url: data.url,
-      };
-    } catch (error) {
-      console.error('[LinkedIn] Signin error:', error);
-      throw this.handleError(error);
-    }
-  }
-
-  async handleLinkedInCallback(code: string): Promise<any> {
-    try {
-      const storedState = await AsyncStorage.getItem('linkedin_state');
-      const urlParams = new URLSearchParams(code.split('?')[1]);
-      const state = urlParams.get('state');
-
-      console.log('[LinkedIn Callback] Processing:', { code, state, storedState });
-
-      if (state !== storedState) {
-        throw new Error('State mismatch');
-      }
-
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-
-      console.log('[LinkedIn Callback] Session:', { userId: data.user?.id });
-
-      if (data.session?.access_token) {
-        await AsyncStorage.setItem('token', data.session.access_token);
-        if (data.user?.id) {
-          await AsyncStorage.setItem('user_id', data.user.id);
-          await AsyncStorage.setItem('user', JSON.stringify(data.user));
-        }
-      }
-
-      return data;
-    } catch (error) {
-      console.error('[LinkedIn Callback] Error:', error);
-      throw this.handleError(error);
-    }
-  }
-
   private handleError(error: any): Error {
     if (error.response) {
       const message = error.response.data?.message || 'Bir hata oluştu';
@@ -361,4 +251,4 @@ class AuthService {
 }
 
 const authService = new AuthService();
-export default authService;
+export default authService; 

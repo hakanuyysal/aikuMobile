@@ -10,9 +10,14 @@ import {
 } from 'react-native';
 import {Colors} from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {DrawerNavigationProp} from '@react-navigation/drawer';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
+import {RootStackParamList} from '../../types';
+
+type CartScreenProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+};
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = metrics.getWidthPercentage(75);
@@ -27,10 +32,7 @@ interface PlanProps {
   isYearly?: boolean;
   index: number;
   scrollX: Animated.Value;
-}
-
-interface CartScreenProps {
-  navigation: DrawerNavigationProp<any>;
+  navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
 const PlanCard: React.FC<PlanProps> = ({
@@ -41,6 +43,7 @@ const PlanCard: React.FC<PlanProps> = ({
   isYearly,
   index,
   scrollX,
+  navigation,
 }) => {
   const yearlyPrice = Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
@@ -119,7 +122,9 @@ const PlanCard: React.FC<PlanProps> = ({
           • {feature}
         </Text>
       ))}
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={() => navigation.navigate('BillingInfo', { planDetails: { title, price, isYearly } })}>
         <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -227,6 +232,7 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
                 isYearly={isYearly}
                 index={index}
                 scrollX={scrollX}
+                navigation={navigation}
               />
             ))}
           </Animated.ScrollView>

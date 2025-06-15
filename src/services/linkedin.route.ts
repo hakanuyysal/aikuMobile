@@ -21,62 +21,110 @@ const router = express_1.default.Router();
 router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const isMobile = req.query.from === 'mobile';
-        const redirectTo = isMobile ? 'yourapp://auth/linkedin-callback' : `${process.env.CLIENT_URL}/auth/callback`;
+        const state = req.query.state || Math.random().toString(36).substring(2, 15);
         
-        console.log('[LinkedIn Auth] Initiating OAuth', { redirectTo, isMobile });
+        // Mobile için custom scheme, web için normal URL
+        const redirectTo = isMobile 
+            ? 'yourapp://auth/linkedin-callback' 
+            : `${process.env.CLIENT_URL}/auth/callback`;
+        
+        console.log('[LinkedIn Auth] Initiating OAuth', { 
+            redirectTo, 
+            isMobile, 
+            state,
+            userAgent: req.get('User-Agent')
+        });
 
         const { data, error } = yield supabase_1.supabase.auth.signInWithOAuth({
             provider: 'linkedin_oidc',
             options: {
-                redirectTo,
+                redirectTo: `${process.env.API_URL || 'https://api.aikuaiplatform.com/api'}/auth/linkedin/callback`,
                 queryParams: {
                     prompt: 'consent',
-                    from: isMobile ? 'mobile' : 'web',
+                    state: `${state}|${isMobile ? 'mobile' : 'web'}`, // State'e platform bilgisi ekle
                 },
             },
         });
+
         if (error) throw error;
         if (!data.url) throw new Error('Auth URL alınamadı');
 
         console.log('[LinkedIn Auth] Redirecting to:', data.url);
-        res.redirect(data.url);
+        
+        // Mobile'da URL'i döndür, web'de redirect yap
+        if (isMobile && req.get('Accept')?.includes('application/json')) {
+            res.json({ url: data.url });
+        } else {
+            res.redirect(data.url);
+        }
     } catch (error) {
         console.error('[LinkedIn Auth] Error:', error);
-        res.redirect(`${process.env.CLIENT_URL}/auth/login?error=linkedin-auth-failed`);
+        const errorUrl = process.env.CLIENT_URL 
+            ? `${process.env.CLIENT_URL}/auth/login?error=linkedin-auth-failed`
+            : 'yourapp://auth/linkedin-callback?error=linkedin-auth-failed';
+        res.redirect(errorUrl);
     }
 }));
 
 router.get('/auth/linkedin/callback', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { code, state, from } = req.query;
-    console.log('[LinkedIn Callback] Received:', { code, state, from });
+    const { code, state, error: oauthError } = req.query;
+    console.log('[LinkedIn Callback] Received:', { code, state, oauthError });
+
+    if (oauthError) {
+        console.error('[LinkedIn Callback] OAuth error:', oauthError);
+        return res.redirect(`yourapp://auth/linkedin-callback?error=${oauthError}`);
+    }
 
     if (!code) {
         console.error('[LinkedIn Callback] No code provided');
-        return res.redirect(`${process.env.CLIENT_URL}/auth/login?error=no-code`);
+        return res.redirect(`yourapp://auth/linkedin-callback?error=no-code`);
     }
 
     try {
+        // State'ten platform bilgisini çıkar
+        const [originalState, platform] = (state as string || '').split('|');
+        const isMobile = platform === 'mobile';
+        
+        console.log('[LinkedIn Callback] Platform:', { platform, isMobile });
+
+        // Supabase ile session exchange
         const { data, error } = yield supabase_1.supabase.auth.exchangeCodeForSession(code.toString());
         if (error) throw error;
 
-        console.log('[LinkedIn Callback] Session exchanged:', { userId: data.user?.id });
+        console.log('[LinkedIn Callback] Session exchanged:', { 
+            userId: data.user?.id,
+            email: data.user?.email 
+        });
 
+        // LinkedIn service ile kullanıcı bilgilerini işle
         const linkedInService = new linkedInService_1.LinkedInService();
         const authResult = yield linkedInService.handleAuth(data);
 
-        const isMobile = from === 'mobile';
-        const redirectUrl = isMobile 
-            ? `http://10.0.2.2:8081/auth/linkedin-callback?code=${code}&state=${state || ''}`
-            : `${process.env.CLIENT_URL}/auth/callback?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${state || ''}`;
+        console.log('[LinkedIn Callback] Auth result:', { 
+            token: authResult.token ? 'present' : 'missing',
+            userId: authResult.user?.id 
+        });
 
-        console.log('[LinkedIn Callback] Redirecting to:', redirectUrl);
-        res.redirect(redirectUrl);
+        // Mobile ise deep link ile redirect
+        if (isMobile) {
+            const deepLinkUrl = `yourapp://auth/linkedin-callback?token=${encodeURIComponent(authResult.token)}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${originalState}`;
+            console.log('[LinkedIn Callback] Mobile redirect:', deepLinkUrl);
+            res.redirect(deepLinkUrl);
+        } else {
+            // Web ise normal redirect
+            const webRedirectUrl = `${process.env.CLIENT_URL}/auth/callback?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${originalState}`;
+            console.log('[LinkedIn Callback] Web redirect:', webRedirectUrl);
+            res.redirect(webRedirectUrl);
+        }
+
     } catch (error) {
         console.error('[LinkedIn Callback] Error:', error);
-        res.redirect(`${process.env.CLIENT_URL}/auth/login?error=linkedin-callback-failed`);
+        const errorUrl = `yourapp://auth/linkedin-callback?error=linkedin-callback-failed&message=${encodeURIComponent(error.message || 'Unknown error')}`;
+        res.redirect(errorUrl);
     }
 }));
 
+// POST endpoint mobil uygulamadan direkt çağrı için
 router.post('/auth/linkedin/callback', linkedinAuth_controller_1.default.handleLinkedInCallback);
 
 exports.default = router;
