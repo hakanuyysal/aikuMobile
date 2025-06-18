@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Text as PaperText, Button, Portal, Modal, TextInput as PaperTextInput } from 'react-native-paper';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert } from 'react-native';
+import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Dimensions } from 'react-native';
@@ -17,18 +17,7 @@ const Startups = () => {
   const [search, setSearch] = useState('');
   const [startups, setStartups] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
   const { favorites, addToFavorites, removeFromFavorites, isFavorite } = useFavoritesStore();
-  const [newStartup, setNewStartup] = useState<Partial<Company>>({
-    companyName: '',
-    companyInfo: '',
-    companyWebsite: '',
-    companyAddress: '',
-    companySector: [],
-    businessModel: '',
-    companySize: '',
-    businessScale: '',
-  });
 
   useEffect(() => {
     fetchStartups();
@@ -39,15 +28,12 @@ const Startups = () => {
       setLoading(true);
       const data = await companyService.getStartups();
       const processedData = data.map(item => {
-        // Ensure _id is always defined. If not from backend, create a stable one for frontend use.
         if (!item._id) {
           console.warn(`Startup ${item.companyName} has undefined _id. Generating a stable temporary ID.`);
-          // Create a stable ID using companyName and companyWebsite for consistency across sessions
           return { ...item, _id: `${item.companyName}-${item.companyWebsite || 'no-website'}` };
         }
         return item;
       });
-      // processedData.forEach(item => console.log(`Fetched Startup (processed): ${item.companyName}, _id: ${item._id}`)); // Removed log
       setStartups(processedData);
     } catch (error) {
       Alert.alert('Hata', 'Startup\'lar yüklenirken bir hata oluştu.');
@@ -57,33 +43,10 @@ const Startups = () => {
     }
   };
 
-  const handleAddStartup = async () => {
-    try {
-      await companyService.addStartup(newStartup);
-      setModalVisible(false);
-      setNewStartup({
-        companyName: '',
-        companyInfo: '',
-        companyWebsite: '',
-        companyAddress: '',
-        companySector: [],
-        businessModel: '',
-        companySize: '',
-        businessScale: '',
-      });
-      fetchStartups();
-      Alert.alert('Başarılı', 'Startup başarıyla eklendi.');
-    } catch (error) {
-      Alert.alert('Hata', 'Startup eklenirken bir hata oluştu.');
-    }
-  };
-
   const handleToggleFavorite = (startup: Company) => {
-    // Now startup._id is guaranteed to be defined due to processing in fetchStartups
     const startupId = startup._id;
 
     if (isFavorite(startupId)) {
-      // console.log(`Removing from favorites: ${startup.companyName}, ID: ${startupId}`); // Removed log
       removeFromFavorites(startupId);
     } else {
       const favoriteStartupData = {
@@ -94,7 +57,6 @@ const Startups = () => {
         website: startup.companyWebsite,
         isHighlighted: startup.isHighlighted,
       };
-      // console.log(`Adding to favorites: ${startup.companyName}, ID: ${startupId}, isHighlighted: ${startup.isHighlighted}`); // Removed log
       addToFavorites(favoriteStartupData);
     }
   };
@@ -112,11 +74,7 @@ const Startups = () => {
   });
 
   const renderItem = ({ item }: { item: Company }) => {
-    // item._id is now guaranteed to be defined due to processing in fetchStartups
     const itemIdForFavoriteCheck = item._id;
-
-    // console.log(`Startups.tsx - Item for render: ${item.companyName}, _id (original): ${item._id}, ID for Favorite Check: ${itemIdForFavoriteCheck}, Is Favorite: ${isFavorite(itemIdForFavoriteCheck)}`); // Removed log
-
     const isCurrentlyFavorite = isFavorite(itemIdForFavoriteCheck);
     return (
       <View style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
@@ -211,9 +169,6 @@ const Startups = () => {
           <Icon name="chevron-back" size={24} color="#3B82F7" />
         </TouchableOpacity>
         <PaperText style={styles.header}>Startups</PaperText>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
-          <Icon name="add-circle-outline" size={24} color="#3B82F7" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -237,110 +192,6 @@ const Startups = () => {
         onRefresh={fetchStartups}
         extraData={favorites}
       />
-
-      <Portal>
-        <Modal
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <LinearGradient
-            colors={['#1E293B', '#0F172A']}
-            style={styles.modalGradient}
-          >
-            <KeyboardAvoidingView 
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.keyboardAvoidingView}
-            >
-              <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
-                keyboardShouldPersistTaps="handled"
-              >
-                <PaperText style={styles.modalTitle}>Add New Startup</PaperText>
-                <View style={styles.modalContent}>
-                  <PaperTextInput
-                    label="Company Name"
-                    value={newStartup.companyName}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companyName: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Description"
-                    value={newStartup.companyInfo}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companyInfo: text })}
-                    multiline
-                    numberOfLines={4}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Website"
-                    value={newStartup.companyWebsite}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companyWebsite: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Address"
-                    value={newStartup.companyAddress}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companyAddress: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Sectors (comma separated)"
-                    value={newStartup.companySector?.join(', ')}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companySector: text.split(',').map(s => s.trim()) })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Business Model"
-                    value={newStartup.businessModel}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, businessModel: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Company Size"
-                    value={newStartup.companySize}
-                    onChangeText={(text) => setNewStartup({ ...newStartup, companySize: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                </View>
-              </ScrollView>
-              <View style={styles.modalButtons}>
-                <Button 
-                  mode="outlined" 
-                  onPress={() => setModalVisible(false)} 
-                  style={[styles.modalButton, styles.cancelButton]}
-                  labelStyle={{ color: '#60A5FA' }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  mode="contained" 
-                  onPress={handleAddStartup} 
-                  style={[styles.modalButton, styles.submitButton]}
-                  labelStyle={{ color: '#fff' }}
-                >
-                  Add Startup
-                </Button>
-              </View>
-            </KeyboardAvoidingView>
-          </LinearGradient>
-        </Modal>
-      </Portal>
     </LinearGradient>
   );
 };
@@ -405,9 +256,6 @@ const styles = StyleSheet.create({
   cardContent: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  contentContainer: {
-    flex: 1,
   },
   companyHeader: {
     flexDirection: 'row',
@@ -474,66 +322,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-  addButton: {
-    marginLeft: 10,
-  },
-  modalContainer: {
-    margin: 0,
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalGradient: {
-    flex: 1,
-    padding: 24,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-  },
-  modalTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  modalContent: {
-    flex: 1,
-    paddingVertical: 16,
-  },
-  input: {
-    marginBottom: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    gap: 12,
-    marginBottom: 45,
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 8,
-    paddingVertical: 8,
-  },
-  cancelButton: {
-    borderColor: '#60A5FA',
-    borderWidth: 2,
-  },
-  submitButton: {},
   companyNameContainer: {
     flex: 1,
     flexDirection: 'row',

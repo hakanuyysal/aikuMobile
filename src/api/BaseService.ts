@@ -55,7 +55,6 @@ class BaseService {
 
   // 🔹 **PRODUCT API METOTLARI**
 
-  // Tüm ürünleri getirme
   async getAllProducts() {
     try {
       const response = await this.axios.get(`/product/all`);
@@ -65,7 +64,6 @@ class BaseService {
     }
   }
 
-  // Belirli bir ürünü ID'ye göre getir (getProductById)
   async getProductById(productId: string) {
     try {
       const response = await this.axios.get(`/product/${productId}`);
@@ -122,7 +120,7 @@ class BaseService {
     }
   }
 
-  async uploadBlogCover(blogId: string, file: any) { // Use 'any' for File type compatibility
+  async uploadBlogCover(blogId: string, file: any) {
     try {
       const formData = new FormData();
       formData.append('cover', file);
@@ -142,7 +140,7 @@ class BaseService {
     }
   }
 
-   async deleteBlogCover(blogId: string) {
+  async deleteBlogCover(blogId: string) {
     try {
       const response = await this.axios.delete(
         `/upload/blog-cover/${blogId}`
@@ -153,17 +151,38 @@ class BaseService {
     }
   }
 
+  // 🔹 **COMPANY API METOTLARI**
+
+  async createCompany(companyData: any) {
+    try {
+      const response = await this.axios.post('/companies', companyData);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // New method to get user companies
+  async getUserCompanies(userId: string) {
+    try {
+      const response = await this.axios.get(`/users/${userId}/companies`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // Hata yönetimi
   handleError(error: any) {
     console.error("API Hatası:", {
-     message: error.message,
-     status: error.response?.status,
-     data: error.response?.data || 'Response yok',
-     config: {
-       url: error.config?.url,
-       method: error.config?.method,
-       headers: error.config?.headers
-     }
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data || 'Response yok',
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
     });
 
     if (error.response) {
@@ -177,4 +196,4 @@ class BaseService {
   }
 }
 
-export default new BaseService(); 
+export default new BaseService();

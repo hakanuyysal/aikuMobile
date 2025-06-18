@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,11 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Colors} from '../constants/colors';
+import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
-import {productService} from '../services/api';
-import {AxiosError} from 'axios';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
+import { productService } from '../services/api'; // Güncellenmiş import
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
@@ -42,7 +41,7 @@ interface FormData {
   companyId: string;
 }
 
-const AddProduct = ({navigation}: Props) => {
+const AddProduct = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     productName: '',
@@ -86,15 +85,13 @@ const AddProduct = ({navigation}: Props) => {
       setLoading(true);
       const response = await productService.createProduct(formData);
       Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
-      navigation.navigate('ProductDetails', {id: response.product.id});
+      navigation.navigate('ProductDetails', { id: response.product.id });
     } catch (error: unknown) {
       Alert.alert('Hata', 'Ürün eklenirken bir hata oluştu.');
       console.error('Ürün ekleme hatası:', error);
-      if (error instanceof AxiosError) {
-        console.error('API Hatası Durumu:', error.response?.status);
-        console.error('API Hatası Verisi:', error.response?.data);
-      } else if (error instanceof Error) {
-        console.error('Genel Hata Mesajı:', error.message);
+      if (error instanceof Error) {
+        console.error('API Hatası Durumu:', (error as any).response?.status);
+        console.error('API Hatası Verisi:', (error as any).response?.data);
       }
     } finally {
       setLoading(false);
@@ -134,8 +131,8 @@ const AddProduct = ({navigation}: Props) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -145,8 +142,8 @@ const AddProduct = ({navigation}: Props) => {
             <Icon name="chevron-back" size={24} color={Colors.lightText} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add New Product</Text>
-          <TouchableOpacity 
-            style={[styles.saveButton, loading && styles.disabledButton]} 
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleAddProduct}
             disabled={loading}>
             {loading ? (
@@ -159,46 +156,46 @@ const AddProduct = ({navigation}: Props) => {
         <ScrollView style={styles.content}>
           <View style={styles.formContainer}>
             <Text style={styles.sectionTitle}>Product Information</Text>
-            
+
             {renderInputField(
               'Product Name',
               formData.productName,
-              (text) => setFormData({...formData, productName: text.trim()}),
+              (text) => setFormData({ ...formData, productName: text }),
               'Enter your product name',
             )}
 
             {renderInputField(
               'Product Logo URL',
               formData.productLogo,
-              (text) => setFormData({...formData, productLogo: text.trim()}),
+              (text) => setFormData({ ...formData, productLogo: text }),
               'Enter product logo URL',
             )}
 
             {renderInputField(
               'Product Category',
               formData.productCategory,
-              (text) => setFormData({...formData, productCategory: text.trim()}),
+              (text) => setFormData({ ...formData, productCategory: text }),
               'Select a category',
             )}
 
             {renderInputField(
               'Company Name',
               formData.companyName,
-              (text) => setFormData({...formData, companyName: text.trim()}),
+              (text) => setFormData({ ...formData, companyName: text }),
               'Select your company',
             )}
 
             {renderInputField(
               'Company ID',
               formData.companyId,
-              (text) => setFormData({...formData, companyId: text.trim()}),
+              (text) => setFormData({ ...formData, companyId: text }),
               'Enter company ID',
             )}
 
             {renderInputField(
               'Product Description',
               formData.productDescription,
-              (text) => setFormData({...formData, productDescription: text.trim()}),
+              (text) => setFormData({ ...formData, productDescription: text }),
               'Brief description of your product',
               true,
               500,
@@ -207,7 +204,7 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Detailed Description',
               formData.detailedDescription,
-              (text) => setFormData({...formData, detailedDescription: text.trim()}),
+              (text) => setFormData({ ...formData, detailedDescription: text }),
               'Provide more details about your product',
               true,
               3000,
@@ -220,7 +217,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter tags (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.tags.join(', ')}
-                onChangeText={(text) => setFormData({...formData, tags: text.split(',').map(tag => tag.trim())})}
+                onChangeText={(text) => setFormData({ ...formData, tags: text.split(',').map(tag => tag.trim()) })}
               />
             </View>
 
@@ -231,7 +228,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter problems (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.problems.join(', ')}
-                onChangeText={(text) => setFormData({...formData, problems: text.split(',').map(problem => problem.trim())})}
+                onChangeText={(text) => setFormData({ ...formData, problems: text.split(',').map(problem => problem.trim()) })}
               />
             </View>
 
@@ -242,7 +239,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter solutions (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.solutions.join(', ')}
-                onChangeText={(text) => setFormData({...formData, solutions: text.split(',').map(solution => solution.trim())})}
+                onChangeText={(text) => setFormData({ ...formData, solutions: text.split(',').map(solution => solution.trim()) })}
               />
             </View>
 
@@ -253,7 +250,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter improvements (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.improvements.join(', ')}
-                onChangeText={(text) => setFormData({...formData, improvements: text.split(',').map(improvement => improvement.trim())})}
+                onChangeText={(text) => setFormData({ ...formData, improvements: text.split(',').map(improvement => improvement.trim()) })}
               />
             </View>
 
@@ -264,7 +261,7 @@ const AddProduct = ({navigation}: Props) => {
                 placeholder="Enter key features (comma-separated)"
                 placeholderTextColor={Colors.lightText + '80'}
                 value={formData.keyFeatures.join(', ')}
-                onChangeText={(text) => setFormData({...formData, keyFeatures: text.split(',').map(feature => feature.trim())})}
+                onChangeText={(text) => setFormData({ ...formData, keyFeatures: text.split(',').map(feature => feature.trim()) })}
               />
             </View>
 
@@ -279,14 +276,14 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Release Date',
               formData.releaseDate,
-              (text) => setFormData({...formData, releaseDate: text.trim()}),
+              (text) => setFormData({ ...formData, releaseDate: text }),
               'gg.aa.yyyy',
             )}
 
             {renderInputField(
               'Product Price',
               formData.productPrice,
-              (text) => setFormData({...formData, productPrice: Number(text)}),
+              (text) => setFormData({ ...formData, productPrice: Number(text) || 0 }),
               'Enter product price',
               false,
               undefined,
@@ -296,21 +293,21 @@ const AddProduct = ({navigation}: Props) => {
             {renderInputField(
               'Product Website',
               formData.productWebsite,
-              (text) => setFormData({...formData, productWebsite: text.trim()}),
+              (text) => setFormData({ ...formData, productWebsite: text }),
               'Enter your product website',
             )}
 
             {renderInputField(
               'Product LinkedIn',
               formData.productLinkedIn,
-              (text) => setFormData({...formData, productLinkedIn: text.trim()}),
+              (text) => setFormData({ ...formData, productLinkedIn: text }),
               'Enter your product LinkedIn',
             )}
 
             {renderInputField(
               'Product X (Twitter)',
               formData.productTwitter,
-              (text) => setFormData({...formData, productTwitter: text.trim()}),
+              (text) => setFormData({ ...formData, productTwitter: text }),
               'Enter your product Twitter',
             )}
 
@@ -445,4 +442,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddProduct; 
+export default AddProduct;

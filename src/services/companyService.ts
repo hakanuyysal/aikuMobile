@@ -1,7 +1,8 @@
 import axios from 'axios';
+import Config from '../config/Config';
 
-const API_URL = 'http://10.0.2.2:3000/api'; // Android emülatör için localhost
-export const BASE_URL = 'http://10.0.2.2:3000';
+const API_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+export const BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com';
 
 // Axios instance oluştur
 const api = axios.create({

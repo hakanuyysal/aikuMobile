@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
-import { Text as PaperText, Button, Portal, Modal, TextInput as PaperTextInput } from 'react-native-paper';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Alert, Image } from 'react-native';
+import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
-import * as ImagePicker from 'react-native-image-picker';
-import type { ImageLibraryOptions, MediaType } from 'react-native-image-picker';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -16,19 +14,6 @@ const Investor = () => {
   const [search, setSearch] = useState('');
   const [investors, setInvestors] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newInvestor, setNewInvestor] = useState<Partial<Company>>({
-    companyName: '',
-    companyInfo: '',
-    companyWebsite: '',
-    companyAddress: '',
-    companySector: [],
-    businessModel: '',
-    companySize: '',
-    businessScale: '',
-    openForInvestments: false,
-  });
-  const [logoFile, setLogoFile] = useState<any>(null);
 
   useEffect(() => {
     fetchInvestors();
@@ -46,72 +31,6 @@ const Investor = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAddInvestor = async () => {
-    const formData = new FormData();
-    formData.append('companyName', newInvestor.companyName || '');
-    formData.append('companyInfo', newInvestor.companyInfo || '');
-    formData.append('companyWebsite', newInvestor.companyWebsite || '');
-    formData.append('companyAddress', newInvestor.companyAddress || '');
-    formData.append('companySector', JSON.stringify(newInvestor.companySector || []));
-    formData.append('businessModel', newInvestor.businessModel || '');
-    formData.append('companySize', newInvestor.companySize || '');
-    formData.append('businessScale', newInvestor.businessScale || '');
-    formData.append('companyType', 'Investor');
-
-    if (logoFile) {
-      formData.append('companyLogo', {
-        uri: logoFile.uri,
-        type: logoFile.type,
-        name: logoFile.fileName || 'upload.jpg',
-      });
-    }
-
-    try {
-      await companyService.addStartup(formData);
-      setModalVisible(false);
-      setNewInvestor({
-        companyName: '',
-        companyInfo: '',
-        companyWebsite: '',
-        companyAddress: '',
-        companySector: [],
-        businessModel: '',
-        companySize: '',
-        businessScale: '',
-        openForInvestments: false,
-      });
-      setLogoFile(null);
-      fetchInvestors();
-      Alert.alert('Success', 'Investor added successfully.');
-    } catch (error) {
-      console.error('Yatırımcı eklenirken hata:', error);
-      Alert.alert('Error', 'Failed to add investor.');
-    }
-  };
-
-  const selectLogo = () => {
-    const options: ImageLibraryOptions = {
-      mediaType: 'photo' as MediaType,
-      includeBase64: false,
-      maxHeight: 200,
-      maxWidth: 200,
-    };
-
-    ImagePicker.launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('Resim seçimi iptal edildi');
-      } else if (response.errorCode) {
-        console.log('ImagePicker Hatası: ', response.errorCode);
-        Alert.alert('Error', 'Failed to pick image.');
-      } else if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setLogoFile(asset);
-      } else {
-        Alert.alert('Error', 'Failed to pick image.');
-      }
-    });
   };
 
   const filteredInvestors = investors.filter(
@@ -212,9 +131,6 @@ const Investor = () => {
           <Icon name="chevron-back" size={24} color="#3B82F7" />
         </TouchableOpacity>
         <PaperText style={styles.header}>Investors</PaperText>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addButton}>
-          <Icon name="add-circle-outline" size={24} color="#3B82F7" />
-        </TouchableOpacity>
       </View>
       <View style={styles.searchContainer}>
         <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
@@ -235,123 +151,6 @@ const Investor = () => {
         refreshing={loading}
         onRefresh={fetchInvestors}
       />
-
-      <Portal>
-        <Modal
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <LinearGradient
-            colors={['#1E293B', '#0F172A']}
-            style={styles.modalGradient}
-          >
-            <KeyboardAvoidingView 
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.keyboardAvoidingView}
-            >
-              <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
-                keyboardShouldPersistTaps="handled"
-              >
-                <PaperText style={styles.modalTitle}>Add New Investor</PaperText>
-                <View style={styles.modalContent}>
-                  <PaperTextInput
-                    label="Company Name"
-                    value={newInvestor.companyName}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyName: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Description"
-                    value={newInvestor.companyInfo}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyInfo: text })}
-                    multiline
-                    numberOfLines={4}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Website"
-                    value={newInvestor.companyWebsite}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyWebsite: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Address"
-                    value={newInvestor.companyAddress}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companyAddress: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Sectors (comma separated)"
-                    value={newInvestor.companySector?.join(', ')}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companySector: text.split(',').map(s => s.trim()) })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Business Model"
-                    value={newInvestor.businessModel}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, businessModel: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Company Size"
-                    value={newInvestor.companySize}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, companySize: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-                  <PaperTextInput
-                    label="Business Scale"
-                    value={newInvestor.businessScale}
-                    onChangeText={(text) => setNewInvestor({ ...newInvestor, businessScale: text })}
-                    style={styles.input}
-                    mode="outlined"
-                    theme={{ colors: { primary: '#60A5FA' } }}
-                  />
-
-                  <Button mode="outlined" onPress={selectLogo} style={styles.logoButton} labelStyle={{ color: '#60A5FA' }}>
-                    {logoFile ? 'Change Logo' : 'Choose Logo'}
-                  </Button>
-                  {logoFile && <PaperText style={styles.fileNameText}>{logoFile.fileName}</PaperText>}
-                </View>
-              </ScrollView>
-              <View style={styles.modalButtons}>
-                <Button 
-                  mode="outlined" 
-                  onPress={() => setModalVisible(false)} 
-                  style={[styles.modalButton, styles.cancelButton]}
-                  labelStyle={{ color: '#60A5FA' }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  mode="contained" 
-                  onPress={handleAddInvestor} 
-                  style={[styles.modalButton, styles.submitButton]}
-                  labelStyle={{ color: '#fff' }}
-                >
-                  Add Investor
-                </Button>
-              </View>
-            </KeyboardAvoidingView>
-          </LinearGradient>
-        </Modal>
-      </Portal>
     </LinearGradient>
   );
 };
@@ -377,9 +176,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     flex: 1,
     textAlign: 'center',
-  },
-  addButton: {
-    marginLeft: 10,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -494,73 +290,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  modalContainer: {
-    margin: 0,
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalGradient: {
-    flex: 1,
-    padding: 24,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-  },
-  modalTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  modalContent: {
-    flex: 1,
-    paddingVertical: 16,
-  },
-  input: {
-    marginBottom: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    gap: 12,
-    marginBottom: 45,
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 8,
-    paddingVertical: 8,
-  },
-  cancelButton: {
-    borderColor: '#60A5FA',
-    borderWidth: 2,
-  },
-  submitButton: {
-    backgroundColor: '#60A5FA',
-  },
-  logoButton: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  fileNameText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    marginBottom: 16,
-  },
+  }
 });
