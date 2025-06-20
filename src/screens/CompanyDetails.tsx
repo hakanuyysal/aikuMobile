@@ -22,9 +22,11 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import DocumentPicker from 'react-native-file-picker';
+import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
@@ -66,16 +68,41 @@ const sectors = [
   'Transportation & Logistics',
 ];
 
+interface Company {
+  _id: string;
+  companyName: string;
+  companyLogo?: string;
+  companyType?: string;
+  openForInvestments?: boolean;
+  incorporated?: string;
+  companySector?: string;
+  companySize?: string;
+  businessModel?: string;
+  businessScale?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  companyInfo?: string;
+  detailedInfo?: string;
+  companyAddress?: string;
+  companyWebsite?: string;
+  companyLinkedIn?: string;
+  companyInstagram?: string;
+  companyTwitter?: string;
+  acceptMessages?: boolean;
+  teamMembers?: string;
+}
+
 const CompanyDetails = ({ navigation }: Props) => {
+  const { user } = useAuth(); // Get user from auth context
   const [modalVisible, setModalVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     companyName: '',
-    companyLogo: null,
+    companyLogo: null as string | null,
     companyType: 'Startup',
     openForInvestments: false,
     incorporated: 'No',
-    companySector: [],
+    companySector: [] as string[],
     companySize: '',
     businessModel: '',
     businessScale: '',
@@ -89,13 +116,14 @@ const CompanyDetails = ({ navigation }: Props) => {
     companyInstagram: '',
     companyTwitter: '',
     acceptMessages: false,
-    teamMembers: [],
+    teamMembers: [] as string[],
   });
-  const [companies, setCompanies] = useState([]);
-  const [editingCompanyId, setEditingCompanyId] = useState(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [slideAnim] = useState(new Animated.Value(0));
   const [visibleSteps, setVisibleSteps] = useState(5);
+  const [sectorPickerVisible, setSectorPickerVisible] = useState(false);
 
   const [aiModalVisible, setAiModalVisible] = useState(false);
   const [aiWebsite, setAiWebsite] = useState('');
@@ -103,19 +131,20 @@ const CompanyDetails = ({ navigation }: Props) => {
   const [aiError, setAiError] = useState('');
   const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>('https://');
   const [aiTab, setAiTab] = useState<'select' | 'website' | 'file' | 'loading'>('select');
-  const [aiFile, setAiFile] = useState<any>(null);
+  const [aiFile, setAiFile] = useState<DocumentPickerResponse | null>(null);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
 
-  // Manuel axios instance with full URL for testing
+  // Axios instance for API calls
   const api = axios.create({
-    baseURL: 'https://api.aikuaiplatform.com/api',
+    baseURL: 'https://api.aikuaiplatform.com/api', // Adjust port if backend runs on a different port
     headers: { 'Content-Type': 'application/json' },
   });
 
-  // Token ekleme (örnek, gerçek token ile değiştirin)
-  api.interceptors.request.use(config => {
-    const token = 'your-jwt-token'; // Gerçek token alma mantığını buraya ekleyin
+  // Add token to requests
+  api.interceptors.request.use(async (config) => {
+    const token = await AsyncStorage.getItem('token');
+    console.log('API Token:', token); // Debug log
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -146,39 +175,83 @@ const CompanyDetails = ({ navigation }: Props) => {
   ];
 
   useEffect(() => {
+    console.log('Auth user:', user); // Debug log
     fetchCompanies();
   }, []);
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      console.log('Fetching from:', `${api.defaults.baseURL}/company/current`);
-      const response = await api.get('/company/current');
-      setCompanies(response.data);
-    } catch (error) {
+
+      // Kullanıcı ID'sini al
+      const userId = user?._id || user?.id;
+      if (!userId) {
+        Alert.alert('Hata', 'Kullanıcı ID\'si bulunamadı, lütfen tekrar giriş yapın.');
+        setCompanies([]);
+        setLoading(false);
+        return;
+      }
+
+      // Query parametresi ile istek at
+      const response = await api.get(`/company/current?userId=${userId}`);
+      const companies = (response.data.companies || []).map((company: any) => ({
+        ...company,
+        _id: company._id || company.id,
+      }));
+      setCompanies(companies);
+    } catch (error: any) {
+      let errorMsg = 'Şirketler alınamadı. Ağ bağlantınızı veya giriş durumunuzu kontrol edin.';
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMsg = 'Yetkisiz. Lütfen tekrar giriş yapın.';
+        } else if (error.response.status === 404) {
+          errorMsg = 'Endpoint /company/current bulunamadı. Backend çalışıyor mu ve route doğru mu?';
+        } else if (error.response.data && error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
       console.error('Error fetching companies:', error.response ? error.response.data : error.message);
-      const errorMsg = error.response?.status === 404
-        ? 'Endpoint /company/current not found. Ensure server is running at http://10.0.2.2:8081 and the /company/current route is defined in your Express app.'
-        : 'Failed to fetch companies. Check network or server status.';
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Hata', errorMsg);
+      setCompanies([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const validateForm = () => {
-    const requiredFields = [
-      'companyName',
-      'companyType',
-      'businessModel',
-      'companySector',
-      'companySize',
-      'summarizedInfo',
-      'companyWebsite',
+  const validateForm = (stepIndex?: number) => {
+    const mandatoryFields = [
+      { key: 'companyName', label: 'Company Name' },
+      { key: 'companyType', label: 'Company Type' },
+      { key: 'companySize', label: 'Company Size' },
+      { key: 'businessModel', label: 'Business Model' },
+      { key: 'businessScale', label: 'Business Scale' },
+      { key: 'summarizedInfo', label: 'Summarized Company Information' },
+      { key: 'detailedInfo', label: 'Detailed Company Information' },
+      { key: 'companyAddress', label: 'Company Address' },
+      { key: 'companyWebsite', label: 'Company Website' },
+      { key: 'companySector', label: 'Company Sector' },
+      { key: 'companyPhone', label: 'Company Phone Number' },
     ];
-    for (const field of requiredFields) {
-      if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
-        return { isValid: false, message: `${formSteps.find(step => step.key === field).label} is required.` };
+
+    // If validating a specific step, check only the field for that step
+    if (stepIndex !== undefined) {
+      const stepField = mandatoryFields.find(field => formSteps[stepIndex].key === field.key);
+      if (stepField) {
+        const value = formData[stepField.key];
+        if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
+          return { isValid: false, message: `${stepField.label} is required.` };
+        }
+      }
+      return { isValid: true };
+    }
+
+    // Full form validation
+    for (const field of mandatoryFields) {
+      const value = formData[field.key];
+      if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
+        return { isValid: false, message: `${field.label} is required.` };
       }
     }
     if (formData.companyEmail && !/\S+@\S+\.\S+/.test(formData.companyEmail)) {
@@ -204,18 +277,18 @@ const CompanyDetails = ({ navigation }: Props) => {
         companySize: formData.companySize,
         companyInfo: formData.summarizedInfo,
         companyWebsite: formData.companyWebsite,
-        companyEmail: formData.companyEmail || undefined,
-        companyPhone: formData.companyPhone || undefined,
-        companyAddress: formData.companyAddress || undefined,
-        companyLinkedIn: formData.companyLinkedIn || undefined,
-        companyTwitter: formData.companyTwitter || undefined,
+        companyEmail: formData.companyEmail || '',
+        companyPhone: formData.companyPhone || '',
+        companyAddress: formData.companyAddress,
+        companyLinkedIn: formData.companyLinkedIn || '',
+        companyTwitter: formData.companyTwitter || '',
         openForInvestments: formData.openForInvestments,
         incorporated: formData.incorporated,
-        businessScale: formData.businessScale || undefined,
-        detailedInfo: formData.detailedInfo || undefined,
-        companyInstagram: formData.companyInstagram || undefined,
+        businessScale: formData.businessScale,
+        detailedDescription: formData.detailedInfo, // Changed to match backend field name
+        companyInstagram: formData.companyInstagram || '',
         acceptMessages: formData.acceptMessages,
-        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers.join(', ') : undefined,
+        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers.join(', ') : '',
       };
 
       let response;
@@ -261,7 +334,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     }
   };
 
-  const handleEditCompany = (company) => {
+  const handleEditCompany = (company: Company) => {
     setEditingCompanyId(company._id);
     setFormData({
       companyName: company.companyName || '',
@@ -288,7 +361,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     setModalVisible(true);
   };
 
-  const handleDeleteCompany = async (companyId) => {
+  const handleDeleteCompany = async (companyId: string) => {
     Alert.alert(
       'Confirm Deletion',
       'Are you sure you want to delete this company?',
@@ -316,6 +389,11 @@ const CompanyDetails = ({ navigation }: Props) => {
   };
 
   const handleNext = () => {
+    const validation = validateForm(currentStep);
+    if (!validation.isValid) {
+      Alert.alert('Validation Error', validation.message);
+      return;
+    }
     if (currentStep < formSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -329,13 +407,26 @@ const CompanyDetails = ({ navigation }: Props) => {
     }
   };
 
-  const handleInputChange = (key, value) => {
+  const handleInputChange = (key: string, value: any) => {
     setFormData({ ...formData, [key]: value });
   };
 
   const renderStep = () => {
     const startIndex = Math.floor(currentStep / 5) * 5;
     const visibleFormSteps = formSteps.slice(startIndex, startIndex + 5);
+    const mandatoryFields = [
+      'companyName',
+      'companyType',
+      'companySize',
+      'businessModel',
+      'businessScale',
+      'summarizedInfo',
+      'detailedInfo',
+      'companyAddress',
+      'companyWebsite',
+      'companySector',
+      'companyPhone',
+    ];
 
     return (
       <ScrollView style={styles.formScrollView}>
@@ -343,10 +434,13 @@ const CompanyDetails = ({ navigation }: Props) => {
           {visibleFormSteps.map((step, index) => {
             const actualIndex = startIndex + index;
             const isActive = actualIndex === currentStep;
+            const isMandatory = mandatoryFields.includes(step.key);
 
             return (
               <View key={step.key} style={[styles.stepContainer, isActive && styles.activeStep]}>
-                <Text style={[styles.label, isActive && styles.activeLabel]}>{step.label}</Text>
+                <Text style={[styles.label, isActive && styles.activeLabel]}>
+                  {step.label} {isMandatory && <Text style={{ color: 'red' }}>*</Text>}
+                </Text>
                 {renderStepContent(step, isActive)}
               </View>
             );
@@ -357,7 +451,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     );
   };
 
-  const renderStepContent = (step, isActive) => {
+  const renderStepContent = (step: any, isActive: boolean) => {
     if (!isActive) return null;
 
     switch (step.type) {
@@ -379,7 +473,8 @@ const CompanyDetails = ({ navigation }: Props) => {
             selectedValue={formData[step.key]}
             style={styles.picker}
             onValueChange={value => handleInputChange(step.key, value)}>
-            {step.options.map(option => (
+            <Picker.Item label={`Select ${step.label}`} value="" />
+            {step.options.map((option: string) => (
               <Picker.Item key={option} label={option} value={option} />
             ))}
           </Picker>
@@ -399,30 +494,15 @@ const CompanyDetails = ({ navigation }: Props) => {
         );
       case 'multi-select':
         return (
-          <View style={styles.multiSelectContainer}>
-            <FlatList
-              data={step.options}
-              keyExtractor={item => item}
-              nestedScrollEnabled={true}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.checkbox}
-                  onPress={() => {
-                    const updatedSectors = formData[step.key].includes(item)
-                      ? formData[step.key].filter(sector => sector !== item)
-                      : [...formData[step.key], item];
-                    handleInputChange(step.key, updatedSectors);
-                  }}>
-                  <MaterialIcons
-                    name={formData[step.key].includes(item) ? 'check-box' : 'check-box-outline-blank'}
-                    size={24}
-                    color={Colors.primary}
-                  />
-                  <Text style={styles.checkboxText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.pickerButton}
+            onPress={() => setSectorPickerVisible(true)}>
+            <Text style={styles.pickerButtonText}>
+              {formData.companySector.length > 0
+                ? formData.companySector.join(', ')
+                : 'Select Sectors'}
+            </Text>
+          </TouchableOpacity>
         );
       case 'file':
         return (
@@ -488,7 +568,7 @@ const CompanyDetails = ({ navigation }: Props) => {
             companyLogo: response.data.companyLogo || prev.companyLogo,
             companyName: response.data.companyName || prev.companyName,
             summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
-            detailedInfo: response.data.detailedInfo || prev.detailedInfo,
+            detailedInfo: response.data.detailedDescription || response.data.detailedInfo || prev.detailedInfo,
             companySector: response.data.companySector || prev.companySector,
             companySize: response.data.companySize || prev.companySize,
             businessModel: response.data.businessModel || prev.businessModel,
@@ -521,7 +601,7 @@ const CompanyDetails = ({ navigation }: Props) => {
           uri: aiFile.uri,
           type: aiFile.type,
           name: aiFile.name,
-        });
+        } as any);
         const response = await api.post('/ai/analyze-document', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -531,7 +611,7 @@ const CompanyDetails = ({ navigation }: Props) => {
             companyLogo: response.data.companyLogo || prev.companyLogo,
             companyName: response.data.companyName || prev.companyName,
             summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
-            detailedInfo: response.data.detailedInfo || prev.detailedInfo,
+            detailedInfo: response.data.detailedDescription || response.data.detailedInfo || prev.detailedInfo,
             companySector: response.data.companySector || prev.companySector,
             companySize: response.data.companySize || prev.companySize,
             businessModel: response.data.businessModel || prev.businessModel,
@@ -554,6 +634,7 @@ const CompanyDetails = ({ navigation }: Props) => {
         }
       }
     } catch (err) {
+      console.error('AI fill error:', err);
       setAiError('Could not connect to AI service.');
       clearInterval(interval);
     } finally {
@@ -573,7 +654,9 @@ const CompanyDetails = ({ navigation }: Props) => {
       });
       setAiFile(res);
     } catch (err) {
-      if (!DocumentPicker.isCancel(err)) setAiError('File selection failed.');
+      if (!DocumentPicker.isCancel(err)) {
+        setAiError('File selection failed.');
+      }
     }
   };
 
@@ -855,6 +938,48 @@ const CompanyDetails = ({ navigation }: Props) => {
                       </View>
                     </View>
                   </Modal>
+                  <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={sectorPickerVisible}
+                    onRequestClose={() => setSectorPickerVisible(false)}>
+                    <View style={styles.modalBackdrop}>
+                      <View style={styles.sectorPickerModal}>
+                        <View style={styles.modalHeader}>
+                          <Text style={styles.modalTitle}>Select Company Sectors</Text>
+                          <TouchableOpacity onPress={() => setSectorPickerVisible(false)}>
+                            <Icon name="close" size={24} color={Colors.lightText} />
+                          </TouchableOpacity>
+                        </View>
+                        <FlatList
+                          data={sectors}
+                          keyExtractor={item => item}
+                          renderItem={({ item }) => (
+                            <TouchableOpacity
+                              style={styles.checkbox}
+                              onPress={() => {
+                                const updatedSectors = formData.companySector.includes(item)
+                                  ? formData.companySector.filter(sector => sector !== item)
+                                  : [...formData.companySector, item];
+                                handleInputChange('companySector', updatedSectors);
+                              }}>
+                              <MaterialIcons
+                                name={formData.companySector.includes(item) ? 'check-box' : 'check-box-outline-blank'}
+                                size={24}
+                                color={Colors.primary}
+                              />
+                              <Text style={styles.checkboxText}>{item}</Text>
+                            </TouchableOpacity>
+                          )}
+                        />
+                        <TouchableOpacity
+                          style={styles.navButton}
+                          onPress={() => setSectorPickerVisible(false)}>
+                          <Text style={styles.navButtonText}>Done</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </Modal>
                   <Animated.View style={[styles.modalContent]}>
                     <View style={styles.progressContainer}>
                       {Array(Math.ceil(formSteps.length / 5)).fill(0).map((_, idx) => (
@@ -960,14 +1085,32 @@ const styles = StyleSheet.create({
   navButton: { backgroundColor: Colors.primary, borderRadius: metrics.borderRadius.md, padding: metrics.padding.md, flex: 1, alignItems: 'center', marginHorizontal: metrics.margin.sm },
   navButtonText: { color: Colors.lightText, fontSize: metrics.fontSize.md, fontWeight: '500' },
   stepContainer: { marginBottom: metrics.margin.md, padding: metrics.padding.md, borderRadius: metrics.borderRadius.md, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  activeStep: { backgroundColor: 'rgba(59,130,247,0.1)', borderColor: Colors.primary },
+  activeStep: { backgroundColor: 'rgba(59, 130, 247, 0.1)', borderColor: Colors.primary },
   activeLabel: { color: Colors.primary, fontWeight: 'bold' },
   progressContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: metrics.margin.md },
   progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 4 },
   activeProgressDot: { backgroundColor: Colors.primary },
-  formScrollView: { flex: 1, marginBottom: 80 },
   bottomPadding: { height: 20 },
   multiSelectContainer: { maxHeight: 200 },
+  pickerButton: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: metrics.borderRadius.md
+  },
+  pickerButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+  },
+  sectorPickerModal: {
+    backgroundColor: '#1A1E',
+    borderRadius: metrics.borderRadius.lg,
+    padding: metrics.padding.md,
+    margin: metrics.margin.lg,
+    maxHeight: '80%',
+  },
 });
 
 export default CompanyDetails;

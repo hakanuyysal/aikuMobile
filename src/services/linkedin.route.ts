@@ -23,10 +23,14 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
         const isMobile = req.query.from === 'mobile';
         const state = req.query.state || Math.random().toString(36).substring(2, 15);
         
-        // Mobile için custom scheme, web için normal URL
+        // Kimlik bilgilerini sabit olarak tanımlama
+        const LINKEDIN_CLIENT_ID = '77sndgcd7twnio';
+        const LINKEDIN_CLIENT_SECRET = 'WPL_AP1.H2wHu0LZH6lsopYR.9+0DAw==';
+        const LINKEDIN_REDIRECT_URI = 'https://aikuaiplatform.com/auth/social-callback';
+
         const redirectTo = isMobile 
             ? 'yourapp://auth/linkedin-callback' 
-            : `${process.env.CLIENT_URL}/auth/callback`;
+            : LINKEDIN_REDIRECT_URI;
         
         console.log('[LinkedIn Auth] Initiating OAuth', { 
             redirectTo, 
@@ -36,9 +40,9 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
 
         const { data, error } = yield supabase_1.supabase.auth.signInWithOAuth({
-            provider: 'linkedin_oidc',
+            provider: 'linkedin', // linkedin_oidc yerine linkedin
             options: {
-                redirectTo: `${process.env.API_URL || 'https://api.aikuaiplatform.com/api'}/auth/linkedin/callback`,
+                redirectTo: LINKEDIN_REDIRECT_URI,
                 queryParams: {
                     prompt: 'consent',
                     state: `${state}|${isMobile ? 'mobile' : 'web'}`, // State'e platform bilgisi ekle
@@ -60,7 +64,7 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
     } catch (error) {
         console.error('[LinkedIn Auth] Error:', error);
         const errorUrl = process.env.CLIENT_URL 
-            ? `${process.env.CLIENT_URL}/auth/login?error=linkedin-auth-failed`
+            ? `yourapp://auth/login?error=linkedin-auth-failed`
             : 'yourapp://auth/linkedin-callback?error=linkedin-auth-failed';
         res.redirect(errorUrl);
     }
@@ -112,7 +116,7 @@ router.get('/auth/linkedin/callback', (req, res) => __awaiter(void 0, void 0, vo
             res.redirect(deepLinkUrl);
         } else {
             // Web ise normal redirect
-            const webRedirectUrl = `${process.env.CLIENT_URL}/auth/callback?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${originalState}`;
+            const webRedirectUrl = `${process.env.CLIENT_URL || 'https://aikuaiplatform.com'}/auth/callback?token=${authResult.token}&user=${encodeURIComponent(JSON.stringify(authResult.user))}&state=${originalState}`;
             console.log('[LinkedIn Callback] Web redirect:', webRedirectUrl);
             res.redirect(webRedirectUrl);
         }

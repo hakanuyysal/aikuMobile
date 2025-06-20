@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     width: metrics.WIDTH,
     position: 'absolute',
-    bottom: 0,
+    bottom: 22,
     left: 0,
     right: 0,
   },
