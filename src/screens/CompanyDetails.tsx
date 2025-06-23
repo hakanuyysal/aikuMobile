@@ -160,7 +160,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     { label: 'Company Sector', key: 'companySector', type: 'multi-select', options: sectors },
     { label: 'Company Size', key: 'companySize', type: 'picker', options: ['1-10', '11-50', '51-200', '201+'] },
     { label: 'Business Model', key: 'businessModel', type: 'picker', options: ['B2B', 'B2C', 'C2C', 'Other'] },
-    { label: 'Business Scale', key: 'businessScale', type: 'picker', options: ['Local', 'Regional', 'National', 'Global'] },
+    { label: 'Business Scale', key: 'businessScale', type: 'picker', options: ['Micro', 'Small', 'Medium', 'Large'] },
     { label: 'Company Email', key: 'companyEmail', type: 'text', placeholder: 'Enter your company email' },
     { label: 'Company Phone Number', key: 'companyPhone', type: 'text', placeholder: 'Enter your phone number' },
     { label: 'Summarized Company Information', key: 'summarizedInfo', type: 'text', placeholder: 'Enter your summarized company information', maxLength: 500 },
@@ -1105,7 +1105,6 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
   },
   sectorPickerModal: {
-    backgroundColor: '#1A1E',
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.md,
     margin: metrics.margin.lg,

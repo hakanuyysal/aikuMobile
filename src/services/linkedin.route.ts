@@ -22,39 +22,32 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
     try {
         const isMobile = req.query.from === 'mobile';
         const state = req.query.state || Math.random().toString(36).substring(2, 15);
-        
-        // Kimlik bilgilerini sabit olarak tanımlama
-        const LINKEDIN_CLIENT_ID = '77sndgcd7twnio';
-        const LINKEDIN_CLIENT_SECRET = 'WPL_AP1.H2wHu0LZH6lsopYR.9+0DAw==';
+        // Sabit client id/secret tanımlarını kaldırdım, Supabase panelinden yönetilmeli
         const LINKEDIN_REDIRECT_URI = 'https://aikuaiplatform.com/auth/social-callback';
-
         const redirectTo = isMobile 
-            ? 'yourapp://auth/linkedin-callback' 
+            ? 'testapp://lms/' 
             : LINKEDIN_REDIRECT_URI;
-        
         console.log('[LinkedIn Auth] Initiating OAuth', { 
             redirectTo, 
             isMobile, 
             state,
             userAgent: req.get('User-Agent')
         });
-
+        // Provider'ı linkedin_oidc olarak düzelttim ve redirectTo'yu dinamik gönderdim
         const { data, error } = yield supabase_1.supabase.auth.signInWithOAuth({
-            provider: 'linkedin', // linkedin_oidc yerine linkedin
+            provider: 'linkedin_oidc',
             options: {
-                redirectTo: LINKEDIN_REDIRECT_URI,
+                redirectTo: redirectTo,
                 queryParams: {
                     prompt: 'consent',
-                    state: `${state}|${isMobile ? 'mobile' : 'web'}`, // State'e platform bilgisi ekle
+                    state: `${state}|${isMobile ? 'mobile' : 'web'}`,
+                    scope: 'r_liteprofile r_emailaddress'
                 },
             },
         });
-
         if (error) throw error;
         if (!data.url) throw new Error('Auth URL alınamadı');
-
         console.log('[LinkedIn Auth] Redirecting to:', data.url);
-        
         // Mobile'da URL'i döndür, web'de redirect yap
         if (isMobile && req.get('Accept')?.includes('application/json')) {
             res.json({ url: data.url });
@@ -64,8 +57,8 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
     } catch (error) {
         console.error('[LinkedIn Auth] Error:', error);
         const errorUrl = process.env.CLIENT_URL 
-            ? `yourapp://auth/login?error=linkedin-auth-failed`
-            : 'yourapp://auth/linkedin-callback?error=linkedin-auth-failed';
+            ? `testapp://lms/?error=linkedin-auth-failed`
+            : 'testapp://lms/?error=linkedin-auth-failed';
         res.redirect(errorUrl);
     }
 }));

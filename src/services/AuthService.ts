@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 import { Linking } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useEffect } from 'react';
 
 interface UserData {
   email: string;

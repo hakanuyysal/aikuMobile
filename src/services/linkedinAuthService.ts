@@ -1,12 +1,5 @@
 import { supabase } from '../config/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Config from 'react-native-config';
-
-interface LinkedInAuthState {
-  state: string;
-  timestamp: number;
-  platform: 'mobile' | 'web';
-}
 
 class LinkedInAuthService {
   private authPromise: Promise<any> | null = null;
@@ -15,35 +8,30 @@ class LinkedInAuthService {
   private readonly STATE_EXPIRY = 15 * 60 * 1000; // 15 dakika
 
   /**
-   * LinkedIn kimlik doğrulama URL'sini oluşturur
+   * LinkedIn kimlik doğrulama URL'sini oluşturur (Supabase ile doğrudan)
    */
   async getLinkedInAuthURL() {
-    console.log('getLinkedInAuthURL çağrıldı');
     try {
       const state = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-      const authState: LinkedInAuthState = {
+      const authState = {
         state,
         timestamp: Date.now(),
-        platform: 'mobile'
+        platform: 'mobile',
       };
-
       await AsyncStorage.setItem('linkedin_auth_state', JSON.stringify(authState));
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${Config.API_URL || 'https://api.aikuaiplatform.com/api'}/auth/linkedin/callback`,
+          redirectTo: 'testapp://lms/',
           queryParams: {
             prompt: 'consent',
             state: `${state}|mobile`,
-            scope: 'r_liteprofile r_emailaddress'
+            scope: 'r_liteprofile r_emailaddress',
           },
         },
       });
-
       if (error) throw error;
       if (!data.url) throw new Error('Auth URL alınamadı');
-
       return data.url;
     } catch (error) {
       console.error('LinkedIn auth URL oluşturma hatası:', error);
@@ -52,65 +40,44 @@ class LinkedInAuthService {
   }
 
   /**
-   * LinkedIn ile giriş işlemini başlatır
-   * Bu metod artık sadece promise'i yönetiyor, URL'yi döndürmüyor. URL, doğrudan WebView tarafından alınacak.
+   * LinkedIn ile giriş işlemini başlatır (Promise yönetimi)
    */
   async signInWithLinkedIn(): Promise<any> {
     if (this.authPromise) {
       return this.authPromise;
     }
-
     this.authPromise = new Promise((resolve, reject) => {
       this.resolveAuth = resolve;
       this.rejectAuth = reject;
     });
-
-    return this.authPromise; // Promise'i döndür, URL'yi WebView yönetecek
+    return this.authPromise;
   }
 
   /**
-   * LinkedIn callback'ini işler
+   * LinkedIn callback'ini işler (Supabase ile doğrudan kodu exchange eder)
    */
   async handleCallback(code: string, state: string) {
     try {
+      console.log('Callbackte gelen state:', state);
       const storedStateStr = await AsyncStorage.getItem('linkedin_auth_state');
+      console.log("AsyncStorage'daki state:", storedStateStr);
       if (!storedStateStr) {
         throw new Error('State bilgisi bulunamadı');
       }
-
-      const storedState: LinkedInAuthState = JSON.parse(storedStateStr);
-      
-      // State süresini kontrol et
+      const storedState = JSON.parse(storedStateStr);
       if (Date.now() - storedState.timestamp > this.STATE_EXPIRY) {
         throw new Error('State süresi dolmuş');
       }
-
-      // State eşleşmesini kontrol et
       if (state !== storedState.state) {
         throw new Error('State uyuşmazlığı');
       }
-
       // Supabase ile oturum değişimi
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) throw error;
-
-      // LinkedIn profil bilgilerini al
-      const profileData = await this.fetchLinkedInProfile(data.session?.access_token);
-      
-      // Analiz sonuçlarını al
-      const analysisResult = await this.analyzeLinkedInData(profileData);
-
-      const result = {
-        ...data,
-        profile: profileData,
-        analysis: analysisResult
-      };
-
       if (this.resolveAuth) {
-        this.resolveAuth(result);
+        this.resolveAuth(data);
       }
-
-      return result;
+      return data;
     } catch (error) {
       if (this.rejectAuth) {
         this.rejectAuth(error);
@@ -155,7 +122,7 @@ class LinkedInAuthService {
    */
   async analyzeLinkedInData(linkedInData: any) {
     try {
-      const response = await fetch(`${Config.API_URL || 'https://api.aikuaiplatform.com/api'}/analyze-linkedin`, {
+      const response = await fetch(`${ 'https://api.aikuaiplatform.com/api'}/analyze-linkedin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
