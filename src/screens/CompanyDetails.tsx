@@ -27,6 +27,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
+import countryCodes from '../services/countryCodes.json';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
@@ -108,6 +110,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     businessScale: '',
     companyEmail: '',
     companyPhone: '',
+    companyPhoneCountryCode: '+90',
     summarizedInfo: '',
     detailedInfo: '',
     companyAddress: '',
@@ -162,7 +165,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     { label: 'Business Model', key: 'businessModel', type: 'picker', options: ['B2B', 'B2C', 'C2C', 'Other'] },
     { label: 'Business Scale', key: 'businessScale', type: 'picker', options: ['Micro', 'Small', 'Medium', 'Large'] },
     { label: 'Company Email', key: 'companyEmail', type: 'text', placeholder: 'Enter your company email' },
-    { label: 'Company Phone Number', key: 'companyPhone', type: 'text', placeholder: 'Enter your phone number' },
+    { label: 'Company Phone Number', key: 'companyPhone', type: 'phone', placeholder: 'Enter your phone number' },
     { label: 'Summarized Company Information', key: 'summarizedInfo', type: 'text', placeholder: 'Enter your summarized company information', maxLength: 500 },
     { label: 'Detailed Company Information', key: 'detailedInfo', type: 'text', placeholder: 'Enter your detailed company information', maxLength: 3000 },
     { label: 'Company Address', key: 'companyAddress', type: 'text', placeholder: 'Enter your company address' },
@@ -222,17 +225,18 @@ const CompanyDetails = ({ navigation }: Props) => {
 
   const validateForm = (stepIndex?: number) => {
     const mandatoryFields = [
-      { key: 'companyName', label: 'Company Name' },
-      { key: 'companyType', label: 'Company Type' },
-      { key: 'companySize', label: 'Company Size' },
-      { key: 'businessModel', label: 'Business Model' },
-      { key: 'businessScale', label: 'Business Scale' },
-      { key: 'summarizedInfo', label: 'Summarized Company Information' },
-      { key: 'detailedInfo', label: 'Detailed Company Information' },
-      { key: 'companyAddress', label: 'Company Address' },
-      { key: 'companyWebsite', label: 'Company Website' },
-      { key: 'companySector', label: 'Company Sector' },
-      { key: 'companyPhone', label: 'Company Phone Number' },
+      'companyName',
+      'companyType',
+      'companySize',
+      'businessModel',
+      'businessScale',
+      'summarizedInfo',
+      'detailedInfo',
+      'companyAddress',
+      'companyWebsite',
+      'companySector',
+      'companyPhone',
+      'companyEmail',
     ];
 
     // If validating a specific step, check only the field for that step
@@ -249,9 +253,9 @@ const CompanyDetails = ({ navigation }: Props) => {
 
     // Full form validation
     for (const field of mandatoryFields) {
-      const value = formData[field.key];
+      const value = formData[field];
       if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
-        return { isValid: false, message: `${field.label} is required.` };
+        return { isValid: false, message: `${field} is required.` };
       }
     }
     if (formData.companyEmail && !/\S+@\S+\.\S+/.test(formData.companyEmail)) {
@@ -278,7 +282,7 @@ const CompanyDetails = ({ navigation }: Props) => {
         companyInfo: formData.summarizedInfo,
         companyWebsite: formData.companyWebsite,
         companyEmail: formData.companyEmail || '',
-        companyPhone: formData.companyPhone || '',
+        companyPhone: (formData.companyPhoneCountryCode || '') + (formData.companyPhone || ''),
         companyAddress: formData.companyAddress,
         companyLinkedIn: formData.companyLinkedIn || '',
         companyTwitter: formData.companyTwitter || '',
@@ -316,6 +320,7 @@ const CompanyDetails = ({ navigation }: Props) => {
         businessScale: '',
         companyEmail: '',
         companyPhone: '',
+        companyPhoneCountryCode: '+90',
         summarizedInfo: '',
         detailedInfo: '',
         companyAddress: '',
@@ -347,7 +352,8 @@ const CompanyDetails = ({ navigation }: Props) => {
       businessModel: company.businessModel || '',
       businessScale: company.businessScale || '',
       companyEmail: company.companyEmail || '',
-      companyPhone: company.companyPhone || '',
+      companyPhone: company.companyPhone ? company.companyPhone.replace(/^[+\d-]+/, '') : '',
+      companyPhoneCountryCode: company.companyPhone ? company.companyPhone.match(/^[+\d-]+/)?.[0] || '+90' : '+90',
       summarizedInfo: company.companyInfo || '',
       detailedInfo: company.detailedInfo || '',
       companyAddress: company.companyAddress || '',
@@ -411,6 +417,13 @@ const CompanyDetails = ({ navigation }: Props) => {
     setFormData({ ...formData, [key]: value });
   };
 
+  const handlePickLogo = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.7 });
+    if (result.assets && result.assets.length > 0) {
+      setFormData({ ...formData, companyLogo: result.assets[0].uri });
+    }
+  };
+
   const renderStep = () => {
     const startIndex = Math.floor(currentStep / 5) * 5;
     const visibleFormSteps = formSteps.slice(startIndex, startIndex + 5);
@@ -426,6 +439,7 @@ const CompanyDetails = ({ navigation }: Props) => {
       'companyWebsite',
       'companySector',
       'companyPhone',
+      'companyEmail',
     ];
 
     return (
@@ -506,11 +520,34 @@ const CompanyDetails = ({ navigation }: Props) => {
         );
       case 'file':
         return (
-          <TouchableOpacity style={styles.fileButton}>
+          <TouchableOpacity style={styles.fileButton} onPress={handlePickLogo}>
             <Text style={styles.fileButtonText}>
               {formData[step.key] ? 'File Selected' : step.placeholder}
             </Text>
           </TouchableOpacity>
+        );
+      case 'phone':
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flex: 1.2, marginRight: 8 }}>
+              <Picker
+                selectedValue={formData.companyPhoneCountryCode}
+                style={styles.picker}
+                onValueChange={value => handleInputChange('companyPhoneCountryCode', value)}>
+                {countryCodes.map((item: any) => (
+                  <Picker.Item key={item.code} label={`${item.name} (${item.code})`} value={item.code} />
+                ))}
+              </Picker>
+            </View>
+            <TextInput
+              style={[styles.input, { flex: 2 }]}
+              placeholder={step.placeholder}
+              placeholderTextColor={Colors.lightText}
+              value={formData.companyPhone}
+              keyboardType="phone-pad"
+              onChangeText={text => handleInputChange('companyPhone', text)}
+            />
+          </View>
         );
       default:
         return null;
@@ -569,7 +606,11 @@ const CompanyDetails = ({ navigation }: Props) => {
             companyName: response.data.companyName || prev.companyName,
             summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
             detailedInfo: response.data.detailedDescription || response.data.detailedInfo || prev.detailedInfo,
-            companySector: response.data.companySector || prev.companySector,
+            companySector: Array.isArray(response.data.companySector)
+              ? response.data.companySector
+              : typeof response.data.companySector === 'string'
+                ? response.data.companySector.split(',').map((s: string) => s.trim())
+                : prev.companySector,
             companySize: response.data.companySize || prev.companySize,
             businessModel: response.data.businessModel || prev.businessModel,
             businessScale: response.data.businessScale || prev.businessScale,
@@ -612,7 +653,11 @@ const CompanyDetails = ({ navigation }: Props) => {
             companyName: response.data.companyName || prev.companyName,
             summarizedInfo: response.data.summarizedInfo || prev.summarizedInfo,
             detailedInfo: response.data.detailedDescription || response.data.detailedInfo || prev.detailedInfo,
-            companySector: response.data.companySector || prev.companySector,
+            companySector: Array.isArray(response.data.companySector)
+              ? response.data.companySector
+              : typeof response.data.companySector === 'string'
+                ? response.data.companySector.split(',').map((s: string) => s.trim())
+                : prev.companySector,
             companySize: response.data.companySize || prev.companySize,
             businessModel: response.data.businessModel || prev.businessModel,
             businessScale: response.data.businessScale || prev.businessScale,
@@ -658,6 +703,32 @@ const CompanyDetails = ({ navigation }: Props) => {
         setAiError('File selection failed.');
       }
     }
+  };
+
+  const isStepValid = (stepIndex: number) => {
+    // Sadece o adımın zorunlu olup olmadığına bakılır
+    const mandatoryFields = [
+      'companyName',
+      'companyType',
+      'companySize',
+      'businessModel',
+      'businessScale',
+      'summarizedInfo',
+      'detailedInfo',
+      'companyAddress',
+      'companyWebsite',
+      'companySector',
+      'companyPhone',
+      'companyEmail',
+    ];
+    const currentStepKey = formSteps[stepIndex].key;
+    if (mandatoryFields.includes(currentStepKey)) {
+      const value = formData[currentStepKey];
+      if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
@@ -973,9 +1044,9 @@ const CompanyDetails = ({ navigation }: Props) => {
                           )}
                         />
                         <TouchableOpacity
-                          style={styles.navButton}
+                          style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 8 }}
                           onPress={() => setSectorPickerVisible(false)}>
-                          <Text style={styles.navButtonText}>Done</Text>
+                          <MaterialIcons name="check" size={40} color="#fff" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -997,7 +1068,11 @@ const CompanyDetails = ({ navigation }: Props) => {
                         <Text style={styles.navButtonText}>Back</Text>
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity style={styles.navButton} onPress={handleNext} disabled={loading}>
+                    <TouchableOpacity
+                      style={[styles.navButton, { opacity: isStepValid(currentStep) && !loading ? 1 : 0.5 }]}
+                      onPress={handleNext}
+                      disabled={!isStepValid(currentStep) || loading}
+                    >
                       <Text style={styles.navButtonText}>
                         {loading ? 'Submitting...' : currentStep === formSteps.length - 1 ? (editingCompanyId ? 'Update' : 'Submit') : 'Next'}
                       </Text>
