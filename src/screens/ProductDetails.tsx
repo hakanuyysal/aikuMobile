@@ -729,6 +729,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: 'rgba(255,255,255,0.2)',
     marginHorizontal: metrics.margin.sm,
+    marginTop:10,
   },
   activeProgressDot: {
     backgroundColor: Colors.primary,
