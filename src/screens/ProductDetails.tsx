@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -87,7 +86,9 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
     { label: 'Key Features', placeholder: 'Enter key features', key: 'keyFeatures', type: 'text', required: false },
   ];
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const fieldsPerPage = 5;
+  const totalPages = Math.ceil(productFormSteps.length / fieldsPerPage);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleAddProduct = () => {
     setShowAddProductModal(true);
@@ -200,10 +201,9 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
     }
   }, [companies]);
 
-  const validateStep = () => {
-    const step = productFormSteps[currentStep];
+  const validateField = (step: typeof productFormSteps[0]) => {
     const value = formData[step.key];
-    console.log('validateStep', { step: step.label, value });
+    console.log('validateField', { field: step.label, value });
     if (step.required && (!value || value.trim() === '')) {
       Alert.alert('Missing Information', `${step.label} is required.`);
       return false;
@@ -229,6 +229,15 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
     return true;
   };
 
+  const validatePage = () => {
+    const startIndex = currentPage * fieldsPerPage;
+    const endIndex = Math.min(startIndex + fieldsPerPage, productFormSteps.length);
+    for (let i = startIndex; i < endIndex; i++) {
+      if (!validateField(productFormSteps[i])) return false;
+    }
+    return true;
+  };
+
   const validateForm = () => {
     const requiredFields = productFormSteps.filter(step => step.required).map(step => step.key);
     for (const field of requiredFields) {
@@ -245,20 +254,19 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleNext = () => {
-    if (!validateStep()) return;
-    if (currentStep < productFormSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (!validatePage()) return;
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
     } else {
       handleSubmit();
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
+    if (currentPage > 0) setCurrentPage(currentPage - 1);
   };
 
-  const renderStepContent = () => {
-    const step = productFormSteps[currentStep];
+  const renderField = (step: typeof productFormSteps[0]) => {
     switch (step.type) {
       case 'text':
         return (
@@ -283,7 +291,8 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
                 console.log('Company selected:', { value: val, companyName: selectedCompany?.companyName });
                 handleInputChange('companyId', val);
                 handleInputChange('companyName', selectedCompany?.companyName || '');
-              }}>
+              }}
+              style={styles.picker}>
               <Picker.Item label="Select Company" value="" />
               {companies.map(company => (
                 <Picker.Item
@@ -298,7 +307,8 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
           return (
             <Picker
               selectedValue={formData[step.key]}
-              onValueChange={(value: string) => handleInputChange(step.key, value)}>
+              onValueChange={(value: string) => handleInputChange(step.key, value)}
+              style={styles.picker}>
               <Picker.Item label="Select" value="" />
               {step.options.map(opt => (
                 <Picker.Item key={opt} label={opt} value={opt} />
@@ -310,6 +320,22 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
       default:
         return null;
     }
+  };
+
+  const renderPageContent = () => {
+    const startIndex = currentPage * fieldsPerPage;
+    const endIndex = Math.min(startIndex + fieldsPerPage, productFormSteps.length);
+    const currentFields = productFormSteps.slice(startIndex, endIndex);
+
+    return currentFields.map((step, index) => (
+      <View key={step.key} style={{ marginBottom: metrics.margin.md }}>
+        <Text style={styles.inputLabel}>
+          {step.label}
+          {step.required && <Text style={{ color: 'red' }}> *</Text>}
+        </Text>
+        {renderField(step)}
+      </View>
+    ));
   };
 
   const handleSubmit = async () => {
@@ -394,13 +420,12 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
         keyFeatures: '',
         companyName: '',
       });
-      setCurrentStep(0);
+      setCurrentPage(0);
       await fetchProducts();
     } catch (err: any) {
       console.error('Error details:', JSON.stringify(err, null, 2));
       if (err.response?.status === 401) {
         Alert.alert('Session Error', 'Please log in again.');
-        // navigation.navigate('Login');
       } else if (err.response?.status === 400) {
         Alert.alert('Error', err.response?.data?.errors?.[0]?.msg || 'Invalid data sent.');
       } else {
@@ -531,29 +556,25 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
                     </TouchableOpacity>
                   </View>
                   <View style={styles.progressContainer}>
-                    {productFormSteps.map((_, idx) => (
+                    {Array.from({ length: totalPages }).map((_, idx) => (
                       <View
                         key={idx}
-                        style={[styles.progressDot, idx === currentStep && styles.activeProgressDot]}
+                        style={[styles.progressDot, idx === currentPage && styles.activeProgressDot]}
                       />
                     ))}
                   </View>
                   <ScrollView style={{ flex: 1, padding: metrics.padding.lg }}>
-                    <Text style={styles.inputLabel}>
-                      {productFormSteps[currentStep].label}
-                      {productFormSteps[currentStep].required && <Text style={{ color: 'red' }}> *</Text>}
-                    </Text>
-                    {renderStepContent()}
+                    {renderPageContent()}
                   </ScrollView>
                   <View style={styles.navigationButtons}>
-                    {currentStep > 0 && (
+                    {currentPage > 0 && (
                       <TouchableOpacity style={styles.navButton} onPress={handleBack} disabled={loading}>
                         <Text style={styles.navButtonText}>Back</Text>
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity style={styles.navButton} onPress={handleNext} disabled={loading}>
                       <Text style={styles.navButtonText}>
-                        {loading ? 'Saving...' : currentStep === productFormSteps.length - 1 ? 'Save' : 'Next'}
+                        {loading ? 'Saving...' : currentPage === totalPages - 1 ? 'Save' : 'Next'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -670,6 +691,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.md,
     padding: metrics.padding.md,
+    marginBottom: metrics.margin.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    color: Colors.lightText,
+  },
+  picker: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.md,
     marginBottom: metrics.margin.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
