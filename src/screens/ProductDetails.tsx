@@ -31,10 +31,9 @@ type Product = {
   productCategory: string;
   productDescription: string;
   companyName: string;
-  // Diğer ürün alanları
 };
 
-const ProductDetails = ({ navigation }: Props) => {
+const ProductDetails: React.FC<Props> = ({ navigation }) => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({
     productName: '',
@@ -58,7 +57,7 @@ const ProductDetails = ({ navigation }: Props) => {
   });
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [products, setProducts] = useState<Product[]>([]); // Ürünleri tutmak için state
+  const [products, setProducts] = useState<Product[]>([]);
   const categories = [
     'AI', 'Fintech', 'Healthcare', 'E-commerce', 'Cybersecurity', 'Blockchain', 'LegalTech', 'EdTech', 'IoT', 'Marketing', 'Social Media', 'Other'
   ];
@@ -69,23 +68,23 @@ const ProductDetails = ({ navigation }: Props) => {
   const { user } = useAuth();
 
   const productFormSteps = [
-    { label: 'Ürün Adı', placeholder: 'Ürün adını girin', key: 'productName', type: 'text', required: true },
-    { label: 'Kategori', key: 'productCategory', type: 'picker', options: categories, required: true },
-    { label: 'Şirket', key: 'companyId', type: 'picker', options: companies, required: true },
-    { label: 'Kısa Açıklama', placeholder: 'Kısa açıklama girin', key: 'productDescription', type: 'text', required: true },
-    { label: 'Detaylı Açıklama', placeholder: 'Detaylı açıklama girin', key: 'detailedDescription', type: 'text', required: true },
-    { label: 'Fiyatlandırma Modeli', key: 'pricingModel', type: 'picker', options: pricingModels, required: true },
-    { label: 'Çıkış Tarihi', placeholder: 'gg.aa.yyyy', key: 'releaseDate', type: 'text', required: true },
-    { label: 'Ürün Fiyatı', placeholder: 'Ürün fiyatı girin', key: 'productPrice', type: 'text', required: false },
-    { label: 'Ürün Web Sitesi', placeholder: 'Ürün web sitesi girin', key: 'productWebsite', type: 'text', required: true },
-    { label: 'Ürün LinkedIn', placeholder: 'Ürün LinkedIn girin', key: 'productLinkedIn', type: 'text', required: false },
-    { label: 'Ürün Twitter', placeholder: 'Ürün Twitter girin', key: 'productTwitter', type: 'text', required: false },
-    { label: 'Ürün Logosu', placeholder: 'Logo URL girin', key: 'productLogo', type: 'text', required: false },
-    { label: 'Etiketler', placeholder: 'Etiketler (virgülle ayırın)', key: 'tags', type: 'text', required: false },
-    { label: 'Problemler', placeholder: 'Çözülen problemler', key: 'problems', type: 'text', required: false },
-    { label: 'Çözümler', placeholder: 'Sunulan çözümler', key: 'solutions', type: 'text', required: false },
-    { label: 'İyileştirmeler', placeholder: 'Geliştirme önerileri', key: 'improvements', type: 'text', required: false },
-    { label: 'Ana Özellikler', placeholder: 'Ürün özellikleri', key: 'keyFeatures', type: 'text', required: false },
+    { label: 'Product Name', placeholder: 'Enter product name', key: 'productName', type: 'text', required: true },
+    { label: 'Category', key: 'productCategory', type: 'picker', options: categories, required: true },
+    { label: 'Company', key: 'companyId', type: 'picker', options: companies, required: true },
+    { label: 'Short Description', placeholder: 'Enter short description', key: 'productDescription', type: 'text', required: true },
+    { label: 'Detailed Description', placeholder: 'Enter detailed description', key: 'detailedDescription', type: 'text', required: true },
+    { label: 'Pricing Model', key: 'pricingModel', type: 'picker', options: pricingModels, required: true },
+    { label: 'Release Date', placeholder: 'dd.mm.yyyy', key: 'releaseDate', type: 'text', required: true },
+    { label: 'Product Price', placeholder: 'Enter product price', key: 'productPrice', type: 'text', required: false },
+    { label: 'Product Website', placeholder: 'Enter product website', key: 'productWebsite', type: 'text', required: true },
+    { label: 'Product LinkedIn', placeholder: 'Enter product LinkedIn', key: 'productLinkedIn', type: 'text', required: false },
+    { label: 'Product Twitter', placeholder: 'Enter product Twitter', key: 'productTwitter', type: 'text', required: false },
+    { label: 'Product Logo', placeholder: 'Enter logo URL', key: 'productLogo', type: 'text', required: false },
+    { label: 'Tags', placeholder: 'Enter tags', key: 'tags', type: 'text', required: false },
+    { label: 'Problems', placeholder: 'Enter problems', key: 'problems', type: 'text', required: false },
+    { label: 'Solutions', placeholder: 'Enter solutions', key: 'solutions', type: 'text', required: false },
+    { label: 'Improvements', placeholder: 'Enter improvements', key: 'improvements', type: 'text', required: false },
+    { label: 'Key Features', placeholder: 'Enter key features', key: 'keyFeatures', type: 'text', required: false },
   ];
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -96,7 +95,7 @@ const ProductDetails = ({ navigation }: Props) => {
 
   const handleInputChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
-    console.log(`Input değişti: ${key}=${value}`);
+    console.log(`Input changed: ${key}=${value}`);
   };
 
   const fetchCompanies = async () => {
@@ -107,7 +106,7 @@ const ProductDetails = ({ navigation }: Props) => {
       console.log('fetchCompanies - User ID:', userId, 'Token:', token);
       if (!token || !userId) {
         setCompanies([]);
-        Alert.alert('Hata', 'Oturum bilgileri eksik.');
+        Alert.alert('Error', 'Session information missing.');
         return;
       }
       const response = await axios.get(
@@ -118,19 +117,19 @@ const ProductDetails = ({ navigation }: Props) => {
           },
         }
       );
-      console.log('Şirketler API yanıtı:', response.data);
+      console.log('Companies API response:', JSON.stringify(response.data, null, 2));
       const companiesData = (response.data.companies || []).map((c: any) => ({
         ...c,
         _id: String(c._id || c.id),
       }));
       setCompanies(companiesData);
       if (companiesData.length === 0) {
-        Alert.alert('Uyarı', 'Kayıtlı şirket bulunamadı. Lütfen önce bir şirket ekleyin.');
+        Alert.alert('Warning', 'No registered companies found. Please add a company first.');
       }
     } catch (e: any) {
-      console.error('fetchCompanies hatası:', e.message, e.response?.data);
+      console.error('fetchCompanies error:', e.message, e.response?.data);
       setCompanies([]);
-      Alert.alert('Hata', 'Şirketler yüklenemedi: ' + (e.response?.data?.message || e.message));
+      Alert.alert('Error', 'Failed to load companies: ' + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
@@ -140,24 +139,27 @@ const ProductDetails = ({ navigation }: Props) => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
+      const userId = user?.id;
+      console.log('fetchProducts - User ID:', userId, 'Token:', token);
       if (!token) {
-        Alert.alert('Hata', 'Oturum bilgileri eksik.');
+        Alert.alert('Error', 'Session information missing.');
         setProducts([]);
         return;
       }
-      const response = await axios.get('https://api.aikuaiplatform.com/api/product/user', {
+      const response = await axios.get(`https://api.aikuaiplatform.com/api/product/user?t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Ürünler API yanıtı:', response.data);
+      console.log('Products API response:', JSON.stringify(response.data, null, 2));
       const productsData = response.data.products || [];
       setProducts(productsData);
+      console.log('Updated products:', productsData);
       if (productsData.length === 0) {
-        console.log('Ürün bulunamadı.');
+        console.log('No products found.');
       }
     } catch (e: any) {
-      console.error('fetchProducts hatası:', e.message, e.response?.data);
+      console.error('fetchProducts error:', e.message, e.response?.data);
       setProducts([]);
-      Alert.alert('Hata', 'Ürünler yüklenemedi: ' + (e.response?.data?.message || e.message));
+      Alert.alert('Error', 'Failed to load products: ' + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
@@ -168,32 +170,33 @@ const ProductDetails = ({ navigation }: Props) => {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert('Hata', 'Oturum bilgileri eksik.');
+        Alert.alert('Error', 'Session information missing.');
         return;
       }
       const response = await axios.get(`https://api.aikuaiplatform.com/api/product/company/${companyId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Şirket ürünleri:', response.data);
+      console.log('Company products:', JSON.stringify(response.data, null, 2));
     } catch (e: any) {
-      console.error('fetchCompanyProducts hatası:', e.message, e.response?.data);
-      Alert.alert('Hata', 'Şirket ürünleri yüklenemedi.');
+      console.error('fetchCompanyProducts error:', e.message, e.response?.data);
+      Alert.alert('Error', 'Failed to load company products: ' + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('Initial load - User:', user);
     fetchCompanies();
-    fetchProducts(); // İlk yüklemede ürünleri çek
+    fetchProducts();
   }, []);
 
   useEffect(() => {
     if (companies.length > 0) {
-      console.log('Şirketler yüklendi:', companies);
+      console.log('Companies loaded:', companies);
       fetchCompanyProducts(companies[0]._id);
     } else {
-      console.log('Şirket bulunamadı.');
+      console.log('No companies found.');
     }
   }, [companies]);
 
@@ -202,24 +205,24 @@ const ProductDetails = ({ navigation }: Props) => {
     const value = formData[step.key];
     console.log('validateStep', { step: step.label, value });
     if (step.required && (!value || value.trim() === '')) {
-      Alert.alert('Eksik Bilgi', `${step.label} zorunludur.`);
+      Alert.alert('Missing Information', `${step.label} is required.`);
       return false;
     }
     if (step.key === 'releaseDate' && value) {
       const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
       if (!dateRegex.test(value)) {
-        Alert.alert('Hata', 'Geçerli bir tarih giriniz (gg.aa.yyyy)');
+        Alert.alert('Error', 'Enter a valid date (dd.mm.yyyy).');
         return false;
       }
     }
     if (step.key === 'productWebsite' && value && !value.match(/^https?:\/\/.+/)) {
-      Alert.alert('Hata', 'Geçerli bir URL giriniz (http:// veya https:// ile başlamalı)');
+      Alert.alert('Error', 'Enter a valid URL (must start with http:// or https://).');
       return false;
     }
     if (step.key === 'companyId' && value) {
       const isValidCompany = companies.some(c => c._id === value);
       if (!isValidCompany) {
-        Alert.alert('Hata', 'Geçerli bir şirket seçiniz.');
+        Alert.alert('Error', 'Select a valid company.');
         return false;
       }
     }
@@ -230,12 +233,12 @@ const ProductDetails = ({ navigation }: Props) => {
     const requiredFields = productFormSteps.filter(step => step.required).map(step => step.key);
     for (const field of requiredFields) {
       if (!formData[field] || formData[field].trim() === '') {
-        Alert.alert('Eksik Bilgi', `${productFormSteps.find(step => step.key === field)?.label} zorunludur.`);
+        Alert.alert('Missing Information', `${productFormSteps.find(step => step.key === field)?.label} is required.`);
         return false;
       }
     }
     if (!companies.some(c => c._id === formData.companyId)) {
-      Alert.alert('Hata', 'Geçerli bir şirket seçiniz.');
+      Alert.alert('Error', 'Select a valid company.');
       return false;
     }
     return true;
@@ -265,7 +268,7 @@ const ProductDetails = ({ navigation }: Props) => {
             placeholderTextColor={Colors.lightText}
             value={formData[step.key]}
             onChangeText={text => handleInputChange(step.key, text)}
-            multiline={step.key === 'detailedDescription' || step.key === 'problems' || step.key === 'solutions' || step.key === 'improvements' || step.key === 'keyFeatures'}
+            multiline={['detailedDescription', 'tags', 'problems', 'solutions', 'improvements', 'keyFeatures'].includes(step.key)}
             keyboardType={step.key === 'productPrice' ? 'numeric' : 'default'}
           />
         );
@@ -277,11 +280,11 @@ const ProductDetails = ({ navigation }: Props) => {
               onValueChange={value => {
                 const val = value === undefined || value === null ? '' : String(value);
                 const selectedCompany = companies.find(c => c._id === val);
-                console.log('Şirket seçildi:', { value: val, companyName: selectedCompany?.companyName });
+                console.log('Company selected:', { value: val, companyName: selectedCompany?.companyName });
                 handleInputChange('companyId', val);
                 handleInputChange('companyName', selectedCompany?.companyName || '');
               }}>
-              <Picker.Item label="Şirket Seçin" value="" />
+              <Picker.Item label="Select Company" value="" />
               {companies.map(company => (
                 <Picker.Item
                   key={String(company._id)}
@@ -296,7 +299,7 @@ const ProductDetails = ({ navigation }: Props) => {
             <Picker
               selectedValue={formData[step.key]}
               onValueChange={(value: string) => handleInputChange(step.key, value)}>
-              <Picker.Item label="Seçiniz" value="" />
+              <Picker.Item label="Select" value="" />
               {step.options.map(opt => (
                 <Picker.Item key={opt} label={opt} value={opt} />
               ))}
@@ -314,9 +317,10 @@ const ProductDetails = ({ navigation }: Props) => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log('Token:', token);
+      const userId = user?.id;
+      console.log('handleSubmit - Token:', token, 'User ID:', userId);
       if (!token) {
-        Alert.alert('Hata', 'Oturum açmanız gerekiyor.');
+        Alert.alert('Error', 'You need to log in.');
         return;
       }
       let releaseDate = formData.releaseDate;
@@ -324,12 +328,12 @@ const ProductDetails = ({ navigation }: Props) => {
         const [day, month, year] = releaseDate.split('.');
         releaseDate = `${year}-${month}-${day}`;
       } else {
-        Alert.alert('Hata', 'Geçerli bir tarih giriniz (gg.aa.yyyy)');
+        Alert.alert('Error', 'Enter a valid date (dd.mm.yyyy).');
         return;
       }
       const selectedCompany = companies.find(c => c._id === formData.companyId);
       if (!selectedCompany) {
-        Alert.alert('Hata', 'Seçilen şirket geçersiz.');
+        Alert.alert('Error', 'Selected company is invalid.');
         return;
       }
       const data = {
@@ -339,10 +343,10 @@ const ProductDetails = ({ navigation }: Props) => {
         productDescription: formData.productDescription,
         detailedDescription: formData.detailedDescription,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-        problems: formData.problems || '',
-        solutions: formData.solutions || '',
-        improvements: formData.improvements || '',
-        keyFeatures: formData.keyFeatures || '',
+        problems: formData.problems ? formData.problems.split(',').map(item => item.trim()).filter(item => item) : [],
+        solutions: formData.solutions ? formData.solutions.split(',').map(item => item.trim()).filter(item => item) : [],
+        improvements: formData.improvements ? formData.improvements.split(',').map(item => item.trim()).filter(item => item) : [],
+        keyFeatures: formData.keyFeatures ? formData.keyFeatures.split(',').map(item => item.trim()).filter(item => item) : [],
         pricingModel: formData.pricingModel,
         releaseDate,
         productPrice: Number(formData.productPrice) || 0,
@@ -352,7 +356,7 @@ const ProductDetails = ({ navigation }: Props) => {
         companyName: selectedCompany.companyName || '',
         companyId: formData.companyId,
       };
-      console.log('Gönderilen veri:', JSON.stringify(data, null, 2));
+      console.log('Data sent:', JSON.stringify(data, null, 2));
       const response = await axios.post(
         'https://api.aikuaiplatform.com/api/product',
         data,
@@ -362,12 +366,13 @@ const ProductDetails = ({ navigation }: Props) => {
           },
         }
       );
-      console.log('API yanıtı:', JSON.stringify(response.data, null, 2));
-      if (!response.data.success || !response.data.product) {
-        Alert.alert('Hata', 'Ürün eklenemedi, lütfen tekrar deneyin.');
+      console.log('API response:', JSON.stringify(response.data, null, 2));
+      console.log('Added product ID:', response.data.product?._id);
+      if (!response.data.success || !response.data.product || !response.data.product._id) {
+        Alert.alert('Error', 'Product could not be added. Please try again.');
         return;
       }
-      Alert.alert('Başarılı', 'Ürün başarıyla eklendi.');
+      Alert.alert('Success', 'Product added successfully.');
       setShowAddProductModal(false);
       setFormData({
         productName: '',
@@ -390,16 +395,16 @@ const ProductDetails = ({ navigation }: Props) => {
         companyName: '',
       });
       setCurrentStep(0);
-      await fetchProducts(); // Ürünleri yeniden çek
+      await fetchProducts();
     } catch (err: any) {
-      console.error('Hata detayları:', JSON.stringify(err, null, 2));
+      console.error('Error details:', JSON.stringify(err, null, 2));
       if (err.response?.status === 401) {
-        Alert.alert('Oturum Hatası', 'Lütfen tekrar oturum açın.');
+        Alert.alert('Session Error', 'Please log in again.');
         // navigation.navigate('Login');
       } else if (err.response?.status === 400) {
-        Alert.alert('Hata', err.response?.data?.errors?.[0]?.msg || 'Geçersiz veri gönderildi.');
+        Alert.alert('Error', err.response?.data?.errors?.[0]?.msg || 'Invalid data sent.');
       } else {
-        Alert.alert('Hata', err?.response?.data?.message || err?.message || 'Ürün eklenemedi');
+        Alert.alert('Error', err?.response?.data?.message || err?.message || 'Product could not be added.');
       }
     } finally {
       setLoading(false);
@@ -417,10 +422,10 @@ const ProductDetails = ({ navigation }: Props) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log('Güncellenen ürün:', response.data);
+      console.log('Updated product:', JSON.stringify(response.data, null, 2));
       await fetchProducts();
     } catch (e: any) {
-      console.error('updateProduct hatası:', e.message);
+      console.error('updateProduct error:', e.message);
     }
   };
 
@@ -434,32 +439,31 @@ const ProductDetails = ({ navigation }: Props) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log('Silinen ürün:', response.data);
+      console.log('Deleted product:', JSON.stringify(response.data, null, 2));
       await fetchProducts();
     } catch (e: any) {
-      console.error('deleteProduct hatası:', e.message);
+      console.error('deleteProduct error:', e.message);
     }
   };
 
   const renderProductCard = (product: Product) => (
     <View key={product._id} style={styles.card}>
       <Text style={styles.productTitle}>{product.productName}</Text>
-      <Text style={styles.productText}>Kategori: {product.productCategory}</Text>
-      <Text style={styles.productText}>Açıklama: {product.productDescription}</Text>
-      <Text style={styles.productText}>Şirket: {product.companyName}</Text>
+      <Text style={styles.productText}>Category: {product.productCategory}</Text>
+      <Text style={styles.productText}>Description: {product.productDescription}</Text>
+      <Text style={styles.productText}>Company: {product.companyName}</Text>
       <View style={styles.productActions}>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => {
-            // Güncelleme için örnek veri
-            updateProduct(product._id, { productName: `${product.productName} (Güncellendi)` });
+            updateProduct(product._id, { productName: `${product.productName} (Updated)` });
           }}>
-          <Text style={styles.actionButtonText}>Güncelle</Text>
+          <Text style={styles.actionButtonText}>Update</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => deleteProduct(product._id)}>
-          <Text style={styles.actionButtonText}>Sil</Text>
+          <Text style={styles.actionButtonText}>Delete</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -489,17 +493,17 @@ const ProductDetails = ({ navigation }: Props) => {
           </View>
           <ScrollView style={styles.content}>
             {loading ? (
-              <Text style={styles.noProductsText}>Yükleniyor...</Text>
+              <Text style={styles.noProductsText}>Loading...</Text>
             ) : products.length === 0 ? (
               <View style={styles.card}>
-                <Text style={styles.noProductsText}>Ürün bulunamadı.</Text>
+                <Text style={styles.noProductsText}>No products found.</Text>
               </View>
             ) : (
               products.map(product => renderProductCard(product))
             )}
             <TouchableOpacity style={styles.addProductCard} onPress={handleAddProduct}>
               <MaterialIcons name="add-business" size={24} color={Colors.primary} />
-              <Text style={styles.addProductText}>Yeni Ürün Ekle</Text>
+              <Text style={styles.addProductText}>Add New Product</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -521,7 +525,7 @@ const ProductDetails = ({ navigation }: Props) => {
                 style={{ flex: 1 }}>
                 <SafeAreaView style={{ flex: 1 }}>
                   <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Ürün Ekle</Text>
+                    <Text style={styles.modalTitle}>Add Product</Text>
                     <TouchableOpacity onPress={() => setShowAddProductModal(false)}>
                       <Icon name="close" size={24} color={Colors.lightText} />
                     </TouchableOpacity>
@@ -544,12 +548,12 @@ const ProductDetails = ({ navigation }: Props) => {
                   <View style={styles.navigationButtons}>
                     {currentStep > 0 && (
                       <TouchableOpacity style={styles.navButton} onPress={handleBack} disabled={loading}>
-                        <Text style={styles.navButtonText}>Geri</Text>
+                        <Text style={styles.navButtonText}>Back</Text>
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity style={styles.navButton} onPress={handleNext} disabled={loading}>
                       <Text style={styles.navButtonText}>
-                        {loading ? 'Kaydediliyor...' : currentStep === productFormSteps.length - 1 ? 'Kaydet' : 'İleri'}
+                        {loading ? 'Saving...' : currentStep === productFormSteps.length - 1 ? 'Save' : 'Next'}
                       </Text>
                     </TouchableOpacity>
                   </View>
