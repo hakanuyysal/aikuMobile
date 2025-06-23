@@ -29,7 +29,7 @@ const LinkedInWebView: React.FC<LinkedInWebViewProps> = ({
       const fetchAuthUrl = async () => {
         try {
           const url = await linkedinAuthService.getLinkedInAuthURL();
-          console.log('LinkedIn Auth URL:', url);
+          console.log('LinkedIn Auth URL alındı:', url);
           setAuthUrl(url);
         } catch (err: any) {
           console.log('LinkedIn Auth URL Hatası:', err);
@@ -47,6 +47,7 @@ const LinkedInWebView: React.FC<LinkedInWebViewProps> = ({
 
   const handleNavigationStateChange = async (navState: any) => {
     const url = navState.url;
+    console.log('WebView navigation state değişti, url:', url);
     
     if (url.includes('/auth/linkedin/callback')) {
       try {
@@ -56,18 +57,24 @@ const LinkedInWebView: React.FC<LinkedInWebViewProps> = ({
         const state = urlObj.searchParams.get('state');
         const error = urlObj.searchParams.get('error');
 
+        console.log('Callback URL parametreleri:', { code, state, error });
+
         if (error) {
+          console.log('Callback error parametresi:', error);
           throw new Error(error);
         }
 
         if (!code || !state) {
+          console.log('Callback parametreleri eksik:', { code, state });
           throw new Error('Geçersiz callback parametreleri');
         }
 
         const data = await linkedinAuthService.handleCallback(code, state);
+        console.log('LinkedIn handleCallback başarılı, data:', data);
         onSuccess(data);
         onClose();
       } catch (error: any) {
+        console.log('LinkedIn handleCallback hatası:', error);
         setError(error.message || 'Bir hata oluştu');
         onError(error);
       } finally {
@@ -77,16 +84,17 @@ const LinkedInWebView: React.FC<LinkedInWebViewProps> = ({
   };
 
   const handleRetry = () => {
+    console.log('LinkedIn login tekrar denenecek.');
     setError(null);
     setIsLoading(true);
     setAuthUrl(null);
     const fetchAuthUrl = async () => {
       try {
         const url = await linkedinAuthService.getLinkedInAuthURL();
-        console.log('LinkedIn Auth URL:', url);
+        console.log('LinkedIn Auth URL alındı (retry):', url);
         setAuthUrl(url);
       } catch (err: any) {
-        console.log('LinkedIn Auth URL Hatası:', err);
+        console.log('LinkedIn Auth URL Hatası (retry):', err);
         setError(err.message || 'Giriş URL\'si alınamadı');
         onError(err);
       } finally {

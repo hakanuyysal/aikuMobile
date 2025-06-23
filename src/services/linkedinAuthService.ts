@@ -12,29 +12,40 @@ class LinkedInAuthService {
    */
   async getLinkedInAuthURL() {
     try {
+      // Eski state'i sil
+      await AsyncStorage.removeItem('linkedin_auth_state');
       const state = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
       const authState = {
         state,
         timestamp: Date.now(),
         platform: 'mobile',
       };
+      console.log('[LinkedInAuthService] Üretilen state:', state);
       await AsyncStorage.setItem('linkedin_auth_state', JSON.stringify(authState));
+      console.log('[LinkedInAuthService] State AsyncStorage\'a kaydedildi:', authState);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
           redirectTo: 'testapp://lms/',
           queryParams: {
             prompt: 'consent',
-            state: `${state}|mobile`,
-            scope: 'r_liteprofile r_emailaddress',
+            state: state,
+            scope: 'openid r_liteprofile r_emailaddress', // <-- openid eklendi!
           },
         },
       });
-      if (error) throw error;
-      if (!data.url) throw new Error('Auth URL alınamadı');
+      if (error) {
+        console.log('[LinkedInAuthService] signInWithOAuth error:', error);
+        throw error;
+      }
+      if (!data.url) {
+        console.log('[LinkedInAuthService] Auth URL alınamadı!');
+        throw new Error('Auth URL alınamadı');
+      }
+      console.log('[LinkedInAuthService] Auth URL döndü:', data.url);
       return data.url;
     } catch (error) {
-      console.error('LinkedIn auth URL oluşturma hatası:', error);
+      console.error('[LinkedInAuthService] LinkedIn auth URL oluşturma hatası:', error);
       throw error;
     }
   }
@@ -58,22 +69,29 @@ class LinkedInAuthService {
    */
   async handleCallback(code: string, state: string) {
     try {
-      console.log('Callbackte gelen state:', state);
+      console.log('[LinkedInAuthService] Callbackte gelen state:', state, 'code:', code);
       const storedStateStr = await AsyncStorage.getItem('linkedin_auth_state');
-      console.log("AsyncStorage'daki state:", storedStateStr);
+      console.log("[LinkedInAuthService] AsyncStorage'daki state:", storedStateStr);
       if (!storedStateStr) {
+        console.log('[LinkedInAuthService] State bilgisi bulunamadı!');
         throw new Error('State bilgisi bulunamadı');
       }
       const storedState = JSON.parse(storedStateStr);
       if (Date.now() - storedState.timestamp > this.STATE_EXPIRY) {
+        console.log('[LinkedInAuthService] State süresi dolmuş!');
         throw new Error('State süresi dolmuş');
       }
       if (state !== storedState.state) {
+        console.log('[LinkedInAuthService] State uyuşmazlığı! Gelen:', state, 'Beklenen:', storedState.state);
         throw new Error('State uyuşmazlığı');
       }
       // Supabase ile oturum değişimi
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) throw error;
+      if (error) {
+        console.log('[LinkedInAuthService] exchangeCodeForSession error:', error);
+        throw error;
+      }
+      console.log('[LinkedInAuthService] exchangeCodeForSession başarılı, data:', data);
       if (this.resolveAuth) {
         this.resolveAuth(data);
       }
@@ -82,10 +100,12 @@ class LinkedInAuthService {
       if (this.rejectAuth) {
         this.rejectAuth(error);
       }
+      console.log('[LinkedInAuthService] handleCallback hata:', error);
       throw error;
     } finally {
       this.clearAuthPromise();
       await AsyncStorage.removeItem('linkedin_auth_state');
+      console.log('[LinkedInAuthService] State temizlendi.');
     }
   }
 

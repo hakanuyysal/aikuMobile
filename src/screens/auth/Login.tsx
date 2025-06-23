@@ -30,39 +30,47 @@ const Login = ({navigation}: Props) => {
 
   const handleLogin = async () => {
     try {
+      console.log('[Login] Normal login denendi:', email);
       const response = await login(email, password);
       if (response?.user) {
+        console.log('[Login] Normal login başarılı, user:', response.user);
         navigation.reset({
           index: 0,
           routes: [{name: 'Main'}],
         });
       }
     } catch (error) {
+      console.log('[Login] Normal login hatası:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
+      console.log('[Login] Google login denendi');
       const token = 'google-token';
       const response = await googleLogin(token);
       if (response?.success && response?.user) {
+        console.log('[Login] Google login başarılı, user:', response.user);
         navigation.reset({
           index: 0,
           routes: [{name: 'Main'}],
         });
       }
     } catch (error) {
+      console.log('[Login] Google login hatası:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
     }
   };
 
   const handleLinkedInLogin = async () => {
+    console.log('[Login] LinkedIn login butonuna basıldı, WebView açılıyor.');
     setShowLinkedInWebView(true);
   };
 
   const handleLinkedInSuccess = async (data: any) => {
     try {
+      console.log('[Login] LinkedIn login başarılı, data:', data);
       if (data && data.user) {
         navigation.reset({
           index: 0,
@@ -70,11 +78,13 @@ const Login = ({navigation}: Props) => {
         });
       }
     } catch (error) {
+      console.log('[Login] LinkedIn login success sonrası hata:', error);
       Alert.alert('Hata', error instanceof Error ? error.message : 'LinkedIn girişi başarısız oldu');
     }
   };
 
   const handleLinkedInError = (error: any) => {
+    console.log('[Login] LinkedIn login hatası:', error);
     Alert.alert('Hata', error instanceof Error ? error.message : 'LinkedIn girişi başarısız oldu');
   };
 

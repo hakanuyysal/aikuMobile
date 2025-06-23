@@ -41,7 +41,7 @@ router.get('/auth/linkedin', (req, res) => __awaiter(void 0, void 0, void 0, fun
                 queryParams: {
                     prompt: 'consent',
                     state: `${state}|${isMobile ? 'mobile' : 'web'}`,
-                    scope: 'r_liteprofile r_emailaddress'
+                    scope: 'openid r_liteprofile r_emailaddress'
                 },
             },
         });

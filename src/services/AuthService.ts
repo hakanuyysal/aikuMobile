@@ -63,10 +63,13 @@ class AuthService {
   private initializeDeepLinkListener() {
     // Uygulama açıkken gelen deep link'leri dinle
     Linking.addEventListener('url', this.handleDeepLink.bind(this));
-    
+    console.log('[AuthService] Deep link event listener eklendi.');
     // Uygulama kapalıyken gelen deep link'leri kontrol et
     Linking.getInitialURL().then(url => {
-      if (url) this.handleDeepLink({ url });
+      if (url) {
+        console.log('[AuthService] Uygulama ilk açılışta deep link ile açıldı:', url);
+        this.handleDeepLink({ url });
+      }
     });
   }
 
@@ -123,6 +126,7 @@ class AuthService {
       }
       // LinkedIn için kullanılan 'linkedin_auth_state' de temizlenmeli
       await AsyncStorage.multiRemove(['token', 'user', 'user_id', 'linkedin_auth_state']);
+      console.log('[AuthService] Logout: token, user, user_id ve linkedin_auth_state silindi.');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -172,6 +176,7 @@ class AuthService {
       // LinkedIn için kullanılan 'linkedin_auth_state' de temizlenmeli
       await AsyncStorage.multiRemove(['token', 'user', 'user_id', 'linkedin_auth_state']);
       delete this.axios.defaults.headers.common['Authorization'];
+      console.log('[AuthService] clearAuth: token, user, user_id ve linkedin_auth_state silindi.');
     } catch (error) {
       console.error('Token silme hatası:', error);
       throw error;
