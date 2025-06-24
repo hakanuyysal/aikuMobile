@@ -81,22 +81,33 @@ class AuthService {
       return;
     }
 
-    const urlObj = new URL(url);
-    if (urlObj.pathname === '/auth/linkedin-callback') {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Session error:', error);
-        return;
-      }
+    const urlObj = new URL(url.replace('#', '?')); // hash'i query'ye çevir
+    if (
+      urlObj.pathname === '/auth/linkedin-callback' ||
+      urlObj.pathname === '/linkedin-callback'
+    ) {
+      // access_token hash kısmında geliyor, onu al
+      const params = new URLSearchParams(url.split('#')[1]);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const expiresIn = params.get('expires_in');
+      const providerToken = params.get('provider_token');
 
-      if (data.session?.access_token) {
-        await AsyncStorage.setItem('token', data.session.access_token);
-        if (data.session.user) {
-          await AsyncStorage.setItem('user_id', data.session.user.id);
-          await AsyncStorage.setItem('user', JSON.stringify(data.session.user));
+      if (accessToken) {
+        await AsyncStorage.setItem('token', accessToken);
+        // İstersen refreshToken, expiresIn, providerToken da kaydedebilirsin
+        // await AsyncStorage.setItem('refresh_token', refreshToken ?? '');
+        // await AsyncStorage.setItem('provider_token', providerToken ?? '');
+
+        // Kullanıcı bilgisini almak için Supabase'den user'ı çekebilirsin
+        const { data, error } = await supabase.auth.getUser(accessToken);
+        if (data?.user) {
+          await AsyncStorage.setItem('user_id', data.user.id);
+          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+          console.log('Successfully authenticated user:', { user: data.user });
         }
-        console.log('Successfully authenticated user:', { user: data.session.user });
+      } else {
+        console.warn('No access_token found in callback URL');
       }
     } else {
       console.warn('Unhandled path:', urlObj.pathname);
@@ -149,7 +160,7 @@ class AuthService {
         return null;
       }
       try {
-        const response = await this.axios.get('/auth/me');
+        const response = await this.axios.get('/auth/currentUser');
         if (response.data && response.data.user) {
           await this.setAuthData(token, response.data.user);
           return response.data.user;
@@ -318,6 +329,46 @@ class AuthService {
     } catch (error) {
       console.error('[LinkedIn Callback] Error:', error);
       throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Supabase kullanıcısını backend ile senkronize et (LinkedIn, Google, vs.)
+   * @param provider 'linkedin_oidc' | 'google' | ...
+   * @param token Supabase access_token (veya ilgili provider tokenı)
+   * @param userData Supabase user objesi (data.session.user)
+   */
+  async syncSupabaseUser(provider: string, token: string, userData: any) {
+    try {
+      const normalizedProvider = provider === 'linkedin_oidc' ? 'linkedin' : provider;
+      const response = await this.axios.post(
+        '/auth/supabase/sync',
+        {
+          provider: normalizedProvider,
+          supabase_user_id: userData?.id,
+          email: userData?.email,
+          user_metadata: userData?.user_metadata || userData?.app_metadata,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      // Backend'den dönen token ve user'ı kaydet
+      if (response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        if (response.data.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          if (response.data.user.id) {
+            await AsyncStorage.setItem('user_id', response.data.user.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Supabase user sync error:', error);
+      throw error;
     }
   }
 

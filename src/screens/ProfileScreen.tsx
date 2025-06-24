@@ -110,11 +110,11 @@ const ProfileScreen = () => {
               <View style={styles.userInfoHeader}>
                 <View>
                   <Text style={styles.userName}>
-                    {profile.firstName && profile.lastName 
-                      ? `${profile.firstName} ${profile.lastName}`
-                      : user?.name || 'Murat Tanrıyakul'}
+                    {/* Sadece giriş yapan kullanıcının mailini göster */}
+                    {profile.email || user?.email}
                   </Text>
-                  <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
+                  {/* İsim alanını kaldırdık */}
+                  {/* <Text style={styles.userEmail}>{profile.email || user?.email}</Text> */}
                   <View style={styles.roleWrapper}>
                     <MaterialCommunityIcons 
                       name="crown" 
