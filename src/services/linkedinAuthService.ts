@@ -30,7 +30,8 @@ class LinkedInAuthService {
           queryParams: {
             prompt: 'consent',
             state: state,
-            scope: 'openid r_liteprofile r_emailaddress', // <-- openid eklendi!
+            scope: 'openid r_liteprofile r_emailaddress',
+            response_type: 'code id_token', // <-- Bunu ekle!
           },
         },
       });
