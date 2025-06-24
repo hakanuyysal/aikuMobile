@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,44 @@ import {
   Animated,
   SafeAreaView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import {useAuth} from '../contexts/AuthContext';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useIsFocused} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
 import {useProfileStore} from '../store/profileStore';
+import AuthService from '../services/AuthService';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ProfileScreen = () => {
   const {user} = useAuth();
-  const {profile} = useProfileStore();
+  const {profile, updateProfile} = useProfileStore();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const isFocused = useIsFocused();
   const scrollY = new Animated.Value(0);
+
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      if (isFocused) {
+        try {
+          console.log('Profil ekranı odakta, güncel veri çekiliyor...');
+          const latestProfile = await AuthService.getCurrentUser();
+          if (latestProfile) {
+            updateProfile(latestProfile);
+            console.log('Profil verisi güncellendi.');
+          }
+        } catch (error) {
+          console.error('Profil verisi çekilirken hata:', error);
+        }
+      }
+    };
+
+    fetchLatestProfile();
+  }, [isFocused, updateProfile]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -33,7 +53,14 @@ const ProfileScreen = () => {
     extrapolate: 'clamp',
   });
 
-  const menuItems = [
+  const menuItems: {
+    icon: string;
+    title: string;
+    subtitle: string;
+    iconType: string;
+    onPress: () => void;
+    gradient: string[];
+  }[] = [
     {
       icon: 'account-outline',
       title: 'Personal Details',
@@ -43,10 +70,10 @@ const ProfileScreen = () => {
       gradient: ['#4F46E5', '#7C3AED'],
     },
     {
-      icon: 'favorite-outline',
+      icon: 'heart-outline',
       title: 'Favorites',
       subtitle: 'Your favorite companies',
-      iconType: 'MaterialIcons',
+      iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('Favorites'),
       gradient: ['#EC4899', '#D946EF'],
     },
@@ -62,7 +89,7 @@ const ProfileScreen = () => {
       icon: 'domain',
       title: 'Company Details',
       subtitle: 'Company information',
-      iconType: 'MaterialIcons',
+      iconType: 'MaterialCommunityIcons',
       onPress: () => navigation.navigate('CompanyDetails'),
       gradient: ['#10B981', '#3B82F6'],
     },
@@ -71,10 +98,21 @@ const ProfileScreen = () => {
       title: 'Product Details',
       subtitle: 'Product information',
       iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('ProductDetails'),
+      onPress: () => navigation.navigate('MarketPlaceProductDetails'),
       gradient: ['#6366F1', '#8B5CF6'],
     },
   ];
+
+  const getProfilePhoto = () => {
+    if (profile.photoURL) {
+      if (profile.photoURL.startsWith('http')) {
+        return profile.photoURL;
+      }
+      return `https://api.aikuaiplatform.com${profile.photoURL}`;
+    }
+    return null;
+  };
+  const profilePhoto = getProfilePhoto();
 
   return (
     <LinearGradient
@@ -87,14 +125,14 @@ const ProfileScreen = () => {
         <Animated.View style={[styles.header, {height: headerHeight}]}>
           <View style={styles.headerContent}>
             <View style={styles.avatarContainer}>
-              {user?.photoURL ? (
-                <Image source={{uri: user.photoURL}} style={styles.avatar} />
+              {profilePhoto ? (
+                <Image source={{uri: profilePhoto}} style={styles.avatar} />
               ) : (
                 <LinearGradient
                   colors={['#2A2D3E', '#424867']}
                   style={styles.avatarPlaceholder}>
-                  <Icon
-                    name="person"
+                  <MaterialCommunityIcons
+                    name="account"
                     size={metrics.scale(32)}
                     color={Colors.lightText}
                   />
@@ -103,32 +141,40 @@ const ProfileScreen = () => {
               <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => navigation.navigate('UpdateProfile')}>
-                <Icon name="edit" size={14} color={Colors.background} />
+                <MaterialCommunityIcons
+                  name="pencil"
+                  size={14}
+                  color={Colors.background}
+                />
               </TouchableOpacity>
             </View>
             <View style={styles.userInfo}>
               <View style={styles.userInfoHeader}>
                 <View>
                   <Text style={styles.userName}>
-                    {profile.firstName && profile.lastName 
+                    {profile.firstName && profile.lastName
                       ? `${profile.firstName} ${profile.lastName}`
                       : user?.name || 'Murat Tanrıyakul'}
                   </Text>
                   <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
                   <View style={styles.roleWrapper}>
-                    <MaterialCommunityIcons 
-                      name="crown" 
-                      size={20} 
+                    <MaterialCommunityIcons
+                      name="crown"
+                      size={20}
                       color="#FFD700"
                       style={styles.roleIcon}
                     />
                     <Text style={styles.roleText}>Startup Plan</Text>
                   </View>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.settingsButton}
                   onPress={() => navigation.navigate('Settings')}>
-                  <Icon name="settings" size={24} color={Colors.lightText} />
+                  <MaterialCommunityIcons
+                    name="cog"
+                    size={24}
+                    color={Colors.lightText}
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -155,22 +201,22 @@ const ProfileScreen = () => {
                   style={styles.menuItemIcon}
                   start={{x: 0, y: 0}}
                   end={{x: 1, y: 1}}>
-                  {item.iconType === 'MaterialCommunityIcons' ? (
-                    <MaterialCommunityIcons
-                      name={item.icon}
-                      size={24}
-                      color="#FFF"
-                    />
-                  ) : (
-                    <Icon name={item.icon} size={24} color="#FFF" />
-                  )}
+                  <MaterialCommunityIcons
+                    name={item.icon}
+                    size={24}
+                    color="#FFF"
+                  />
                 </LinearGradient>
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
                   <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
                 </View>
                 <View style={styles.menuItemArrow}>
-                  <Icon name="chevron-right" size={24} color={Colors.primary} />
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={24}
+                    color={Colors.primary}
+                  />
                 </View>
               </TouchableOpacity>
             ))}
@@ -249,95 +295,76 @@ const styles = StyleSheet.create({
   userInfoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-  settingsButton: {
-    padding: metrics.padding.xs,
-    borderRadius: metrics.borderRadius.circle,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
   },
   userName: {
     fontSize: metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
-    marginBottom: metrics.margin.xxs,
   },
   userEmail: {
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
     opacity: 0.7,
-    marginBottom: metrics.margin.sm,
+    marginTop: metrics.margin.xxs,
   },
-  roleWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: metrics.margin.xs,
-    backgroundColor: Colors.background,
-    paddingHorizontal: metrics.padding.xs,
-    paddingVertical: metrics.padding.xxs,
-    borderRadius: metrics.borderRadius.circle,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-  },
-  roleIcon: {
-    marginRight: 6,
-    fontWeight: '900',
-  },
-  roleText: {
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.sm,
-    fontWeight: '800',
+  settingsButton: {
+    // Ayarlar butonu için stil
   },
   menuContainer: {
     paddingHorizontal: metrics.padding.lg,
-    paddingTop: metrics.padding.lg,
+    paddingTop: metrics.padding.sm,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: metrics.padding.lg,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: metrics.borderRadius.lg,
+    padding: metrics.padding.md,
     marginBottom: metrics.margin.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   menuItemIcon: {
-    width: metrics.scale(48),
-    height: metrics.scale(48),
-    borderRadius: metrics.scale(16),
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
   },
   menuItemContent: {
     flex: 1,
-    marginLeft: metrics.margin.lg,
+    marginLeft: metrics.margin.md,
   },
   menuItemTitle: {
     fontSize: metrics.fontSize.lg,
+    fontWeight: 'bold',
     color: Colors.lightText,
-    fontWeight: '600',
-    marginBottom: metrics.margin.xxs,
   },
   menuItemSubtitle: {
     fontSize: metrics.fontSize.sm,
     color: Colors.lightText,
-    opacity: 0.6,
+    opacity: 0.7,
+    marginTop: 2,
   },
   menuItemArrow: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: metrics.padding.xs,
-    borderRadius: metrics.borderRadius.circle,
+    // Ok ikonu için stil
+  },
+  roleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginTop: metrics.margin.sm,
+    alignSelf: 'flex-start',
+  },
+  roleIcon: {
+    marginRight: 4,
+  },
+  roleText: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+    fontSize: metrics.fontSize.xs,
   },
 });
 

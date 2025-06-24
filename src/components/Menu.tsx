@@ -16,10 +16,10 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
+import {useProfileStore} from '../store/profileStore';
 
 interface MenuProps {
   user: {
@@ -41,6 +41,7 @@ const SCALE = 0.9;
 
 const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const {profile} = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
   const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
@@ -116,7 +117,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
       } else if (title === 'Company Details') {
         navigation.navigate({ name: 'CompanyDetails', params: undefined });
       } else if (title === 'Product Details') {
-        navigation.navigate({ name: 'ProductDetails', params: undefined });
+        navigation.navigate({ name: 'ProductDetails', params: { id: '' } });
       } else if (title === 'Investment Details') {
         navigation.navigate({ name: 'InvestmentDetails', params: undefined });
       } else if (title === 'Settings') {
@@ -134,20 +135,20 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   };
 
   const menuItems = [
-    {title: 'Personal Details', icon: 'person'},
-    {title: 'Favorites', icon: 'favorite'},
-    {title: 'Subscription Details', icon: 'card-membership'},
-    {title: 'Company Details', icon: 'business'},
-    {title: 'Product Details', icon: 'inventory'},
-    {title: 'Investment Details', icon: 'attach-money'},
-    {title: 'Resources', icon: 'folder', isSection: true},
-    {title: 'Settings', icon: 'settings'},
+    {title: 'Personal Details', icon: 'account-outline'},
+    {title: 'Favorites', icon: 'heart-outline'},
+    {title: 'Subscription Details', icon: 'crown-outline'},
+    {title: 'Company Details', icon: 'domain'},
+    {title: 'Product Details', icon: 'view-grid-outline'},
+    {title: 'Investment Details', icon: 'cash-multiple'},
+    {title: 'Resources', icon: 'folder-outline', isSection: true},
+    {title: 'Settings', icon: 'cog'},
   ];
 
   const resourceItems = [
-    {title: 'Talent Pool', icon: 'people'},
+    {title: 'Talent Pool', icon: 'account-group-outline'},
     {title: 'Investment Opportunities', icon: 'trending-up'},
-    {title: 'How It Works', icon: 'help-outline'},
+    {title: 'How It Works', icon: 'help-circle-outline'},
   ];
 
   const openSocialMedia = (url: string) => {
@@ -156,6 +157,17 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
       Alert.alert('Error', 'Could not open link');
     });
   };
+
+  const getProfilePhoto = () => {
+    if (profile.photoURL) {
+      if (profile.photoURL.startsWith('http')) {
+        return profile.photoURL;
+      }
+      return `https://api.aikuaiplatform.com${profile.photoURL}`;
+    }
+    return null;
+  };
+  const profilePhoto = getProfilePhoto();
 
   return (
     <TouchableWithoutFeedback onPress={handleClose}>
@@ -172,7 +184,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={handleClose}>
-                <Icon
+                <MaterialCommunityIcons
                   name="close"
                   size={metrics.scale(24)}
                   color={Colors.primary}
@@ -180,12 +192,12 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
               </TouchableOpacity>
               <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
-                  {user?.avatar ? (
-                    <Image source={{uri: user.avatar}} style={styles.avatar} />
+                  {profilePhoto ? (
+                    <Image source={{uri: profilePhoto}} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Icon
-                        name="person"
+                      <MaterialCommunityIcons
+                        name="account"
                         size={metrics.scale(40)}
                         color={Colors.lightText}
                       />
@@ -220,7 +232,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                       item.title === 'Settings' && styles.settingsItem
                     ]}
                     onPress={() => handleMenuItemPress(item.title)}>
-                    <Icon
+                    <MaterialCommunityIcons
                       name={item.icon}
                       size={metrics.scale(24)}
                       color={Colors.primary}
@@ -230,8 +242,8 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                       item.title === 'Resources' && styles.sectionHeaderText
                     ]}>{item.title}</Text>
                     {item.title === 'Resources' && (
-                      <Icon
-                        name={expandedSection === 'Resources' ? 'expand-less' : 'expand-more'}
+                      <MaterialCommunityIcons
+                        name={expandedSection === 'Resources' ? 'chevron-up' : 'chevron-down'}
                         size={metrics.scale(24)}
                         color={Colors.primary}
                         style={styles.expandIcon}
@@ -246,7 +258,7 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                           key={subIndex}
                           style={styles.subMenuItem}
                           onPress={() => handleMenuItemPress(subItem.title)}>
-                          <Icon
+                          <MaterialCommunityIcons
                             name={subItem.icon}
                             size={metrics.scale(20)}
                             color={Colors.primary}
@@ -444,7 +456,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   sectionHeader: {
-    backgroundColor: Colors.cardBackground,
+    backgroundColor: '#1A1E29',
   },
   sectionHeaderText: {
     fontWeight: '600',
@@ -453,7 +465,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   subMenuContainer: {
-    backgroundColor: `${Colors.cardBackground}80`,
+    backgroundColor: Colors.background,
   },
   subMenuItem: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import {Text, TextInput} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -17,11 +18,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useAuth} from '../contexts/AuthContext';
 import CountryPicker, {Country, CountryCode} from 'react-native-country-picker-modal';
 import {useProfileStore} from '../store/profileStore';
+import ImageCropPicker from 'react-native-image-crop-picker';
+import axios from 'axios';
+import {storage} from '../storage/mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpdateProfile'>;
 
 const UpdateProfileScreen = ({navigation}: Props) => {
-  const {profile, updateProfile} = useProfileStore();
+  const {profile, updateProfile, updateProfilePhoto} = useProfileStore();
   const [form, setForm] = useState(profile);
   const {user} = useAuth();
   const [countryCode, setCountryCode] = useState<CountryCode>('TR');
@@ -33,11 +38,25 @@ const UpdateProfileScreen = ({navigation}: Props) => {
   const [withAlphaFilter] = useState<boolean>(false);
   const [withCallingCode] = useState<boolean>(true);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [avatarUri, setAvatarUri] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    // Profil ve kullanıcı verisi yüklendiğinde avatar URI'ını ayarla
+    const initialPhotoURL = profile.photoURL || user?.photoURL || '';
+    if (initialPhotoURL && !initialPhotoURL.startsWith('file://')) {
+        // Eğer URL tam değilse, base URL ekle (backend kodundan anlaşıldığı üzere)
+        const baseUrl = 'https://api.aikuaiplatform.com';
+        setAvatarUri(initialPhotoURL.startsWith('http') ? initialPhotoURL : `${baseUrl}${initialPhotoURL}`);
+    } else {
+        setAvatarUri(initialPhotoURL);
+    }
+  }, [profile.photoURL, user?.photoURL]);
 
   const onSelect = (country: Country) => {
     setCountryCode(country.cca2);
     setCountry(country);
-    const phoneWithoutCode = form.phone?.replace(/^\+\d+\s*/, '') || '';
+    const phoneWithoutCode = form.phone?.replace(/^\\+\\d+\\s*/, '') || '';
     handleChange('phone', `+${country.callingCode[0]} ${phoneWithoutCode}`);
   };
 
@@ -48,17 +67,9 @@ const UpdateProfileScreen = ({navigation}: Props) => {
     }));
   };
 
-  const handleSocialChange = (key: string, value: string) => {
-    setForm(prev => ({
-      ...prev,
-      social: {
-        ...prev.social,
-        [key]: value,
-      },
-    }));
-  };
+  const handleSave = async () => {
+    console.log("DEBUG: handleSave fonksiyonu başlatıldı.");
 
-  const handleSave = () => {
     if (!form.firstName || !form.lastName || !form.email) {
       Alert.alert(
         'Missing Information',
@@ -67,19 +78,128 @@ const UpdateProfileScreen = ({navigation}: Props) => {
       );
       return;
     }
+    
+    setIsSaving(true);
+    console.log("DEBUG: setIsSaving(true) çalıştı.");
+
+    let token: string | null | undefined = storage.getString('auth_token');
+    if (!token) {
+      token = await AsyncStorage.getItem('token');
+    }
+    console.log(`DEBUG: Token bulundu: ${token ? 'Evet' : 'Hayır'}`);
+
+    if (!token) {
+        Alert.alert('Error', 'Authentication token not found. Please log in again.');
+        setIsSaving(false);
+        return;
+    }
 
     try {
-      updateProfile(form);
-      Alert.alert('Success', 'Profile updated successfully', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+        console.log("DEBUG: try bloğuna girildi.");
+        
+        let photoPathForUpdate = profile.photoURL; 
+        let photoUrlForDisplay = profile.photoURL;
+
+        if (avatarUri && avatarUri.startsWith('file://')) {
+            console.log(`DEBUG: Fotoğraf yükleme bloğuna girildi. Avatar URI: ${avatarUri}`);
+            const formData = new FormData();
+            formData.append('photo', {
+                uri: avatarUri,
+                type: 'image/jpeg',
+                name: 'profile.jpg',
+            });
+
+            console.log("DEBUG: Fotoğraf yükleme isteği gönderiliyor...");
+            const photoResponse = await axios.post('https://api.aikuaiplatform.com/api/upload/profile-photo', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            
+            console.log("DEBUG: Fotoğraf yükleme cevabı:", JSON.stringify(photoResponse.data, null, 2));
+
+            if (photoResponse.data?.success && photoResponse.data.data?.url) {
+                const relativePath = photoResponse.data.data.url;
+                photoPathForUpdate = relativePath;
+                photoUrlForDisplay = relativePath.startsWith('/') ? `https://api.aikuaiplatform.com${relativePath}` : relativePath;
+                console.log("DEBUG: Backend'e gönderilecek göreceli yol:", photoPathForUpdate);
+                console.log("DEBUG: Mobilde gösterilecek tam URL:", photoUrlForDisplay);
+
+            } else {
+                 console.error("DEBUG: Fotoğraf yükleme başarısız veya URL bulunamadı.");
+                 throw new Error('Photo upload failed or URL not found in response.');
+            }
+        }
+        
+        // 2. Metin verilerini güncelle
+        const profileDataToUpdate = { ...form, photoURL: photoPathForUpdate, profilePhoto: photoPathForUpdate };
+        console.log("DEBUG: Profil güncelleme isteği gönderiliyor, data:", JSON.stringify(profileDataToUpdate, null, 2));
+
+        const response = await axios.put('https://api.aikuaiplatform.com/api/auth/updateUser', profileDataToUpdate, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        console.log("DEBUG: Profil güncelleme cevabı alındı:", JSON.stringify(response.data, null, 2));
+
+        if (response.data?.success) {
+            const updatedUser = {
+                ...response.data.user,
+                photoURL: photoUrlForDisplay,
+                profilePhoto: photoUrlForDisplay, 
+            };
+            updateProfile(updatedUser);
+            Alert.alert('Success', 'Profile updated successfully', [
+                {
+                    text: 'OK',
+                    onPress: () => navigation.goBack(),
+                },
+            ]);
+        } else {
+             console.error("DEBUG: Profil güncelleme başarısız.");
+             throw new Error(response.data.message || 'Failed to update profile.');
+        }
+
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.', [
-        {text: 'OK'},
-      ]);
+        console.error("DEBUG: catch bloğuna düşüldü.");
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        // @ts-ignore
+        const serverError = error.response?.data?.message;
+        console.error("Update profile error:", serverError || errorMessage);
+        Alert.alert('Error', serverError || 'Failed to update profile. Please try again.', [
+            {text: 'OK'},
+        ]);
+    } finally {
+        console.log("DEBUG: finally bloğuna girildi.");
+        setIsSaving(false);
+    }
+  };
+
+  const handlePickAvatar = async () => {
+    try {
+      const image = await ImageCropPicker.openPicker({
+        width: 400,
+        height: 400,
+        cropping: true,
+        cropperCircleOverlay: true,
+        compressImageQuality: 0.8,
+        mediaType: 'photo',
+      });
+      if (image && image.path) {
+        setAvatarUri(image.path);
+        // anlık olarak photoURL'i de güncelleyelim ki save'e basınca gitsin
+        updateProfilePhoto(image.path)
+      }
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error) {
+        // @ts-ignore
+        if ((error as any).code !== 'E_PICKER_CANCELLED') {
+          Alert.alert('Error', 'Photo selection failed.');
+        }
+      } else {
+        Alert.alert('Error', 'Photo selection failed.');
+      }
     }
   };
 
@@ -91,12 +211,16 @@ const UpdateProfileScreen = ({navigation}: Props) => {
       end={{x: 2, y: 1}}
       style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} disabled={isSaving}>
           <Icon name="arrow-back" size={24} color={Colors.lightText} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Icon name="check" size={24} color={Colors.primary} />
+        <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+            {isSaving ? (
+                <ActivityIndicator color={Colors.primary} />
+            ) : (
+                <Icon name="check" size={24} color={Colors.primary} />
+            )}
         </TouchableOpacity>
       </View>
 
@@ -107,8 +231,8 @@ const UpdateProfileScreen = ({navigation}: Props) => {
         
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            {user?.photoURL ? (
-              <Image source={{uri: user.photoURL}} style={styles.avatar} />
+            {avatarUri ? (
+              <Image source={{uri: avatarUri}} style={styles.avatar} />
             ) : (
               <LinearGradient
                 colors={['#2A2D3E', '#424867']}
@@ -122,7 +246,9 @@ const UpdateProfileScreen = ({navigation}: Props) => {
             )}
             <TouchableOpacity 
               style={styles.editAvatarButton}
-              onPress={() => Alert.alert('Coming Soon', 'Photo upload feature will be available soon!')}>
+              onPress={handlePickAvatar}
+              disabled={isSaving}
+              >
               <Icon name="edit" size={16} color={Colors.background} />
             </TouchableOpacity>
           </View>
@@ -309,91 +435,6 @@ const UpdateProfileScreen = ({navigation}: Props) => {
           </View>
         </View>
 
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Social Media</Text>
-          <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>LinkedIn</Text>
-              <TextInput
-                value={form.social.linkedin}
-                onChangeText={text => handleSocialChange('linkedin', text)}
-                style={styles.input}
-                mode="outlined"
-                outlineColor="rgba(255,255,255,0.1)"
-                activeOutlineColor={Colors.primary}
-                placeholder="Enter your LinkedIn profile URL"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                theme={{
-                  colors: {
-                    text: Colors.lightText,
-                    placeholder: 'rgba(255,255,255,0.5)',
-                    background: Colors.background,
-                  },
-                }}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Instagram</Text>
-              <TextInput
-                value={form.social.instagram}
-                onChangeText={text => handleSocialChange('instagram', text)}
-                style={styles.input}
-                mode="outlined"
-                outlineColor="rgba(255,255,255,0.1)"
-                activeOutlineColor={Colors.primary}
-                placeholder="Enter your Instagram profile URL"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                theme={{
-                  colors: {
-                    text: Colors.lightText,
-                    placeholder: 'rgba(255,255,255,0.5)',
-                    background: Colors.background,
-                  },
-                }}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Facebook</Text>
-              <TextInput
-                value={form.social.facebook}
-                onChangeText={text => handleSocialChange('facebook', text)}
-                style={styles.input}
-                mode="outlined"
-                outlineColor="rgba(255,255,255,0.1)"
-                activeOutlineColor={Colors.primary}
-                placeholder="Enter your Facebook profile URL"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                theme={{
-                  colors: {
-                    text: Colors.lightText,
-                    placeholder: 'rgba(255,255,255,0.5)',
-                    background: Colors.background,
-                  },
-                }}
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputLabel}>Twitter/X</Text>
-              <TextInput
-                value={form.social.twitter}
-                onChangeText={text => handleSocialChange('twitter', text)}
-                style={styles.input}
-                mode="outlined"
-                outlineColor="rgba(255,255,255,0.1)"
-                activeOutlineColor={Colors.primary}
-                placeholder="Enter your Twitter/X profile URL"
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                theme={{
-                  colors: {
-                    text: Colors.lightText,
-                    placeholder: 'rgba(255,255,255,0.5)',
-                    background: Colors.background,
-                  },
-                }}
-              />
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -408,7 +449,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: metrics.padding.lg,
-    paddingTop: metrics.padding.xxl * 2,
+    paddingTop: metrics.padding.lg,
     paddingBottom: metrics.padding.lg,
   },
   headerTitle: {

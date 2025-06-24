@@ -1,9 +1,8 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Alert,
   Linking,
@@ -22,18 +21,6 @@ import {RootStackParamList} from '../../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'ContactUs'>;
 
 const ContactUs = ({navigation}: Props) => {
-  const [message, setMessage] = useState('');
-
-  const handleSubmit = () => {
-    if (!message.trim()) {
-      Alert.alert('Hata', 'Lütfen mesajınızı yazın.');
-      return;
-    }
-
-    Alert.alert('Başarılı', 'Mesajınız başarıyla gönderildi.');
-    setMessage('');
-  };
-
   const handleInstagramPress = () => {
     Linking.openURL('https://www.instagram.com/aikuai_platform/');
   };
@@ -99,44 +86,14 @@ const ContactUs = ({navigation}: Props) => {
           <Text style={styles.headerTitle}>Contact Us</Text>
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.messageContainer}>
-            <TextInput
-              style={styles.messageInput}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Write your message here..."
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              multiline
-              textAlignVertical="top"
-              numberOfLines={6}
-            />
-          </View>
-
-          <View style={styles.submitButtonContainer}>
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              activeOpacity={0.7}>
-              <View style={styles.submitContent}>
-                <IoniconsIcon
-                  name="paper-plane"
-                  size={24}
-                  color="#FFFFFF"
-                  style={styles.submitIcon}
-                />
-                <Text style={styles.submitButtonText}>Send Message</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
+        <View style={styles.infoContent}>
           <View style={styles.contactInfoContainer}>
             <TouchableOpacity
               style={styles.socialItemContainer}
               onPress={handlePhonePress}
               activeOpacity={0.7}>
               <View style={styles.socialIconContainer}>
-                <MaterialIcons name="phone" size={24} color={Colors.primary} />
+                <MaterialIcons name="phone" size={28} color={Colors.primary} />
               </View>
               <Text style={styles.socialText}>+90 850 757 94 27</Text>
             </TouchableOpacity>
@@ -146,7 +103,7 @@ const ContactUs = ({navigation}: Props) => {
               onPress={handleEmailPress}
               activeOpacity={0.7}>
               <View style={styles.socialIconContainer}>
-                <MaterialIcons name="email" size={24} color={Colors.primary} />
+                <MaterialIcons name="email" size={28} color={Colors.primary} />
               </View>
               <Text style={styles.socialText}>info@aikuaiplatform.com</Text>
             </TouchableOpacity>
@@ -158,7 +115,7 @@ const ContactUs = ({navigation}: Props) => {
               <View style={styles.socialIconContainer}>
                 <FontAwesome
                   name="linkedin-square"
-                  size={24}
+                  size={28}
                   color={Colors.primary}
                 />
               </View>
@@ -172,7 +129,7 @@ const ContactUs = ({navigation}: Props) => {
               <View style={styles.socialIconContainer}>
                 <FontAwesome
                   name="instagram"
-                  size={24}
+                  size={28}
                   color={Colors.primary}
                 />
               </View>
@@ -209,100 +166,55 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     marginBottom: -metrics.margin.sm,
   },
-  content: {
-    padding: metrics.padding.lg,
-  },
-  messageContainer: {
-    height: 150,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: metrics.borderRadius.lg,
-    marginTop: metrics.margin.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  messageInput: {
+  infoContent: {
     flex: 1,
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-    lineHeight: metrics.fontSize.md * 1.5,
-    textAlignVertical: 'top',
-    padding: metrics.padding.lg,
-  },
-  submitButtonContainer: {
-    width: '100%',
-    alignItems: 'center',
-    marginTop: metrics.margin.xl,
-  },
-  submitButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: metrics.borderRadius.md,
-    paddingVertical: metrics.padding.md,
-    paddingHorizontal: metrics.padding.xl,
-    shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    width: '90%',
-  },
-  submitContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  submitIcon: {
-    marginRight: metrics.margin.md,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: metrics.fontSize.lg,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    alignItems: 'center',
+    padding: metrics.padding.xl,
   },
   contactInfoContainer: {
-    marginTop: metrics.margin.xl * 1.5,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: metrics.borderRadius.lg,
-    padding: metrics.padding.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: metrics.borderRadius.xl,
+    padding: metrics.padding.xl * 1.2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.13)',
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
   },
   socialItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: metrics.padding.md,
+    paddingVertical: metrics.padding.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: 'rgba(255,255,255,0.13)',
   },
   noBorder: {
     borderBottomWidth: 0,
   },
   socialIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: 'rgba(255,255,255,0.13)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: metrics.margin.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    marginRight: metrics.margin.lg,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   socialText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-    opacity: 0.9,
+    fontSize: metrics.fontSize.lg * 1.05,
+    opacity: 0.95,
+    fontWeight: '500',
   },
 });
 
