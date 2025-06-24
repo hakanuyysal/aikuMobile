@@ -79,6 +79,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.974504980015-2e15l52tr86h8o42v8puf36lrtaamjqc</string>
+				<string>com.aikumobile</string>
 			</array>
 		</dict>
 	</array>
