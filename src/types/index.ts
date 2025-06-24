@@ -93,4 +93,11 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
+  BillingInfo: { planDetails: any };
+  Payment: { planDetails: any; billingInfo: any };
 };
+
+export type BillingInfoScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'BillingInfo'
+>;

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,24 +9,24 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  FlatList,
   Image,
-  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Colors} from '../constants/colors';
+import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
-import {productService} from '../services/api';
-import {AxiosError} from 'axios';
-import * as ImagePicker from 'react-native-image-picker';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
+import { productService } from '../services/api';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddProduct'>;
 
 interface FormData {
   productName: string;
-  productLogo: string | null;
+  productLogo: string;
   productCategory: string;
   productDescription: string;
   detailedDescription: string;
@@ -37,37 +37,59 @@ interface FormData {
   keyFeatures: string[];
   pricingModel: string;
   releaseDate: string;
+  productPrice: number;
   productWebsite: string;
   productLinkedIn: string;
   productTwitter: string;
   companyName: string;
   companyId: string;
-  [key: string]: string | string[] | null;
 }
 
-interface InputValues {
-  tags: string;
-  problems: string;
-  solutions: string;
-  improvements: string;
-  keyFeatures: string;
-  [key: string]: string;
+interface Company {
+  id: string;
+  companyName: string;
 }
 
-const AddProduct = ({navigation}: Props) => {
+interface Product {
+  id: string;
+  productName: string;
+  productLogo?: string;
+  productCategory?: string;
+  productDescription?: string;
+  detailedDescription?: string;
+  tags?: string[];
+  problems?: string[];
+  solutions?: string[];
+  improvements?: string[];
+  keyFeatures?: string[];
+  pricingModel?: string;
+  releaseDate?: string;
+  productPrice?: number;
+  productWebsite?: string;
+  productLinkedIn?: string;
+  productTwitter?: string;
+  companyName?: string;
+  companyId?: string;
+}
+
+const AddProduct = ({ navigation, route }: Props) => {
+  const { user } = route.params;
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessageCompany, setErrorMessageCompany] = useState('');
+  const [products, setProducts] = useState<Product[] | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [showProductForm, setShowProductForm] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [inputValues, setInputValues] = useState<InputValues>({
-    tags: '',
-    problems: '',
-    solutions: '',
-    improvements: '',
-    keyFeatures: '',
-  });
+  const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [showCompanyOptions, setShowCompanyOptions] = useState(false);
+  const pricingOptions = ['Free', 'Paid', 'Freemium', 'Subscription'];
 
-  const [formData, setFormData] = useState<FormData>({
+  const initialFormData: FormData = {
     productName: '',
-    productLogo: null,
+    productLogo: '',
     productCategory: '',
     productDescription: '',
     detailedDescription: '',
@@ -76,228 +98,194 @@ const AddProduct = ({navigation}: Props) => {
     solutions: [],
     improvements: [],
     keyFeatures: [],
-    pricingModel: 'Free',
+    pricingModel: '',
     releaseDate: '',
+    productPrice: 0,
     productWebsite: '',
     productLinkedIn: '',
     productTwitter: '',
     companyName: '',
     companyId: '',
-  });
-
-  // AI Modal state'leri
-  const [aiModalVisible, setAiModalVisible] = useState(false);
-  const [aiWebsite, setAiWebsite] = useState('');
-  const [aiError, setAiError] = useState('');
-  const [aiProtocol, setAiProtocol] = useState<'https://' | 'http://'>('https://');
-  const [aiTab, setAiTab] = useState<'select' | 'website' | 'file' | 'loading'>('select');
-  const [aiFile, setAiFile] = useState<any>(null);
-  const [aiProgress, setAiProgress] = useState(0);
-  const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
-
-  const handleImagePicker = () => {
-    ImagePicker.launchImageLibrary({
-      mediaType: 'photo',
-      includeBase64: true,
-      maxHeight: 500,
-      maxWidth: 500,
-    }, (response) => {
-      if (response.didCancel) {
-        return;
-      }
-      if (response.errorCode) {
-        Alert.alert('Hata', 'Resim seçilirken bir hata oluştu.');
-        return;
-      }
-      const uri = response.assets?.[0]?.uri;
-      if (uri) {
-        setFormData(prev => ({
-          ...prev,
-          productLogo: uri,
-        }));
-      }
-    });
   };
 
-  const addItem = (field: keyof InputValues) => {
-    if (inputValues[field].trim() !== '') {
-      const fieldName = field as keyof FormData;
-      setFormData(prev => ({
-        ...prev,
-        [fieldName]: [...(prev[fieldName] as string[]), inputValues[field].trim()],
-      }));
-      setInputValues(prev => ({...prev, [field]: ''}));
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+
+  const fetchUserCompanies = useCallback(async () => {
+    try {
+      const userId = user?._id || user?.id;
+      if (!userId) {
+        throw new Error("Kullanıcı ID'si bulunamadı.");
+      }
+      const userCompanies = await productService.getUserCompanies(userId);
+      setCompanies(userCompanies.companies || []);
+    } catch (error) {
+      console.error('Error fetching user companies:', error);
+      setErrorMessageCompany('Failed to load companies. Please add a company first.');
+      setCompanies([]);
     }
-  };
+  }, [user]);
 
-  const removeItem = (index: number, field: keyof FormData) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field] as string[]).filter((_, i: number) => i !== index),
-    }));
-  };
+  const fetchUserProducts = useCallback(async () => {
+    try {
+      const userProducts = await productService.getUserProducts();
+      const normalizedProducts = (userProducts.products || []).map((p: any) => ({
+        ...p,
+        id: p.id || p._id || '',
+      }));
+      setProducts(normalizedProducts);
+    } catch (error) {
+      console.error('Error fetching user products:', error);
+      setErrorMessage('Failed to load products.');
+    }
+  }, []);
 
-  const handleSubmit = async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchUserProducts();
+    fetchUserCompanies();
+  }, [fetchUserProducts, fetchUserCompanies]);
+
+  const handleNewProduct = () => {
     setFormErrors([]);
+    if (companies.length === 0) {
+      setErrorMessageCompany('You need to add a company first');
+      return;
+    }
+
+    const allowedPlans = ['startup', 'investor', 'business'];
+    if (
+      !user.subscriptionPlan ||
+      !allowedPlans.includes(user.subscriptionPlan.toLowerCase())
+    ) {
+      setErrorMessage('Subscription required');
+      return;
+    }
+
+    setErrorMessage('');
+    setErrorMessageCompany('');
+    setSelectedProduct(null);
+    setFormData(initialFormData);
+    setShowProductForm(true);
+    setMessage('');
+  };
+
+  const handleProductSelect = (product: Product) => {
+    setFormErrors([]);
+    setSelectedProduct(product);
+    setFormData({
+      productName: product.productName || '',
+      productLogo: product.productLogo || '',
+      productCategory: product.productCategory || '',
+      productDescription: product.productDescription || '',
+      detailedDescription: product.detailedDescription || '',
+      tags: product.tags || [],
+      problems: product.problems || [],
+      solutions: product.solutions || [],
+      improvements: product.improvements || [],
+      keyFeatures: product.keyFeatures || [],
+      pricingModel: product.pricingModel || '',
+      releaseDate: product.releaseDate
+        ? new Date(product.releaseDate).toISOString().split('T')[0]
+        : '',
+      productPrice: product.productPrice || 0,
+      productWebsite: product.productWebsite || '',
+      productLinkedIn: product.productLinkedIn || '',
+      productTwitter: product.productTwitter || '',
+      companyId: product.companyId || '',
+      companyName: product.companyName || '',
+    });
+    setShowProductForm(true);
+  };
+
+  const handleAddProduct = async () => {
+    // Client-side validation
+    if (
+      !formData.productName ||
+      !formData.productCategory ||
+      !formData.productDescription ||
+      !formData.detailedDescription ||
+      !formData.pricingModel ||
+      !formData.companyId
+    ) {
+      Alert.alert(
+        'Eksik Bilgi',
+        'Lütfen tüm zorunlu alanları doldurun: Ürün Adı, Kategori, Açıklama, Detaylı Açıklama, Fiyatlandırma Modeli, Şirket'
+      );
+      setFormErrors([
+        'Please fill in all required fields: Product Name, Category, Short Description, Detailed Description, Pricing Model, Company',
+      ]);
+      return;
+    }
 
     try {
-      const response = await productService.createProduct({
-        ...formData,
-        productLogo: formData.productLogo || undefined,
-      });
-      Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
-      navigation.navigate('ProductDetails', {id: response.product.id});
-    } catch (error: unknown) {
-      if (error instanceof AxiosError && error.response?.data?.errors) {
-        const msgs = error.response.data.errors.map((e: any) => e.msg);
-        setFormErrors(msgs);
+      setLoading(true);
+      if (selectedProduct) {
+        await productService.updateProduct(selectedProduct.id, formData);
+        Alert.alert('Başarılı', 'Ürün başarıyla güncellendi!');
+        setMessage('Product successfully updated!');
       } else {
-        Alert.alert('Hata', 'Ürün eklenirken bir hata oluştu.');
+        const response = await productService.createProduct(formData);
+        Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
+        setMessage('Product successfully added!');
+        navigation.navigate('ProductDetails', { id: response.product.id });
+      }
+      await fetchUserProducts();
+      setShowProductForm(false);
+      setSelectedProduct(null);
+      setFormData(initialFormData);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const errorMessages =
+          error.response?.data?.errors?.map((err: any) => err.msg) || ['Ürün işlenirken bir hata oluştu.'];
+        setFormErrors(errorMessages);
+        Alert.alert('Hata', errorMessages.join(', '));
+        console.error('API Hatası Durumu:', error.response?.status);
+        console.error('API Hatası Verisi:', error.response?.data);
+      } else {
+        setFormErrors(['Bilinmeyen bir hata oluştu.']);
+        Alert.alert('Hata', 'Bilinmeyen bir hata oluştu.');
+        console.error('Ürün işleme hatası:', error);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // AI modalı için analiz mesajı fonksiyonu
-  const getAnalysisMessage = (progress: number, method: 'website' | 'file') => {
-    if (progress < 25) {
-      return method === 'website' ? 'Website analiz ediliyor...' : 'Doküman okunuyor...';
-    } else if (progress < 50) {
-      return method === 'website' ? 'Ürün bilgileri çıkarılıyor...' : 'İçerik çıkarılıyor...';
-    } else if (progress < 75) {
-      return 'Bilgileriniz işleniyor...';
-    } else if (progress < 90) {
-      return 'Neredeyse tamamlandı...';
-    } else {
-      return 'Ürün detayları optimize ediliyor...';
-    }
-  };
-
-  // AI ile doldurma fonksiyonu
-  const handleAIFill = async () => {
-    setAiError('');
-    setAiTab('loading');
-    setAiProgress(0);
-    setAiMethod(prev => (prev === 'website' || prev === 'file') ? prev : 'website');
-    let progress = 0;
-    const intervalStep = 250;
-    const totalDuration = 4000;
-    const steps = Math.floor(totalDuration / intervalStep);
-    const progressStep = 100 / steps;
-    const interval = setInterval(() => {
-      progress += progressStep;
-      setAiProgress(Math.min(progress, 100));
-    }, intervalStep);
-    try {
-      if (aiTab === 'website') {
-        if (!aiWebsite.trim()) {
-          setAiError('Lütfen bir website URL\'si girin.');
-          setAiTab('website');
-          clearInterval(interval);
-          return;
-        }
-        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i;
-        let url = aiWebsite.trim();
-        if (!urlPattern.test(url)) {
-          setAiError('Geçersiz URL formatı.');
-          setAiTab('website');
-          clearInterval(interval);
-          return;
-        }
-        if (!/^https?:\/\//i.test(url)) {
-          url = aiProtocol + url;
-        }
-        url = url.replace(/^(https?:\/\/)+(https?:\/\/)/i, '$1');
-        const response = await fetch('/ai/analyze-website', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+  const handleDeleteProduct = () => {
+    Alert.alert(
+      'Ürünü Sil',
+      `"${selectedProduct?.productName}" ürününü silmek istediğinizden emin misiniz?`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await productService.deleteProduct(selectedProduct!.id);
+              Alert.alert('Başarılı', 'Ürün başarıyla silindi!');
+              setMessage('Product deleted successfully!');
+              await fetchUserProducts();
+              setShowProductForm(false);
+              setSelectedProduct(null);
+              setFormData(initialFormData);
+            } catch (error: unknown) {
+              if (axios.isAxiosError(error)) {
+                const errorMessages =
+                  error.response?.data?.errors?.map((err: any) => err.msg) || ['Ürün silinirken bir hata oluştu.'];
+                setFormErrors(errorMessages);
+                Alert.alert('Hata', errorMessages.join(', '));
+              } else {
+                setFormErrors(['Bilinmeyen bir hata oluştu.']);
+                Alert.alert('Hata', 'Bilinmeyen bir hata oluştu.');
+              }
+            } finally {
+              setLoading(false);
+            }
           },
-          body: JSON.stringify({ url }),
-        });
-        const data = await response.json();
-        if (data) {
-          setFormData((prev) => ({
-            ...prev,
-            productLogo: data.productLogo || prev.productLogo,
-            productName: data.productName || prev.productName,
-            productDescription: data.productDescription || prev.productDescription,
-            detailedDescription: data.detailedDescription || prev.detailedDescription,
-            productCategory: data.productCategory || prev.productCategory,
-            productWebsite: data.productWebsite || prev.productWebsite,
-            productLinkedIn: data.productLinkedIn || prev.productLinkedIn,
-            productTwitter: data.productTwitter || prev.productTwitter,
-            companyName: data.companyName || prev.companyName,
-            companyId: data.companyId || prev.companyId,
-          }));
-          setAiModalVisible(false);
-          setAiWebsite('');
-          setAiFile(null);
-          clearInterval(interval);
-        } else {
-          setAiError('Otomatik doldurma başarısız oldu.');
-          clearInterval(interval);
-        }
-      } else if (aiTab === 'file') {
-        if (!aiFile) {
-          setAiError('Lütfen bir dosya seçin.');
-          setAiTab('file');
-          clearInterval(interval);
-          return;
-        }
-        const formDataFile = new FormData();
-        formDataFile.append('document', aiFile);
-        const response = await fetch('/ai/analyze-document', {
-          method: 'POST',
-          body: formDataFile,
-        });
-        const data = await response.json();
-        if (data) {
-          setFormData((prev) => ({
-            ...prev,
-            productLogo: data.productLogo || prev.productLogo,
-            productName: data.productName || prev.productName,
-            productDescription: data.productDescription || prev.productDescription,
-            detailedDescription: data.detailedDescription || prev.detailedDescription,
-            productCategory: data.productCategory || prev.productCategory,
-            productWebsite: data.productWebsite || prev.productWebsite,
-            productLinkedIn: data.productLinkedIn || prev.productLinkedIn,
-            productTwitter: data.productTwitter || prev.productTwitter,
-            companyName: data.companyName || prev.companyName,
-            companyId: data.companyId || prev.companyId,
-          }));
-          setAiModalVisible(false);
-          setAiWebsite('');
-          setAiFile(null);
-          clearInterval(interval);
-        } else {
-          setAiError('Otomatik doldurma başarısız oldu.');
-          clearInterval(interval);
-        }
-      }
-    } catch (error) {
-      setAiError('Bir hata oluştu. Lütfen tekrar deneyin.');
-      clearInterval(interval);
-    } finally {
-      setAiTab('select');
-    }
-  };
-
-  const handlePickFile = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibrary({
-        mediaType: 'mixed',
-        includeBase64: true,
-      });
-      if (result.assets && result.assets[0]) {
-        setAiFile(result.assets[0]);
-        setAiTab('file');
-      }
-    } catch (err) {
-      Alert.alert('Hata', 'Dosya seçilirken bir hata oluştu.');
-    }
+        },
+      ]
+    );
   };
 
   const renderInputField = (
@@ -307,17 +295,17 @@ const AddProduct = ({navigation}: Props) => {
     placeholder: string,
     multiline: boolean = false,
     maxLength?: number,
-    keyboardType: 'default' | 'numeric' | 'email-address' | 'phone-pad' = 'default',
-    required: boolean = false,
+    keyboardType: 'default' | 'numeric' | 'email-address' | 'phone-pad' | 'url' = 'default',
+    required: boolean = false
   ) => (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>
-        {label} {required && <Text style={styles.requiredStar}>*</Text>}
+        {label} {required && <Text style={styles.requiredAsterisk}>*</Text>}
       </Text>
       <TextInput
         style={[styles.input, multiline && styles.multilineInput]}
         value={String(value)}
-        onChangeText={onChangeText}
+        onChangeText={(text) => onChangeText(text.trim())}
         placeholder={placeholder}
         placeholderTextColor={Colors.lightText + '80'}
         multiline={multiline}
@@ -334,365 +322,369 @@ const AddProduct = ({navigation}: Props) => {
 
   const renderTagInput = (
     label: string,
-    field: string,
-    items: string[],
-    placeholder: string,
+    value: string[],
+    onChangeText: (tags: string[]) => void,
+    placeholder: string
   ) => (
     <View style={styles.tagContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
-      <View style={styles.tagInputContainer}>
-        <TextInput
-          style={[styles.input, styles.tagInput]}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.lightText + '80'}
-          value={inputValues[field]}
-          onChangeText={(text) =>
-            setInputValues(prev => ({...prev, [field]: text}))
-          }
-          onSubmitEditing={() => addItem(field as keyof InputValues)}
-        />
-        <TouchableOpacity
-          style={styles.addTagButton}
-          onPress={() => addItem(field as keyof InputValues)}
-          disabled={!inputValues[field].trim()}>
-          <Text style={styles.addTagButtonText}>Ekle</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.tagList}>
-        {items.map((item, index) => (
-          <View key={index} style={styles.tagItem}>
-            <Text style={styles.tagText}>{item}</Text>
-            <TouchableOpacity
-              onPress={() => removeItem(index, field as keyof FormData)}
-              style={styles.removeTagButton}>
-              <Icon name="close" size={16} color={Colors.lightText} />
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
+      <TextInput
+        style={[styles.input, styles.tagInput]}
+        placeholder={placeholder}
+        placeholderTextColor={Colors.lightText + '80'}
+        value={value.join(', ')}
+        onChangeText={(text) =>
+          onChangeText(text.split(',').map((tag) => tag.trim()).filter(Boolean))
+        }
+      />
     </View>
   );
+
+  const renderProductItem = ({ item }: { item: Product }) => (
+    <TouchableOpacity
+      style={styles.productCard}
+      onPress={() => handleProductSelect(item)}
+    >
+      <Image
+        source={item.productLogo ? { uri: `${process.env.REACT_APP_IMG_URL}${item.productLogo}` } : undefined}
+        style={styles.productImage}
+      />
+      <Text style={styles.productName}>{item.productName}</Text>
+    </TouchableOpacity>
+  );
+
+  console.log('user:', user);
 
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
-      style={styles.container}>
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
+      style={styles.container}
+    >
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={Colors.lightText} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Yeni Ürün Ekle</Text>
-          <TouchableOpacity
-            style={[styles.saveButton, loading && styles.disabledButton]}
-            onPress={handleSubmit}
-            disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color={Colors.primary} />
-            ) : (
-              <Text style={styles.saveButtonText}>Kaydet</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.content}>
-          <View style={styles.formContainer}>
-            <TouchableOpacity
-              style={styles.aiButton}
-              onPress={() => setAiModalVisible(true)}>
-              <Icon name="bulb-outline" size={24} color={Colors.primary} />
-              <Text style={styles.aiButtonText}>AI ile Doldur</Text>
-            </TouchableOpacity>
-
-            {renderInputField(
-              'Ürün Adı',
-              formData.productName,
-              (text) => setFormData({...formData, productName: text}),
-              'Ürün adını girin',
-              false,
-              undefined,
-              'default',
-              true,
-            )}
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Ürün Logosu</Text>
+        {!showProductForm ? (
+          <>
+            <View style={styles.header}>
               <TouchableOpacity
-                style={styles.imagePickerButton}
-                onPress={handleImagePicker}>
-                {formData.productLogo ? (
-                  <Image
-                    source={{uri: formData.productLogo}}
-                    style={styles.productLogo}
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Icon name="chevron-back" size={24} color={Colors.lightText} />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>Product Details</Text>
+            </View>
+            <ScrollView style={styles.content}>
+              <Text style={styles.sectionTitle}>Product Information</Text>
+              {errorMessage && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate({ name: 'Pricing' })}
+                  style={styles.warningMessage}
+                >
+                  <Icon name="warning-outline" size={30} color={Colors.error} />
+                  <Text style={styles.warningText}>{errorMessage}</Text>
+                </TouchableOpacity>
+              )}
+              {errorMessageCompany && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate({ name: 'CompanyProfile' })}
+                  style={styles.warningMessage}
+                >
+                  <Icon name="warning-outline" size={30} color={Colors.error} />
+                  <Text style={styles.warningText}>{errorMessageCompany}</Text>
+                </TouchableOpacity>
+              )}
+              {message && (
+                <View style={styles.successMessage}>
+                  <Icon name="checkmark-circle-outline" size={30} color={Colors.primary} />
+                  <Text style={styles.successText}>{message}</Text>
+                </View>
+              )}
+              <View style={styles.productListContainer}>
+                {products === null ? (
+                  <Text style={styles.loadingText}>Loading...</Text>
+                ) : products.length > 0 ? (
+                  <FlatList
+                    data={products}
+                    renderItem={renderProductItem}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.productRow}
                   />
                 ) : (
-                  <View style={styles.placeholderLogo}>
-                    <Icon name="image-outline" size={32} color={Colors.lightText} />
-                    <Text style={styles.placeholderText}>Logo Seç</Text>
-                  </View>
+                  <Text style={styles.noProductsText}>No products found.</Text>
+                )}
+                <TouchableOpacity style={styles.addProductButton} onPress={handleNewProduct}>
+                  <Icon name="add-circle-outline" size={30} color={Colors.primary} />
+                  <Text style={styles.addProductText}>Add New Product</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </>
+        ) : (
+          <>
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setShowProductForm(false)}
+              >
+                <Icon name="close" size={24} color={Colors.lightText} />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>
+                {selectedProduct ? 'Edit Product' : 'Add Product'}
+              </Text>
+              <TouchableOpacity
+                style={[styles.saveButton, loading && styles.disabledButton]}
+                onPress={handleAddProduct}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={Colors.primary} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
                 )}
               </TouchableOpacity>
             </View>
+            <ScrollView style={styles.content}>
+              <View style={styles.formContainer}>
+                <Text style={styles.sectionTitle}>Product Information</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>
-                Kategori <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <View style={styles.selectContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={formData.productCategory}
-                  onChangeText={(text) =>
-                    setFormData({...formData, productCategory: text})
-                  }
-                  placeholder="Kategori seçin"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <Icon name="chevron-down" size={24} color={Colors.lightText} />
-              </View>
-            </View>
+                {renderInputField(
+                  'Product Name',
+                  formData.productName,
+                  (text) => setFormData({ ...formData, productName: text }),
+                  'Enter your product name',
+                  false,
+                  undefined,
+                  'default',
+                  true
+                )}
 
-            {renderInputField(
-              'Kısa Açıklama',
-              formData.productDescription,
-              (text) => setFormData({...formData, productDescription: text}),
-              'Ürününüz hakkında kısa açıklama',
-              true,
-              500,
-              'default',
-              true,
-            )}
+                {renderInputField(
+                  'Product Logo URL',
+                  formData.productLogo,
+                  (text) => setFormData({ ...formData, productLogo: text }),
+                  'Enter product logo URL',
+                  false,
+                  undefined,
+                  'url'
+                )}
 
-            {renderInputField(
-              'Detaylı Açıklama',
-              formData.detailedDescription,
-              (text) => setFormData({...formData, detailedDescription: text}),
-              'Ürününüz hakkında detaylı açıklama',
-              true,
-              3000,
-            )}
+                {renderInputField(
+                  'Product Category',
+                  formData.productCategory,
+                  (text) => setFormData({ ...formData, productCategory: text }),
+                  'Enter a category',
+                  false,
+                  undefined,
+                  'default',
+                  true
+                )}
 
-            {renderTagInput('Etiketler', 'tags', formData.tags, 'Etiket ekleyin')}
-            {renderTagInput('Problemler', 'problems', formData.problems, 'Problem ekleyin')}
-            {renderTagInput('Çözümler', 'solutions', formData.solutions, 'Çözüm ekleyin')}
-            {renderTagInput('İyileştirmeler', 'improvements', formData.improvements, 'İyileştirme ekleyin')}
-            {renderTagInput('Özellikler', 'keyFeatures', formData.keyFeatures, 'Özellik ekleyin')}
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>
-                Fiyatlandırma Modeli <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <View style={styles.selectContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={formData.pricingModel}
-                  onChangeText={(text) =>
-                    setFormData({...formData, pricingModel: text})
-                  }
-                  placeholder="Fiyatlandırma modeli seçin"
-                  placeholderTextColor={Colors.lightText + '80'}
-                />
-                <Icon name="chevron-down" size={24} color={Colors.lightText} />
-              </View>
-            </View>
-
-            {renderInputField(
-              'Yayın Tarihi',
-              formData.releaseDate,
-              (text) => setFormData({...formData, releaseDate: text}),
-              'gg.aa.yyyy',
-              false,
-              undefined,
-              'default',
-              true,
-            )}
-
-            {renderInputField(
-              'Ürün Websitesi',
-              formData.productWebsite,
-              (text) => setFormData({...formData, productWebsite: text}),
-              'Ürün websitesini girin',
-              false,
-              undefined,
-              'default',
-              true,
-            )}
-
-            {renderInputField(
-              'LinkedIn',
-              formData.productLinkedIn,
-              (text) => setFormData({...formData, productLinkedIn: text}),
-              'LinkedIn profilini girin',
-            )}
-
-            {renderInputField(
-              'Twitter',
-              formData.productTwitter,
-              (text) => setFormData({...formData, productTwitter: text}),
-              'Twitter profilini girin',
-            )}
-
-            {formErrors.length > 0 && (
-              <View style={styles.errorContainer}>
-                {formErrors.map((error, index) => (
-                  <Text key={index} style={styles.errorText}>
-                    • {error}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>
+                    Company Name <Text style={styles.requiredAsterisk}>*</Text>
                   </Text>
-                ))}
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.submitButton, loading && styles.disabledButton]}
-              onPress={handleSubmit}
-              disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color={Colors.lightText} />
-              ) : (
-                <Text style={styles.submitButtonText}>Ürünü Kaydet</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-
-        <Modal
-          visible={aiModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setAiModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>AI ile Doldur</Text>
-                <TouchableOpacity
-                  onPress={() => setAiModalVisible(false)}
-                  style={styles.modalCloseButton}>
-                  <Icon name="close" size={24} color={Colors.lightText} />
-                </TouchableOpacity>
-              </View>
-
-              {aiTab === 'select' && (
-                <View style={styles.modalBody}>
                   <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => setAiTab('website')}>
-                    <Icon name="globe-outline" size={24} color={Colors.primary} />
-                    <Text style={styles.modalOptionText}>Websiteden Doldur</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={handlePickFile}>
-                    <Icon name="document-outline" size={24} color={Colors.primary} />
-                    <Text style={styles.modalOptionText}>Dokümandan Doldur</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {aiTab === 'website' && (
-                <View style={styles.modalBody}>
-                  <View style={styles.urlInputContainer}>
-                    <TouchableOpacity
-                      style={styles.protocolButton}
-                      onPress={() =>
-                        setAiProtocol(prev =>
-                          prev === 'https://' ? 'http://' : 'https://',
-                        )
-                      }>
-                      <Text style={styles.protocolButtonText}>{aiProtocol}</Text>
-                    </TouchableOpacity>
-                    <TextInput
-                      style={styles.urlInput}
-                      value={aiWebsite}
-                      onChangeText={setAiWebsite}
-                      placeholder="example.com"
-                      placeholderTextColor={Colors.lightText + '80'}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-                  {aiError && (
-                    <Text style={styles.errorText}>{aiError}</Text>
-                  )}
-                  <View style={styles.modalFooter}>
-                    <TouchableOpacity
-                      style={styles.modalButton}
-                      onPress={() => setAiTab('select')}>
-                      <Text style={styles.modalButtonText}>Geri</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonPrimary]}
-                      onPress={handleAIFill}
-                      disabled={!aiWebsite.trim()}>
-                      <Text style={styles.modalButtonText}>Analiz Et</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {aiTab === 'file' && (
-                <View style={styles.modalBody}>
-                  {aiFile ? (
-                    <View style={styles.fileInfo}>
-                      <Icon name="document" size={24} color={Colors.primary} />
-                      <Text style={styles.fileName}>{aiFile.name}</Text>
-                      <TouchableOpacity
-                        onPress={() => setAiFile(null)}
-                        style={styles.removeFileButton}>
-                        <Icon name="close" size={20} color={Colors.lightText} />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.filePickerButton}
-                      onPress={handlePickFile}>
-                      <Icon name="add-circle-outline" size={24} color={Colors.primary} />
-                      <Text style={styles.filePickerText}>Dosya Seç</Text>
-                    </TouchableOpacity>
-                  )}
-                  {aiError && (
-                    <Text style={styles.errorText}>{aiError}</Text>
-                  )}
-                  <View style={styles.modalFooter}>
-                    <TouchableOpacity
-                      style={styles.modalButton}
-                      onPress={() => setAiTab('select')}>
-                      <Text style={styles.modalButtonText}>Geri</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.modalButtonPrimary]}
-                      onPress={handleAIFill}
-                      disabled={!aiFile}>
-                      <Text style={styles.modalButtonText}>Analiz Et</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {aiTab === 'loading' && (
-                <View style={styles.modalBody}>
-                  <View style={styles.progressContainer}>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {width: `${aiProgress}%`},
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.progressText}>
-                      {getAnalysisMessage(aiProgress, aiMethod)}
+                    style={styles.pricingButton}
+                    onPress={() => setShowCompanyOptions(!showCompanyOptions)}
+                  >
+                    <Text style={styles.pricingButtonText}>
+                      {formData.companyName || 'Select your company'}
                     </Text>
-                  </View>
+                    <Icon name="chevron-down" size={20} color={Colors.lightText} />
+                  </TouchableOpacity>
+                  {showCompanyOptions && (
+                    <View style={styles.pricingOptions}>
+                      {companies.map((company) => (
+                        <TouchableOpacity
+                          key={company.id}
+                          style={styles.pricingOption}
+                          onPress={() => {
+                            setFormData({
+                              ...formData,
+                              companyId: company.id,
+                              companyName: company.companyName,
+                            });
+                            setShowCompanyOptions(false);
+                          }}
+                        >
+                          <Text style={styles.pricingOptionText}>{company.companyName}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-          </View>
-        </Modal>
+
+                {renderInputField(
+                  'Product Description',
+                  formData.productDescription,
+                  (text) => setFormData({ ...formData, productDescription: text }),
+                  'Brief description of your product',
+                  true,
+                  500,
+                  'default',
+                  true
+                )}
+
+                {renderInputField(
+                  'Detailed Description',
+                  formData.detailedDescription,
+                  (text) => setFormData({ ...formData, detailedDescription: text }),
+                  'Provide more details about your product',
+                  true,
+                  3000,
+                  'default',
+                  true
+                )}
+
+                {renderTagInput(
+                  'Tags',
+                  formData.tags,
+                  (tags) => setFormData({ ...formData, tags }),
+                  'Enter tags (comma-separated)'
+                )}
+
+                {renderTagInput(
+                  'Problems',
+                  formData.problems,
+                  (problems) => setFormData({ ...formData, problems }),
+                  'Enter problems (comma-separated)'
+                )}
+
+                {renderTagInput(
+                  'Solutions',
+                  formData.solutions,
+                  (solutions) => setFormData({ ...formData, solutions }),
+                  'Enter solutions (comma-separated)'
+                )}
+
+                {renderTagInput(
+                  'Improvements',
+                  formData.improvements,
+                  (improvements) => setFormData({ ...formData, improvements }),
+                  'Enter improvements (comma-separated)'
+                )}
+
+                {renderTagInput(
+                  'Key Features',
+                  formData.keyFeatures,
+                  (keyFeatures) => setFormData({ ...formData, keyFeatures }),
+                  'Enter key features (comma-separated)'
+                )}
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>
+                    Pricing Model <Text style={styles.requiredAsterisk}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.pricingButton}
+                    onPress={() => setShowPricingOptions(!showPricingOptions)}
+                  >
+                    <Text style={styles.pricingButtonText}>
+                      {formData.pricingModel || 'Select pricing model'}
+                    </Text>
+                    <Icon name="chevron-down" size={20} color={Colors.lightText} />
+                  </TouchableOpacity>
+                  {showPricingOptions && (
+                    <View style={styles.pricingOptions}>
+                      {pricingOptions.map((option) => (
+                        <TouchableOpacity
+                          key={option}
+                          style={styles.pricingOption}
+                          onPress={() => {
+                            setFormData({ ...formData, pricingModel: option });
+                            setShowPricingOptions(false);
+                          }}
+                        >
+                          <Text style={styles.pricingOptionText}>{option}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+
+                {renderInputField(
+                  'Release Date',
+                  formData.releaseDate,
+                  (text) => setFormData({ ...formData, releaseDate: text }),
+                  'dd.mm.yyyy'
+                )}
+
+                {renderInputField(
+                  'Product Price',
+                  formData.productPrice,
+                  (text) => setFormData({ ...formData, productPrice: Number(text) || 0 }),
+                  'Enter product price',
+                  false,
+                  undefined,
+                  'numeric'
+                )}
+
+                {renderInputField(
+                  'Product Website',
+                  formData.productWebsite,
+                  (text) => setFormData({ ...formData, productWebsite: text }),
+                  'Enter your product website',
+                  false,
+                  undefined,
+                  'url'
+                )}
+
+                {renderInputField(
+                  'Product LinkedIn',
+                  formData.productLinkedIn,
+                  (text) => setFormData({ ...formData, productLinkedIn: text }),
+                  'Enter your product LinkedIn',
+                  false,
+                  undefined,
+                  'url'
+                )}
+
+                {renderInputField(
+                  'Product X (Twitter)',
+                  formData.productTwitter,
+                  (text) => setFormData({ ...formData, productTwitter: text }),
+                  'Enter your product Twitter',
+                  false,
+                  undefined,
+                  'url'
+                )}
+
+                <TouchableOpacity
+                  style={[styles.submitButton, loading && styles.disabledButton]}
+                  onPress={handleAddProduct}
+                  disabled={loading}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {selectedProduct ? 'Update Product' : 'Add Product'}
+                  </Text>
+                </TouchableOpacity>
+
+                {selectedProduct && (
+                  <TouchableOpacity
+                    style={[styles.deleteButton, loading && styles.disabledButton]}
+                    onPress={handleDeleteProduct}
+                    disabled={loading}
+                  >
+                    <Text style={styles.deleteButtonText}>Delete Product</Text>
+                  </TouchableOpacity>
+                )}
+
+                {formErrors.length > 0 && (
+                  <View style={styles.errorContainer}>
+                    {formErrors.map((err, i) => (
+                      <Text key={i} style={styles.errorText}>
+                        • {err}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+          </>
+        )}
       </SafeAreaView>
     </LinearGradient>
   );
@@ -743,6 +735,12 @@ const styles = StyleSheet.create({
     padding: metrics.padding.lg,
     marginBottom: metrics.margin.md,
   },
+  sectionTitle: {
+    fontSize: metrics.fontSize.xl,
+    color: Colors.lightText,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.lg,
+  },
   inputContainer: {
     marginBottom: metrics.margin.md,
   },
@@ -751,8 +749,9 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     marginBottom: metrics.margin.sm,
   },
-  requiredStar: {
-    color: 'red',
+  requiredAsterisk: {
+    color: Colors.error,
+    fontSize: metrics.fontSize.md,
   },
   input: {
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -771,104 +770,41 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: metrics.margin.xs,
   },
-  selectContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    paddingRight: metrics.padding.md,
-  },
-  imagePickerButton: {
-    width: 100,
-    height: 100,
-    borderRadius: metrics.borderRadius.md,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  productLogo: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  placeholderLogo: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: Colors.lightText,
-    marginTop: metrics.margin.xs,
-  },
   tagContainer: {
     marginBottom: metrics.margin.md,
   },
-  tagInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   tagInput: {
-    flex: 1,
-    marginRight: metrics.margin.sm,
+    marginRight: 0,
   },
-  addTagButton: {
-    backgroundColor: Colors.primary,
-    padding: metrics.padding.sm,
-    borderRadius: metrics.borderRadius.md,
-  },
-  addTagButtonText: {
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.sm,
-  },
-  tagList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: metrics.margin.sm,
-  },
-  tagItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  pricingButton: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.sm,
-    marginRight: metrics.margin.sm,
-    marginBottom: metrics.margin.sm,
-  },
-  tagText: {
-    color: Colors.lightText,
-    marginRight: metrics.margin.xs,
-  },
-  removeTagButton: {
-    padding: metrics.padding.xs,
-  },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     padding: metrics.padding.md,
-    borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  aiButtonText: {
-    color: Colors.primary,
-    marginLeft: metrics.margin.sm,
+  pricingButtonText: {
+    color: Colors.lightText,
     fontSize: metrics.fontSize.md,
   },
-  errorContainer: {
-    backgroundColor: 'rgba(255,0,0,0.1)',
-    padding: metrics.padding.md,
+  pricingOptions: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
+    marginTop: metrics.margin.sm,
+    padding: metrics.padding.sm,
   },
-  errorText: {
-    color: 'red',
-    fontSize: metrics.fontSize.sm,
-    marginBottom: metrics.margin.xs,
+  pricingOption: {
+    padding: metrics.padding.sm,
+  },
+  pricingOptionText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
   },
   submitButton: {
     backgroundColor: Colors.primary,
-    padding: metrics.padding.lg,
     borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.lg,
     alignItems: 'center',
     marginTop: metrics.margin.lg,
   },
@@ -877,143 +813,99 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.lg,
     fontWeight: 'bold',
   },
+  deleteButton: {
+    backgroundColor: Colors.error,
+    borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.lg,
+    alignItems: 'center',
+    marginTop: metrics.margin.md,
+  },
+  deleteButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.lg,
+    fontWeight: 'bold',
+  },
   disabledButton: {
     opacity: 0.5,
   },
-  modalOverlay: {
+  productListContainer: {
+    marginBottom: metrics.margin.lg,
+  },
+  productCard: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#1A1E29',
-    borderRadius: metrics.borderRadius.lg,
-    width: '90%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: metrics.padding.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  modalTitle: {
-    fontSize: metrics.fontSize.lg,
-    fontWeight: 'bold',
-    color: Colors.lightText,
-  },
-  modalCloseButton: {
-    padding: metrics.padding.xs,
-  },
-  modalBody: {
-    padding: metrics.padding.lg,
-  },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: metrics.padding.md,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.md,
+    margin: metrics.margin.sm,
+    alignItems: 'center',
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: metrics.borderRadius.sm,
+    backgroundColor: '#fff',
+  },
+  productName: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    marginTop: metrics.margin.sm,
+    textAlign: 'center',
+  },
+  productRow: {
+    justifyContent: 'space-between',
+  },
+  addProductButton: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: metrics.borderRadius.md,
+    padding: metrics.padding.lg,
+    alignItems: 'center',
+    marginTop: metrics.margin.md,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  addProductText: {
+    color: Colors.primary,
+    fontSize: metrics.fontSize.lg,
+    fontWeight: '600',
+    marginLeft: metrics.margin.sm,
+  },
+  loadingText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    textAlign: 'center',
+  },
+  noProductsText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    textAlign: 'center',
+  },
+  warningMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: metrics.margin.md,
   },
-  modalOptionText: {
-    color: Colors.lightText,
+  warningText: {
+    color: Colors.error,
     fontSize: metrics.fontSize.md,
     marginLeft: metrics.margin.sm,
   },
-  urlInputContainer: {
+  successMessage: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
     marginBottom: metrics.margin.md,
   },
-  protocolButton: {
-    padding: metrics.padding.md,
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(255,255,255,0.1)',
-  },
-  protocolButtonText: {
+  successText: {
     color: Colors.primary,
     fontSize: metrics.fontSize.md,
+    marginLeft: metrics.margin.sm,
   },
-  urlInput: {
-    flex: 1,
-    padding: metrics.padding.md,
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: metrics.margin.sm,
+  errorContainer: {
     marginTop: metrics.margin.md,
   },
-  modalButton: {
-    padding: metrics.padding.md,
-    borderRadius: metrics.borderRadius.md,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  modalButtonPrimary: {
-    backgroundColor: Colors.primary,
-  },
-  modalButtonText: {
-    color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
-  },
-  fileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: metrics.padding.md,
-    borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
-  },
-  fileName: {
-    flex: 1,
-    color: Colors.lightText,
-    marginLeft: metrics.margin.sm,
-  },
-  removeFileButton: {
-    padding: metrics.padding.xs,
-  },
-  filePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: metrics.padding.lg,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    marginBottom: metrics.margin.md,
-  },
-  filePickerText: {
-    color: Colors.primary,
-    fontSize: metrics.fontSize.md,
-    marginLeft: metrics.margin.sm,
-  },
-  progressContainer: {
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: metrics.margin.md,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary,
-  },
-  progressText: {
-    color: Colors.lightText,
+  errorText: {
+    color: Colors.error,
     fontSize: metrics.fontSize.sm,
-    textAlign: 'center',
   },
 });
 
-export default AddProduct; 
+export default AddProduct;

@@ -7,11 +7,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActionSheetIOS,
-  Platform,
   SafeAreaView,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import IoniconsIcon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
@@ -31,46 +29,11 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({navigation}) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const {updateUser} = useAuth();
 
-  const languages = [
-    {code: 'tr', name: 'Turkish'},
-    {code: 'en', name: 'English'},
-  ];
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-
-  const handleLanguageSelect = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [...languages.map(lang => lang.name), 'Cancel'],
-          cancelButtonIndex: languages.length,
-          title: 'Select Language',
-        },
-        buttonIndex => {
-          if (buttonIndex !== languages.length) {
-            setSelectedLanguage(languages[buttonIndex].code);
-          }
-        },
-      );
-    } else {
-      // Android için Alert.alert kullanabiliriz
-      Alert.alert(
-        'Select Language',
-        '',
-        languages.map(lang => ({
-          text: lang.name,
-          onPress: () => setSelectedLanguage(lang.code),
-        })),
-        {cancelable: true},
-      );
-    }
-  };
-
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Are you sure you want to log out?', [
       {
         text: 'Cancel',
         style: 'cancel',
@@ -84,12 +47,10 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
             if (updateUser) {
               updateUser({} as any);
             }
-            setTimeout(() => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Auth' }],
-              });
-            }, 1000);
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Auth' }],
+            });
           } catch (error) {
             console.error('Logout error:', error);
             Alert.alert(
@@ -102,35 +63,15 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
     ]);
   };
 
-  const handleFeedback = () => {
-    Alert.alert('Feedback', 'Coming soon!');
-  };
-
   const handleContactUs = () => {
     navigation.navigate('ContactUs');
   };
 
   const settingsItems = [
     {
-      icon: 'dark-mode',
-      title: 'Dark Theme',
-      subtitle: 'Switch between light and dark mode',
-      iconType: 'MaterialIcons',
-      gradient: ['#4F46E5', '#7C3AED'],
-      rightElement: (
-        <Switch
-          value={isDarkMode}
-          onValueChange={setIsDarkMode}
-          trackColor={{false: Colors.border, true: Colors.primary}}
-          ios_backgroundColor={Colors.border}
-        />
-      ),
-    },
-    {
-      icon: 'notifications',
+      icon: 'bell-outline',
       title: 'Notifications',
       subtitle: 'Manage notification preferences',
-      iconType: 'MaterialIcons',
       gradient: ['#EC4899', '#D946EF'],
       rightElement: (
         <Switch
@@ -141,35 +82,11 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
         />
       ),
     },
+
     {
-      icon: 'language',
-      title: 'Language',
-      subtitle: 'Choose your preferred language',
-      iconType: 'MaterialIcons',
-      gradient: ['#F59E0B', '#EF4444'],
-      rightElement: (
-        <View style={styles.languageSelector}>
-          <Text style={styles.selectedLanguageText}>
-            {languages.find(lang => lang.code === selectedLanguage)?.name}
-          </Text>
-          <Icon name="arrow-forward-ios" size={16} color={Colors.primary} />
-        </View>
-      ),
-      onPress: handleLanguageSelect,
-    },
-    {
-      icon: 'feedback',
-      title: 'Send Feedback',
-      subtitle: 'Help us improve our service',
-      iconType: 'MaterialIcons',
-      gradient: ['#10B981', '#3B82F6'],
-      onPress: handleFeedback,
-    },
-    {
-      icon: 'contact-support',
+      icon: 'email-outline',
       title: 'Contact Us',
       subtitle: 'Get in touch with our support team',
-      iconType: 'MaterialIcons',
       gradient: ['#6366F1', '#8B5CF6'],
       onPress: handleContactUs,
     },
@@ -197,7 +114,11 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => console.log('Add new setting')}>
-            <Icon name="add-circle-outline" size={24} color={Colors.primary} />
+            <MaterialCommunityIcons
+              name="plus-circle-outline"
+              size={24}
+              color={Colors.primary}
+            />
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -216,7 +137,7 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
                   style={styles.menuItemIcon}
                   start={{x: 0, y: 0}}
                   end={{x: 1, y: 1}}>
-                  <Icon name={item.icon} size={24} color="#FFF" />
+                  <MaterialCommunityIcons name={item.icon} size={24} color="#FFF" />
                 </LinearGradient>
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
@@ -226,7 +147,7 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
                   item.rightElement
                 ) : (
                   <View style={styles.menuItemArrow}>
-                    <Icon
+                    <MaterialCommunityIcons
                       name="chevron-right"
                       size={24}
                       color={Colors.primary}
@@ -248,7 +169,7 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
                 start={{x: 0, y: 0}}
                 end={{x: 1, y: 1}}>
                 <View style={styles.logoutContent}>
-                  <Icon
+                  <MaterialCommunityIcons
                     name="logout"
                     size={22}
                     color={Colors.lightText}

@@ -27,6 +27,8 @@ import TalentPoolScreen from 'components/TalentPool';
 import TrainingDetailScreen from 'components/TrainingDetailScreen';
 import PaymentSuccess from 'screens/subscriptions/PaymentSuccess';
 import PaymentError from 'screens/subscriptions/PaymentError';
+import BillingInfoScreen from 'screens/subscriptions/BillingInfoScreen';
+import PaymentScreen from 'screens/subscriptions/PaymentScreen';
 import HowItWorksScreen from 'components/Faq';
 import MarketPlaceScreen from 'screens/MarketPlaceScreen';
 import ProductDetailsScreen from 'screens/MarketPlaceProductDetails';
@@ -38,11 +40,12 @@ import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
 import AddProduct from './src/screens/AddProduct';
 import {ChatProvider} from './src/contexts/ChatContext';
 import ChatScreen from './src/screens/ChatScreen';
+import SubscriptionNavigator from './src/navigation/SubscriptionNavigator';
 import {
   useAppInitialization,
   markOnboardingComplete,
 } from './src/hooks/useAppInitialization';
-import CartScreen from './src/screens/subscriptions/CartScreen';
+import { Company } from './src/services/companyService';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -74,7 +77,9 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
-  Cart: undefined;
+  CompanyProfile: { company: Company };
+  BillingInfo: {planDetails: {title: string; price: number; isYearly: boolean}};
+  Payment: {planDetails: any; billingInfo: any};
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -285,8 +290,18 @@ function AppContent(): React.JSX.Element {
             options={{headerShown: false}}
           />
           <RootStack.Screen
-            name="Cart"
-            component={CartScreen}
+            name="CompanyProfile"
+            component={CompanyDetails}
+            options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="BillingInfo"
+            component={BillingInfoScreen}
+            options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="Payment"
+            component={PaymentScreen}
             options={{headerShown: false}}
           />
         </RootStack.Navigator>

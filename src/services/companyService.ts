@@ -1,7 +1,17 @@
 import axios from 'axios';
+import Config from '../config/Config';
 
-const API_URL = 'https://api.aikuaiplatform.com/api';
-const BASE_URL = 'https://api.aikuaiplatform.com';
+const API_URL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+export const BASE_URL = Config.API_URL || 'https://api.aikuaiplatform.com';
+
+// Axios instance oluştur
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface Company {
   _id: string;
@@ -17,6 +27,18 @@ export interface Company {
   companySize: string;
   businessScale: string;
   isHighlighted?: boolean;
+  userId?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  companyLinkedIn?: string;
+  companyInstagram?: string;
+  companyTwitter?: string;
+  acceptMessages?: boolean;
+  detailedDescription?: string;
+  interestedSectors?: string[];
+  numberOfInvestments?: number;
+  numberOfExits?: number;
+  isIncorporated?: boolean;
 }
 
 const processCompanyLogo = (company: Company): Company => {
@@ -52,8 +74,8 @@ export const companyService = {
   // Tüm şirketleri getir
   getAllCompanies: async (): Promise<{ success: boolean; companies: Company[] }> => {
     try {
-      const response = await axios.get(`${API_URL}/company/all`);
-      console.log('API Response:', response.data); // API yanıtını kontrol et
+      const response = await api.get('/company/all');
+      console.log('API Response:', response.data);
       return {
         success: true,
         companies: response.data.companies.map(processCompanyLogo)
@@ -70,12 +92,11 @@ export const companyService = {
   // Sadece startup'ları getir
   getStartups: async (): Promise<Company[]> => {
     try {
-      const response = await axios.get(`${API_URL}/company/all`);
+      const response = await api.get('/company/all');
       if (response.data.success) {
         const startups = response.data.companies
           .filter((c: Company) => c.companyType === "Startup")
           .map(processCompanyLogo);
-        // Öne çıkan şirketleri başa al
         return [
           ...startups.filter((c: Company) => c.isHighlighted),
           ...startups.filter((c: Company) => !c.isHighlighted)
@@ -91,12 +112,11 @@ export const companyService = {
   // Sadece yatırımcıları getir
   getInvestors: async (): Promise<Company[]> => {
     try {
-      const response = await axios.get(`${API_URL}/company/all`);
+      const response = await api.get('/company/all');
       if (response.data.success) {
         const investors = response.data.companies
           .filter((c: Company) => c.companyType === "Investor")
           .map(processCompanyLogo);
-        // Öne çıkan şirketleri başa al
         return [
           ...investors.filter((c: Company) => c.isHighlighted),
           ...investors.filter((c: Company) => !c.isHighlighted)
@@ -109,51 +129,81 @@ export const companyService = {
     }
   },
 
-  // Yeni startup ekle
-  addStartup: async (startupData: Partial<Company> | FormData): Promise<Company> => {
+  // Yeni şirket ekle
+  addCompany: async (companyData: Partial<Company> | FormData): Promise<Company> => {
     try {
-      // Verinin FormData mı yoksa Partial<Company> mi olduğunu kontrol et
-      const isFormData = startupData instanceof FormData;
+      const isFormData = companyData instanceof FormData;
       
-      const response = await axios.post(`${API_URL}/company`, startupData, {
+      const config = {
         headers: {
           'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
         },
-      });
-      // API yanıtı doğrudan şirket verisini döndürüyor varsayıldı
+      };
+
+      console.log('Gönderilen veri:', companyData);
+      const response = await api.post('/company', companyData, config);
+      console.log('API yanıtı:', response.data);
       return processCompanyLogo(response.data.company);
     } catch (error) {
-      console.error('Startup eklenirken hata oluştu:', error);
+      console.error('Şirket eklenirken hata oluştu:', error);
       throw error;
     }
   },
 
-  // Startup güncelle
-  updateStartup: async (id: string, startupData: Partial<Company> | FormData): Promise<Company> => {
+  // Şirket güncelle
+  updateCompany: async (id: string, companyData: Partial<Company> | FormData): Promise<Company> => {
     try {
-       // Verinin FormData mı yoksa Partial<Company> mi olduğunu kontrol et
-       const isFormData = startupData instanceof FormData;
+      const isFormData = companyData instanceof FormData;
 
-      const response = await axios.put(`${API_URL}/company/${id}`, startupData, {
-         headers: {
+      const config = {
+        headers: {
           'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
         },
-      });
-      // API yanıtı doğrudan şirket verisini döndürüyor varsayıldı
+      };
+
+      const response = await api.put(`/company/${id}`, companyData, config);
       return processCompanyLogo(response.data.company);
     } catch (error) {
-      console.error('Startup güncellenirken hata oluştu:', error);
+      console.error('Şirket güncellenirken hata oluştu:', error);
       throw error;
     }
   },
 
-  // Startup sil
-  deleteStartup: async (id: string): Promise<void> => {
+  // Şirket sil
+  deleteCompany: async (id: string): Promise<void> => {
     try {
-      await axios.delete(`${API_URL}/company/${id}`);
+      await api.delete(`/company/${id}`);
     } catch (error) {
-      console.error('Startup silinirken hata oluştu:', error);
+      console.error('Şirket silinirken hata oluştu:', error);
+      throw error;
+    }
+  },
+
+  // AI ile şirket analizi
+  analyzeWebsite: async (url: string): Promise<any> => {
+    try {
+      const response = await api.post('/ai/analyze-website', { url });
+      return response.data;
+    } catch (error) {
+      console.error('Website analizi sırasında hata oluştu:', error);
+      throw error;
+    }
+  },
+
+  // AI ile dosya analizi
+  analyzeDocument: async (file: FormData): Promise<any> => {
+    try {
+      const response = await api.post('/ai/analyze-document', file, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Dosya analizi sırasında hata oluştu:', error);
       throw error;
     }
   }
-}; 
+};
+
+export default companyService; 
