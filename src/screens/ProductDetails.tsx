@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -524,11 +524,15 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
         }
       );
       console.log('API response:', JSON.stringify(response.data, null, 2));
-      console.log('Added product ID:', response.data.product?._id);
-      if (!response.data.success || !response.data.product || !response.data.product._id) {
-        Alert.alert('Error', 'Product could not be added. Please try again.');
+      if (!response.data || !response.data.success) {
+        Alert.alert('Error', response.data?.message || 'Product could not be added. Please try again.');
         return;
       }
+      if (!response.data.product || !response.data.product._id) {
+        Alert.alert('Error', 'Product could not be added. API yanıtı beklenen formatta değil.');
+        return;
+      }
+      console.log('Added product ID:', response.data.product._id);
       Alert.alert('Success', 'Product added successfully.');
       setShowAddProductModal(false);
       setFormData({
@@ -644,7 +648,7 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
             <TouchableOpacity
               style={styles.addButton}
               onPress={handleAddProduct}>
-              <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+              <MaterialCommunityIcons name="briefcase-plus" size={24} color={Colors.primary} />
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.content}>
@@ -658,7 +662,7 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
               products.map(product => renderProductCard(product))
             )}
             <TouchableOpacity style={styles.addProductCard} onPress={handleAddProduct}>
-              <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+              <MaterialCommunityIcons name="briefcase-plus" size={24} color={Colors.primary} />
               <Text style={styles.addProductText}>Add New Product</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -795,7 +799,7 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
                         marginRight: 8,
                       }}
                       onPress={() => setAiTab('website')}>
-                      <MaterialIcons name="language" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                      <MaterialCommunityIcons name="web" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
                       <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From Web</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -812,7 +816,7 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
                         marginLeft: 8,
                       }}
                       onPress={() => setAiTab('file')}>
-                      <MaterialIcons name="insert-drive-file" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                      <MaterialCommunityIcons name="file-document-outline" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
                       <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From File</Text>
                     </TouchableOpacity>
                   </View>

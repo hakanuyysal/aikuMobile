@@ -18,7 +18,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -347,7 +347,11 @@ const CompanyDetails = ({ navigation }: Props) => {
       companyType: company.companyType || 'Startup',
       openForInvestments: company.openForInvestments || false,
       incorporated: company.incorporated || 'No',
-      companySector: company.companySector ? company.companySector.split(', ') : [],
+      companySector: Array.isArray(company.companySector)
+        ? company.companySector
+        : (typeof company.companySector === 'string' && company.companySector
+            ? company.companySector.split(',').map((s: string) => s.trim())
+            : []),
       companySize: company.companySize || '',
       businessModel: company.businessModel || '',
       businessScale: company.businessScale || '',
@@ -498,8 +502,8 @@ const CompanyDetails = ({ navigation }: Props) => {
           <TouchableOpacity
             style={styles.checkbox}
             onPress={() => handleInputChange(step.key, !formData[step.key])}>
-            <MaterialIcons
-              name={formData[step.key] ? 'check-box' : 'check-box-outline-blank'}
+            <MaterialCommunityIcons
+              name={formData[step.key] ? 'checkbox-marked' : 'checkbox-blank-outline'}
               size={24}
               color={Colors.primary}
             />
@@ -745,7 +749,7 @@ const CompanyDetails = ({ navigation }: Props) => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Company Details</Text>
           <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+            <MaterialCommunityIcons name="briefcase-plus" size={24} color={Colors.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView style={styles.content}>
@@ -763,18 +767,40 @@ const CompanyDetails = ({ navigation }: Props) => {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.companyName}>{company.companyName}</Text>
                     <View style={styles.companyActions}>
-                      <TouchableOpacity onPress={() => handleEditCompany(company)}>
-                        <MaterialIcons name="edit" size={20} color={Colors.primary} />
+                      <TouchableOpacity 
+                        onPress={() => handleEditCompany(company)}
+                        style={{
+                          backgroundColor: Colors.primary,
+                          padding: 8,
+                          borderRadius: 8,
+                          flexDirection: 'column-reverse',
+                          alignItems: 'center',
+                          marginRight: 8,
+                        }}
+                      >
+                        <MaterialCommunityIcons name="pencil" size={20} color={Colors.lightText} />
+           
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDeleteCompany(company._id)} style={{ marginLeft: 10 }}>
-                        <MaterialIcons name="delete" size={20} color="red" />
+                      <TouchableOpacity 
+                        onPress={() => handleDeleteCompany(company._id)} 
+                        style={{
+                          backgroundColor: '#ff4d4f',
+                          padding: 8,
+                          borderRadius: 8,
+                          flexDirection: 'column-reverse',
+                          alignItems: 'center',
+                          marginLeft:'70%'
+                        }}
+                      >
+                        <MaterialCommunityIcons name="delete" size={20} color={Colors.lightText} />
+                     
                       </TouchableOpacity>
                     </View>
                   </View>
                 </View>
               ))}
               <TouchableOpacity style={styles.addCompanyCard} onPress={() => setModalVisible(true)}>
-                <MaterialIcons name="add-business" size={24} color={Colors.primary} />
+                <MaterialCommunityIcons name="briefcase-plus" size={24} color={Colors.primary} />
                 <Text style={styles.addCompanyText}>Add New Company</Text>
               </TouchableOpacity>
             </>
@@ -875,7 +901,7 @@ const CompanyDetails = ({ navigation }: Props) => {
                                     marginRight: 8,
                                   }}
                                   onPress={() => setAiTab('website')}>
-                                  <MaterialIcons name="language" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <MaterialCommunityIcons name="web" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
                                   <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From Web</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
@@ -892,7 +918,7 @@ const CompanyDetails = ({ navigation }: Props) => {
                                     marginLeft: 8,
                                   }}
                                   onPress={() => setAiTab('file')}>
-                                  <MaterialIcons name="insert-drive-file" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                  <MaterialCommunityIcons name="file-document-outline" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
                                   <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From File</Text>
                                 </TouchableOpacity>
                               </View>
@@ -1034,8 +1060,8 @@ const CompanyDetails = ({ navigation }: Props) => {
                                   : [...formData.companySector, item];
                                 handleInputChange('companySector', updatedSectors);
                               }}>
-                              <MaterialIcons
-                                name={formData.companySector.includes(item) ? 'check-box' : 'check-box-outline-blank'}
+                              <MaterialCommunityIcons
+                                name={formData.companySector.includes(item) ? 'checkbox-marked' : 'checkbox-blank-outline'}
                                 size={24}
                                 color={Colors.primary}
                               />
@@ -1046,7 +1072,7 @@ const CompanyDetails = ({ navigation }: Props) => {
                         <TouchableOpacity
                           style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 8 }}
                           onPress={() => setSectorPickerVisible(false)}>
-                          <MaterialIcons name="check" size={40} color="#fff" />
+                          <MaterialCommunityIcons name="check" size={40} color="#fff" />
                         </TouchableOpacity>
                       </View>
                     </View>

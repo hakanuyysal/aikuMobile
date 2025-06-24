@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {Text, TextInput} from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
@@ -212,7 +212,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
       style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} disabled={isSaving}>
-          <Icon name="arrow-back" size={24} color={Colors.lightText} />
+          <Icon name="arrow-left" size={24} color={Colors.lightText} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={isSaving}>
@@ -238,7 +238,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
                 colors={['#2A2D3E', '#424867']}
                 style={styles.avatarPlaceholder}>
                 <Icon
-                  name="person"
+                  name="account"
                   size={metrics.scale(32)}
                   color={Colors.lightText}
                 />
@@ -249,7 +249,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
               onPress={handlePickAvatar}
               disabled={isSaving}
               >
-              <Icon name="edit" size={16} color={Colors.background} />
+              <Icon name="pencil" size={16} color={Colors.background} />
             </TouchableOpacity>
           </View>
           <Text style={styles.avatarHint}>Tap to change profile photo</Text>
@@ -340,6 +340,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
                     onClose={() => setShowCountryPicker(false)}
                   />
                   <Icon name="arrow-drop-down" size={24} color={Colors.lightText} />
+                  <Icon name="chevron-down" size={24} color={Colors.lightText} />
                 </TouchableOpacity>
                 <TextInput
                   value={form.phone?.replace(/^\+\d+\s*/, '')}
