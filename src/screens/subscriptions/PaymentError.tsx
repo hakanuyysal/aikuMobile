@@ -1,77 +1,139 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../types';
+import LinearGradient from 'react-native-linear-gradient';
 
-type PaymentErrorProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList>;
-  route: {
-    params: {
-      message: string;
-    };
+type PaymentErrorScreenParams = {
+  message: string;
+  planDetails?: {
+    name: string;
+    price: number;
+    description: string;
+    billingCycle: 'yearly' | 'monthly';
+    hasPaymentHistory?: boolean;
   };
+  billingInfo?: any;
 };
 
+type PaymentErrorProps = NativeStackScreenProps<
+  RootStackParamList,
+  'PaymentError'
+>;
+
 const PaymentError: React.FC<PaymentErrorProps> = ({navigation, route}) => {
-  const {message} = route.params;
+  const {message, planDetails, billingInfo} = route.params as PaymentErrorScreenParams;
+
+  const handleTryAgain = () => {
+    if (planDetails && billingInfo) {
+      navigation.navigate('Payment', {
+        planDetails,
+        billingInfo,
+      });
+    } else {
+      navigation.navigate('Main');
+    }
+  };
+
+  const handleClose = () => {
+    navigation.navigate('Main');
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Icon name="close-circle" size={80} color={Colors.error} />
+    <LinearGradient
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Icon name="close" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
         </View>
-        <Text style={styles.title}>Hata!</Text>
-        <Text style={styles.message}>{message}</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Tekrar Dene</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+
+        <View style={styles.content}>
+          {/* Error Icon */}
+          <View style={styles.iconContainer}>
+            <Icon name="close-circle" size={80} color="#FF4B55" />
+          </View>
+
+          {/* Error Message */}
+          <Text style={styles.title}>Error!</Text>
+          <Text style={styles.message}>{message}</Text>
+
+          {/* Try Again Button */}
+          <TouchableOpacity style={styles.tryAgainButton} onPress={handleTryAgain}>
+            <Text style={styles.tryAgainText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
-    padding: metrics.padding.xl,
+    justifyContent: 'center',
   },
   content: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: metrics.padding.lg,
   },
   iconContainer: {
-    marginBottom: metrics.margin.xl,
+    marginBottom: metrics.margin.lg,
   },
   title: {
-    fontSize: metrics.fontSize.xxl,
-    fontWeight: 'bold',
+    fontSize: metrics.fontSize.xl,
     color: Colors.lightText,
-    marginBottom: metrics.margin.md,
+    fontWeight: 'bold',
+    marginBottom: metrics.margin.sm,
   },
   message: {
-    fontSize: metrics.fontSize.lg,
-    color: Colors.inactive,
+    fontSize: metrics.fontSize.md,
+    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
     marginBottom: metrics.margin.xl,
   },
-  button: {
+  tryAgainButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: metrics.padding.lg,
-    paddingHorizontal: metrics.padding.xxl,
+    paddingHorizontal: metrics.padding.xl,
+    paddingVertical: metrics.padding.md,
     borderRadius: metrics.borderRadius.circle,
+    minWidth: 200,
+    alignItems: 'center',
   },
-  buttonText: {
+  tryAgainText: {
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
 

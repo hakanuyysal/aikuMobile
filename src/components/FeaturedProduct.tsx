@@ -156,11 +156,11 @@ const FeaturedProduct: React.FC = () => {
                 <View style={styles.errorContainer}>
                   <Text style={styles.newsText}>{error}</Text>
                   <TouchableOpacity onPress={() => fetchNews()}>
-                    <Text style={styles.retryButton}>Tekrar Dene</Text>
+                    <Text style={styles.retryButton}> Try Again</Text>
                   </TouchableOpacity>
                 </View>
               ) : articles.length === 0 ? (
-                <Text style={styles.newsText}>Haber bulunamadı.</Text>
+                <Text style={styles.newsText}>No news found.</Text>
               ) : (
                 <FlatList
                   ref={listRef}

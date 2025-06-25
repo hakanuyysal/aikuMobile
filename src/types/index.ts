@@ -159,6 +159,7 @@ export interface BillingInfo {
   isDefault: boolean;
   companyName?: string;
   taxNumber?: string;
+  taxOffice?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,16 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import BillingService from '../../services/BillingService';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddBillingInfo'>;
 
 const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
-  const {planDetails} = route.params;
+  const {planDetails, editMode, billingInfo} = route.params;
   const [loading, setLoading] = useState(false);
-  const [billingType, setBillingType] = useState<'individual' | 'corporate'>('individual');
+  const [billingType, setBillingType] = useState<'individual' | 'corporate'>(
+    billingInfo?.billingType || 'individual'
+  );
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,6 +42,27 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    if (editMode && billingInfo) {
+      setFormData({
+        firstName: billingInfo.firstName || '',
+        lastName: billingInfo.lastName || '',
+        identityNumber: billingInfo.identityNumber || '',
+        companyName: billingInfo.companyName || '',
+        taxNumber: billingInfo.taxNumber || '',
+        taxOffice: billingInfo.taxOffice || '',
+        address: billingInfo.address || '',
+        city: billingInfo.city || '',
+        district: billingInfo.district || '',
+        zipCode: billingInfo.zipCode || '',
+        phone: billingInfo.phone || '',
+        email: billingInfo.email || '',
+        isDefault: billingInfo.isDefault ?? true,
+      });
+      setBillingType(billingInfo.billingType || 'individual');
+    }
+  }, [editMode, billingInfo]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({...prev, [field]: value}));
@@ -87,7 +111,9 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
         billingType,
       };
 
-      const response = await BillingService.createBillingInfo(billingData);
+      const response = editMode && billingInfo
+        ? await BillingService.updateBillingInfo(billingInfo._id, billingData)
+        : await BillingService.createBillingInfo(billingData);
       
       if (response.success) {
         navigation.navigate('Payment', {
@@ -95,10 +121,10 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
           billingInfo: response.data as any,
         });
       } else {
-        Alert.alert('Error', response.message || 'An error occurred while adding billing information');
+        Alert.alert('Error', response.message || 'An error occurred while saving billing information');
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while adding billing information');
+      Alert.alert('Error', 'An error occurred while saving billing information');
     } finally {
       setLoading(false);
     }
@@ -112,6 +138,17 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
       end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="chevron-back" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {editMode ? 'Edit Billing Information' : 'Add Billing Information'}
+          </Text>
+        </View>
+
         <View style={styles.container}>
           {/* Billing Type Selection */}
           <View style={styles.billingTypeContainer}>
@@ -185,51 +222,47 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
               {errors.companyName && (
                 <Text style={styles.errorText}>{errors.companyName}</Text>
               )}
+
+              <View style={styles.rowContainer}>
+                <View style={styles.halfInput}>
+                  <TextInput
+                    style={[styles.input, errors.taxNumber && styles.inputError]}
+                    placeholder="Tax Number"
+                    placeholderTextColor={Colors.inactive}
+                    value={formData.taxNumber}
+                    onChangeText={value => handleInputChange('taxNumber', value)}
+                    keyboardType="numeric"
+                  />
+                  {errors.taxNumber && (
+                    <Text style={styles.errorText}>{errors.taxNumber}</Text>
+                  )}
+                </View>
+                <View style={styles.halfInput}>
+                  <TextInput
+                    style={[styles.input, errors.taxOffice && styles.inputError]}
+                    placeholder="Tax Office"
+                    placeholderTextColor={Colors.inactive}
+                    value={formData.taxOffice}
+                    onChangeText={value => handleInputChange('taxOffice', value)}
+                  />
+                  {errors.taxOffice && (
+                    <Text style={styles.errorText}>{errors.taxOffice}</Text>
+                  )}
+                </View>
+              </View>
             </>
           )}
 
           {billingType === 'individual' && (
-            <>
-              <TextInput
-                style={[styles.input, errors.identityNumber && styles.inputError]}
-                placeholder="Identity Number"
-                placeholderTextColor={Colors.inactive}
-                value={formData.identityNumber}
-                onChangeText={value => handleInputChange('identityNumber', value)}
-                keyboardType="numeric"
-                maxLength={11}
-              />
-              {errors.identityNumber && (
-                <Text style={styles.errorText}>{errors.identityNumber}</Text>
-              )}
-            </>
-          )}
-
-          {billingType === 'corporate' && (
-            <>
-              <TextInput
-                style={[styles.input, errors.taxNumber && styles.inputError]}
-                placeholder="Tax Number"
-                placeholderTextColor={Colors.inactive}
-                value={formData.taxNumber}
-                onChangeText={value => handleInputChange('taxNumber', value)}
-                keyboardType="numeric"
-              />
-              {errors.taxNumber && (
-                <Text style={styles.errorText}>{errors.taxNumber}</Text>
-              )}
-
-              <TextInput
-                style={[styles.input, errors.taxOffice && styles.inputError]}
-                placeholder="Tax Office"
-                placeholderTextColor={Colors.inactive}
-                value={formData.taxOffice}
-                onChangeText={value => handleInputChange('taxOffice', value)}
-              />
-              {errors.taxOffice && (
-                <Text style={styles.errorText}>{errors.taxOffice}</Text>
-              )}
-            </>
+            <TextInput
+              style={[styles.input, errors.identityNumber && styles.inputError]}
+              placeholder="Identity Number"
+              placeholderTextColor={Colors.inactive}
+              value={formData.identityNumber}
+              onChangeText={value => handleInputChange('identityNumber', value)}
+              keyboardType="numeric"
+              maxLength={11}
+            />
           )}
 
           <TextInput
@@ -253,7 +286,9 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
                 value={formData.city}
                 onChangeText={value => handleInputChange('city', value)}
               />
-              {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+              {errors.city && (
+                <Text style={styles.errorText}>{errors.city}</Text>
+              )}
             </View>
             <View style={styles.halfInput}>
               <TextInput
@@ -269,27 +304,34 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
             </View>
           </View>
 
-          <TextInput
-            style={[styles.input, errors.zipCode && styles.inputError]}
-            placeholder="Zip Code"
-            placeholderTextColor={Colors.inactive}
-            value={formData.zipCode}
-            onChangeText={value => handleInputChange('zipCode', value)}
-            keyboardType="numeric"
-          />
-          {errors.zipCode && (
-            <Text style={styles.errorText}>{errors.zipCode}</Text>
-          )}
-
-          <TextInput
-            style={[styles.input, errors.phone && styles.inputError]}
-            placeholder="Phone"
-            placeholderTextColor={Colors.inactive}
-            value={formData.phone}
-            onChangeText={value => handleInputChange('phone', value)}
-            keyboardType="phone-pad"
-          />
-          {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+          <View style={styles.rowContainer}>
+            <View style={styles.halfInput}>
+              <TextInput
+                style={[styles.input, errors.zipCode && styles.inputError]}
+                placeholder="Zip Code"
+                placeholderTextColor={Colors.inactive}
+                value={formData.zipCode}
+                onChangeText={value => handleInputChange('zipCode', value)}
+                keyboardType="numeric"
+              />
+              {errors.zipCode && (
+                <Text style={styles.errorText}>{errors.zipCode}</Text>
+              )}
+            </View>
+            <View style={styles.halfInput}>
+              <TextInput
+                style={[styles.input, errors.phone && styles.inputError]}
+                placeholder="Phone"
+                placeholderTextColor={Colors.inactive}
+                value={formData.phone}
+                onChangeText={value => handleInputChange('phone', value)}
+                keyboardType="phone-pad"
+              />
+              {errors.phone && (
+                <Text style={styles.errorText}>{errors.phone}</Text>
+              )}
+            </View>
+          </View>
 
           <TextInput
             style={[styles.input, errors.email && styles.inputError]}
@@ -300,16 +342,21 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          {errors.email && (
+            <Text style={styles.errorText}>{errors.email}</Text>
+          )}
 
+          {/* Submit Button */}
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, loading && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={loading}>
             {loading ? (
               <ActivityIndicator color={Colors.lightText} />
             ) : (
-              <Text style={styles.submitButtonText}>Continue</Text>
+              <Text style={styles.submitButtonText}>
+                {editMode ? 'Update' : 'Continue'}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -390,6 +437,34 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
     fontWeight: 'bold',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: metrics.margin.sm,
+  },
+  headerTitle: {
+    fontSize: metrics.fontSize.lg,
+    color: Colors.lightText,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40, // To center the title considering the back button width
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });
 

@@ -230,11 +230,11 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{error}</Text>
                   <TouchableOpacity onPress={fetchBlogs} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
                   </TouchableOpacity>
                 </View>
               ) : blogs.length === 0 ? (
-                <Text style={styles.blogText}>Henüz blog yazısı yok.</Text>
+                <Text style={styles.blogText}>No blog posts yet.</Text>
               ) : (
                 <FlatList
                   ref={listRef}

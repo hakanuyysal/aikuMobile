@@ -358,7 +358,7 @@ function AppContent(): React.JSX.Element {
             component={AddBillingInfo}
             options={{
               title: 'Billing Information',
-              headerShown: true,
+              headerShown: false,
             }}
           />
         </RootStack.Navigator>
