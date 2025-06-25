@@ -7,53 +7,29 @@ import PaymentScreen from '../screens/subscriptions/PaymentScreen';
 import PaymentSuccess from '../screens/subscriptions/PaymentSuccess';
 import PaymentError from '../screens/subscriptions/PaymentError';
 import ThreeDSecure from '../screens/subscriptions/ThreeDSecure';
+import TabNavigator from './TabNavigator';
 import {RootStackParamList} from '../types';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const AppNavigator = () => {
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="ChatList"
-        component={ChatListScreen}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="CompanyList"
-        component={CompanyListScreen}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="ChatDetail"
-        component={ChatDetailScreen}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="BillingInfo"
-        component={BillingInfoScreen}
-        options={{headerShown: false}}
-      />
-
-      <Stack.Screen
-        name="Payment"
-        component={PaymentScreen}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="PaymentSuccess"
-        component={PaymentSuccess}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="PaymentError"
-        component={PaymentError}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="ThreeDSecure"
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="TabNavigator" component={TabNavigator} />
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
+      <Stack.Screen name="CompanyList" component={CompanyListScreen} />
+      <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+      <Stack.Screen name="BillingInfo" component={BillingInfoScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+      <Stack.Screen name="PaymentError" component={PaymentError} />
+      <Stack.Screen 
+        name="ThreeDSecure" 
         component={ThreeDSecure}
-        options={{headerShown: false}}
+        options={{
+          presentation: 'modal',
+          gestureEnabled: false
+        }}
       />
     </Stack.Navigator>
   );

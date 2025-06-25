@@ -122,12 +122,11 @@ class PaymentService {
 
       MMKVInstance.setBoolean('payment_initiated', true);
 
-      const secureSessionId = Date.now().toString();
-      MMKVInstance.setString('secure_html_' + secureSessionId, paymentData.html);
-      MMKVInstance.setString('secure_session_id', secureSessionId);
-
       // React Navigation ile 3D Secure sayfasına yönlendir
-      this.navigation.navigate('SecurePayment', {sessionId: secureSessionId});
+      this.navigation.navigate('ThreeDSecure', {
+        htmlContent: paymentData.html,
+        returnUrl: paymentData.redirectUrl
+      });
 
       return {paymentStatus: 'redirected'};
     } catch (error) {

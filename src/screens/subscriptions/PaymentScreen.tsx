@@ -18,6 +18,7 @@ import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../types';
 import PaymentService from '../../services/PaymentService';
 import LinearGradient from 'react-native-linear-gradient';
+import currencyService from '../../services/CurrencyService';
 
 type PaymentScreenProps = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -31,11 +32,29 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({navigation, route}) => {
   const [couponCode, setCouponCode] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [_isLoadingRate, setIsLoadingRate] = useState(false);
 
   // PaymentService için navigation'ı ayarla
   useEffect(() => {
     PaymentService.setNavigation(navigation);
   }, [navigation]);
+
+  useEffect(() => {
+    loadExchangeRate();
+  }, []);
+
+  const loadExchangeRate = async () => {
+    setIsLoadingRate(true);
+    try {
+      const rate = await currencyService.getUSDtoTRYRate();
+      setExchangeRate(rate);
+    } catch (error) {
+      console.error('Error loading exchange rate:', error);
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
 
   const formatCardNumber = (text: string) => {
     const cleaned = text.replace(/\s/g, '');
@@ -128,9 +147,12 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({navigation, route}) => {
       }
 
       // Normal payment process
+      const amount = discountedPrice || planDetails.price;
+      const amountInTRY = exchangeRate ? Math.round(amount * exchangeRate * 100) / 100 : amount * 32;
+
       const paymentData = {
         planType: planDetails.name.replace(' Plan', '').toUpperCase() + '_' + planDetails.billingCycle.toUpperCase(),
-        amount: discountedPrice || planDetails.price,
+        amount: amountInTRY,
         billingCycle: planDetails.billingCycle,
         billingInfo: billingInfo,
         cardInfo: {
@@ -141,8 +163,11 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({navigation, route}) => {
           cvv,
         },
         couponCode: couponCode.trim() || undefined,
-        currency: 'USD',
-        installment: 1
+        currency: 'TRY',
+        installment: 1,
+        originalAmount: amount,
+        originalCurrency: 'USD',
+        exchangeRate: exchangeRate || 32
       };
 
       const response = await PaymentService.processPayment(paymentData);
@@ -151,8 +176,8 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({navigation, route}) => {
         if (response.data.isRedirect) {
           // Redirect for 3D Secure process
           navigation.navigate('ThreeDSecure', {
-            htmlContent: response.data.htmlContent,
-            returnUrl: response.data.returnUrl,
+            htmlContent: response.data.html,
+            returnUrl: response.data.redirectUrl
           });
         } else {
           // Successful payment
@@ -199,11 +224,16 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({navigation, route}) => {
             <View style={styles.planInfo}>
               <Text style={styles.planName}>{planDetails.name}</Text>
               <Text style={styles.planPrice}>
-                ${planDetails.price}
+                ${discountedPrice || planDetails.price}
                 <Text style={styles.planPricePeriod}>
                   /{planDetails.billingCycle === 'yearly' ? 'year' : 'month'}
                 </Text>
               </Text>
+              {exchangeRate && (
+                <Text style={styles.tryPrice}>
+                  ~₺{Math.round((discountedPrice || planDetails.price) * exchangeRate * 100) / 100}
+                </Text>
+              )}
               <Text style={styles.planDescription}>For AI Startups & Developers</Text>
             </View>
 
@@ -503,6 +533,11 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginLeft: metrics.margin.xs,
+  },
+  tryPrice: {
+    fontSize: metrics.fontSize.md,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: metrics.margin.xs,
   },
 });
 

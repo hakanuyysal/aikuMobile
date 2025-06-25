@@ -50,6 +50,7 @@ import { BillingInfo } from './src/types';
 import authService from './src/services/AuthService';
 import { useNavigation } from '@react-navigation/native';
 import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
+import ThreeDSecure from './src/screens/subscriptions/ThreeDSecure';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -102,6 +103,10 @@ export type RootStackParamList = {
       billingCycle: 'yearly' | 'monthly';
       hasPaymentHistory?: boolean;
     };
+  };
+  ThreeDSecure: {
+    htmlContent: string;
+    returnUrl: string;
   };
 };
 
@@ -208,6 +213,15 @@ function AppContent(): React.JSX.Element {
             name="SubscriptionDetails"
             component={SubscriptionDetails}
             options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="ThreeDSecure"
+            component={ThreeDSecure}
+            options={{
+              headerShown: false,
+              presentation: 'modal',
+              gestureEnabled: false
+            }}
           />
           <RootStack.Screen
             name="Favorites"
