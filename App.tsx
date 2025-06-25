@@ -343,7 +343,7 @@ function AppContent(): React.JSX.Element {
             name="AddBillingInfo"
             component={AddBillingInfo}
             options={{
-              title: 'Fatura Bilgileri',
+              title: 'Billing Information',
               headerShown: true,
             }}
           />

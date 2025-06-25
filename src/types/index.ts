@@ -86,6 +86,8 @@ export type RootStackParamList = {
       billingCycle: 'yearly' | 'monthly';
       hasPaymentHistory?: boolean;
     };
+    editMode?: boolean;
+    billingInfo?: BillingInfo;
   };
   Payment: {
     planDetails: {

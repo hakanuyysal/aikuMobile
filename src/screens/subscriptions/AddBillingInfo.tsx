@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
@@ -13,7 +12,6 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../types';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Ionicons';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import BillingService from '../../services/BillingService';
@@ -53,26 +51,26 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
     const newErrors: {[key: string]: string} = {};
 
     if (billingType === 'individual') {
-      if (!formData.firstName) newErrors.firstName = 'Ad alanı zorunludur';
-      if (!formData.lastName) newErrors.lastName = 'Soyad alanı zorunludur';
-      if (!formData.identityNumber) newErrors.identityNumber = 'TC Kimlik No zorunludur';
+      if (!formData.firstName) newErrors.firstName = 'First name is required';
+      if (!formData.lastName) newErrors.lastName = 'Last name is required';
+      if (!formData.identityNumber) newErrors.identityNumber = 'Identity number is required';
       if (formData.identityNumber && formData.identityNumber.length !== 11) {
-        newErrors.identityNumber = 'TC Kimlik No 11 haneli olmalıdır';
+        newErrors.identityNumber = 'Identity number must be 11 digits';
       }
     } else {
-      if (!formData.companyName) newErrors.companyName = 'Şirket adı zorunludur';
-      if (!formData.taxNumber) newErrors.taxNumber = 'Vergi numarası zorunludur';
-      if (!formData.taxOffice) newErrors.taxOffice = 'Vergi dairesi zorunludur';
+      if (!formData.companyName) newErrors.companyName = 'Company name is required';
+      if (!formData.taxNumber) newErrors.taxNumber = 'Tax number is required';
+      if (!formData.taxOffice) newErrors.taxOffice = 'Tax office is required';
     }
 
-    if (!formData.address) newErrors.address = 'Adres alanı zorunludur';
-    if (!formData.city) newErrors.city = 'İl alanı zorunludur';
-    if (!formData.district) newErrors.district = 'İlçe alanı zorunludur';
-    if (!formData.zipCode) newErrors.zipCode = 'Posta kodu zorunludur';
-    if (!formData.phone) newErrors.phone = 'Telefon alanı zorunludur';
-    if (!formData.email) newErrors.email = 'E-posta alanı zorunludur';
+    if (!formData.address) newErrors.address = 'Address is required';
+    if (!formData.city) newErrors.city = 'City is required';
+    if (!formData.district) newErrors.district = 'District is required';
+    if (!formData.zipCode) newErrors.zipCode = 'Zip code is required';
+    if (!formData.phone) newErrors.phone = 'Phone is required';
+    if (!formData.email) newErrors.email = 'Email is required';
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Geçerli bir e-posta adresi giriniz';
+      newErrors.email = 'Please enter a valid email address';
     }
 
     setErrors(newErrors);
@@ -97,10 +95,10 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
           billingInfo: response.data as any,
         });
       } else {
-        Alert.alert('Hata', response.message || 'Fatura bilgisi eklenirken bir hata oluştu');
+        Alert.alert('Error', response.message || 'An error occurred while adding billing information');
       }
     } catch (error) {
-      Alert.alert('Hata', 'Fatura bilgisi eklenirken bir hata oluştu');
+      Alert.alert('Error', 'An error occurred while adding billing information');
     } finally {
       setLoading(false);
     }
@@ -114,17 +112,8 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
       end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={24} color={Colors.lightText} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Fatura Bilgileri</Text>
-        </View>
-
-        <ScrollView style={styles.container}>
-          {/* Fatura Tipi Seçimi */}
+        <View style={styles.container}>
+          {/* Billing Type Selection */}
           <View style={styles.billingTypeContainer}>
             <TouchableOpacity
               style={[
@@ -137,7 +126,7 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
                   styles.billingTypeText,
                   billingType === 'individual' && styles.selectedBillingTypeText,
                 ]}>
-                Bireysel
+                Individual
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -151,39 +140,59 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
                   styles.billingTypeText,
                   billingType === 'corporate' && styles.selectedBillingTypeText,
                 ]}>
-                Kurumsal
+                Corporate
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Form Alanları */}
+          {/* Form Fields */}
           {billingType === 'individual' ? (
+            <View style={styles.rowContainer}>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.firstName && styles.inputError]}
+                  placeholder="First Name"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.firstName}
+                  onChangeText={value => handleInputChange('firstName', value)}
+                />
+                {errors.firstName && (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                )}
+              </View>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.lastName && styles.inputError]}
+                  placeholder="Last Name"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.lastName}
+                  onChangeText={value => handleInputChange('lastName', value)}
+                />
+                {errors.lastName && (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+              </View>
+            </View>
+          ) : (
             <>
               <TextInput
-                style={[styles.input, errors.firstName && styles.inputError]}
-                placeholder="Ad"
+                style={[styles.input, errors.companyName && styles.inputError]}
+                placeholder="Company Name"
                 placeholderTextColor={Colors.inactive}
-                value={formData.firstName}
-                onChangeText={value => handleInputChange('firstName', value)}
+                value={formData.companyName}
+                onChangeText={value => handleInputChange('companyName', value)}
               />
-              {errors.firstName && (
-                <Text style={styles.errorText}>{errors.firstName}</Text>
+              {errors.companyName && (
+                <Text style={styles.errorText}>{errors.companyName}</Text>
               )}
+            </>
+          )}
 
-              <TextInput
-                style={[styles.input, errors.lastName && styles.inputError]}
-                placeholder="Soyad"
-                placeholderTextColor={Colors.inactive}
-                value={formData.lastName}
-                onChangeText={value => handleInputChange('lastName', value)}
-              />
-              {errors.lastName && (
-                <Text style={styles.errorText}>{errors.lastName}</Text>
-              )}
-
+          {billingType === 'individual' && (
+            <>
               <TextInput
                 style={[styles.input, errors.identityNumber && styles.inputError]}
-                placeholder="TC Kimlik No"
+                placeholder="Identity Number"
                 placeholderTextColor={Colors.inactive}
                 value={formData.identityNumber}
                 onChangeText={value => handleInputChange('identityNumber', value)}
@@ -194,22 +203,13 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
                 <Text style={styles.errorText}>{errors.identityNumber}</Text>
               )}
             </>
-          ) : (
+          )}
+
+          {billingType === 'corporate' && (
             <>
               <TextInput
-                style={[styles.input, errors.companyName && styles.inputError]}
-                placeholder="Şirket Adı"
-                placeholderTextColor={Colors.inactive}
-                value={formData.companyName}
-                onChangeText={value => handleInputChange('companyName', value)}
-              />
-              {errors.companyName && (
-                <Text style={styles.errorText}>{errors.companyName}</Text>
-              )}
-
-              <TextInput
                 style={[styles.input, errors.taxNumber && styles.inputError]}
-                placeholder="Vergi Numarası"
+                placeholder="Tax Number"
                 placeholderTextColor={Colors.inactive}
                 value={formData.taxNumber}
                 onChangeText={value => handleInputChange('taxNumber', value)}
@@ -221,7 +221,7 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
 
               <TextInput
                 style={[styles.input, errors.taxOffice && styles.inputError]}
-                placeholder="Vergi Dairesi"
+                placeholder="Tax Office"
                 placeholderTextColor={Colors.inactive}
                 value={formData.taxOffice}
                 onChangeText={value => handleInputChange('taxOffice', value)}
@@ -234,7 +234,7 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
 
           <TextInput
             style={[styles.input, errors.address && styles.inputError]}
-            placeholder="Adres"
+            placeholder="Address"
             placeholderTextColor={Colors.inactive}
             value={formData.address}
             onChangeText={value => handleInputChange('address', value)}
@@ -244,29 +244,34 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
             <Text style={styles.errorText}>{errors.address}</Text>
           )}
 
-          <TextInput
-            style={[styles.input, errors.city && styles.inputError]}
-            placeholder="İl"
-            placeholderTextColor={Colors.inactive}
-            value={formData.city}
-            onChangeText={value => handleInputChange('city', value)}
-          />
-          {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-
-          <TextInput
-            style={[styles.input, errors.district && styles.inputError]}
-            placeholder="İlçe"
-            placeholderTextColor={Colors.inactive}
-            value={formData.district}
-            onChangeText={value => handleInputChange('district', value)}
-          />
-          {errors.district && (
-            <Text style={styles.errorText}>{errors.district}</Text>
-          )}
+          <View style={styles.rowContainer}>
+            <View style={styles.halfInput}>
+              <TextInput
+                style={[styles.input, errors.city && styles.inputError]}
+                placeholder="City"
+                placeholderTextColor={Colors.inactive}
+                value={formData.city}
+                onChangeText={value => handleInputChange('city', value)}
+              />
+              {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+            </View>
+            <View style={styles.halfInput}>
+              <TextInput
+                style={[styles.input, errors.district && styles.inputError]}
+                placeholder="District"
+                placeholderTextColor={Colors.inactive}
+                value={formData.district}
+                onChangeText={value => handleInputChange('district', value)}
+              />
+              {errors.district && (
+                <Text style={styles.errorText}>{errors.district}</Text>
+              )}
+            </View>
+          </View>
 
           <TextInput
             style={[styles.input, errors.zipCode && styles.inputError]}
-            placeholder="Posta Kodu"
+            placeholder="Zip Code"
             placeholderTextColor={Colors.inactive}
             value={formData.zipCode}
             onChangeText={value => handleInputChange('zipCode', value)}
@@ -278,7 +283,7 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
 
           <TextInput
             style={[styles.input, errors.phone && styles.inputError]}
-            placeholder="Telefon"
+            placeholder="Phone"
             placeholderTextColor={Colors.inactive}
             value={formData.phone}
             onChangeText={value => handleInputChange('phone', value)}
@@ -288,7 +293,7 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
 
           <TextInput
             style={[styles.input, errors.email && styles.inputError]}
-            placeholder="E-posta"
+            placeholder="Email"
             placeholderTextColor={Colors.inactive}
             value={formData.email}
             onChangeText={value => handleInputChange('email', value)}
@@ -304,10 +309,10 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
             {loading ? (
               <ActivityIndicator color={Colors.lightText} />
             ) : (
-              <Text style={styles.submitButtonText}>Devam Et</Text>
+              <Text style={styles.submitButtonText}>Continue</Text>
             )}
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -323,21 +328,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: metrics.padding.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: metrics.padding.lg,
-    justifyContent: 'center',
-  },
-  backButton: {
-    position: 'absolute',
-    left: metrics.padding.lg,
-  },
-  headerTitle: {
-    fontSize: metrics.fontSize.xl,
-    color: Colors.lightText,
-    fontWeight: 'bold',
   },
   billingTypeContainer: {
     flexDirection: 'row',
@@ -361,6 +351,15 @@ const styles = StyleSheet.create({
   },
   selectedBillingTypeText: {
     fontWeight: 'bold',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: metrics.margin.sm,
+  },
+  halfInput: {
+    flex: 1,
+    marginHorizontal: metrics.margin.xs,
   },
   input: {
     backgroundColor: Colors.cardBackground,
@@ -386,7 +385,6 @@ const styles = StyleSheet.create({
     padding: metrics.padding.lg,
     alignItems: 'center',
     marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.xxl,
   },
   submitButtonText: {
     color: Colors.lightText,

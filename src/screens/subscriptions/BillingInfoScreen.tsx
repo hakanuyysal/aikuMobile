@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
@@ -15,255 +14,67 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import metrics from '../../constants/aikuMetric';
 import LinearGradient from 'react-native-linear-gradient';
 import {BillingInfoScreenProps} from '../../types';
-import PaymentService from '../../services/PaymentService';
-
-interface FormErrors {
-  [key: string]: string;
-}
-
-interface BaseFormData {
-  address: string;
-  city: string;
-  district: string;
-  zipCode: string;
-  phone: string;
-  email: string;
-  isDefault: boolean;
-}
-
-interface CorporateFormData extends BaseFormData {
-  companyName: string;
-  taxNumber: string;
-  taxOffice: string;
-}
-
-interface IndividualFormData extends BaseFormData {
-  firstName: string;
-  lastName: string;
-  identityNumber: string;
-}
-
-type FormData = CorporateFormData | IndividualFormData;
+import BillingService from '../../services/BillingService';
 
 const BillingInfoScreen: React.FC<BillingInfoScreenProps> = ({
   navigation,
   route,
 }) => {
   const {planDetails, hasExistingBillingInfo, existingBillingInfo} = route.params;
-  const [billingType, setBillingType] = useState<'Individual' | 'Corporate'>(
-    'Individual',
-  );
-  const [formData, setFormData] = useState<FormData>(
-    billingType === 'Individual'
-      ? {
-          firstName: '',
-          lastName: '',
-          identityNumber: '',
-          address: '',
-          city: '',
-          district: '',
-          zipCode: '',
-          phone: '',
-          email: '',
-          isDefault: true,
-        }
-      : {
-          companyName: '',
-          taxNumber: '',
-          taxOffice: '',
-          address: '',
-          city: '',
-          district: '',
-          zipCode: '',
-          phone: '',
-          email: '',
-          isDefault: true,
-        },
-  );
-
-  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [name, setName] = useState('');
 
-  const validateInput = (field: string, value: string): boolean => {
-    // Sadece harf ve boşluk kontrolü (ad soyad için)
-    const nameRegex = /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]*$/;
-    // Sadece rakam kontrolü
-    const numberRegex = /^[0-9]*$/;
-
-    switch (field) {
-      case 'firstName':
-      case 'lastName':
-        return nameRegex.test(value);
-      case 'identityNumber':
-      case 'phone':
-      case 'zipCode':
-        return numberRegex.test(value);
-      default:
-        return true;
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    // Input validasyonu
-    if (!validateInput(field, value)) {
-      return;
-    }
-
-    // Maksimum karakter sınırlamaları
-    if (field === 'identityNumber' && value.length > 11) {
-      return;
-    }
-    if (field === 'zipCode' && value.length > 5) {
-      return;
-    }
-
-    if (billingType === 'Individual') {
-      setFormData(
-        (prev: FormData) =>
-          ({
-            ...prev,
-            [field]: value,
-          } as IndividualFormData),
-      );
-    } else {
-      setFormData(
-        (prev: FormData) =>
-          ({
-            ...prev,
-            [field]: value,
-          } as CorporateFormData),
-      );
-    }
-    if (errors[field]) {
-      setErrors(prev => ({...prev, [field]: ''}));
-    }
-  };
-
-  const handleBillingTypeChange = (type: 'Individual' | 'Corporate') => {
-    setBillingType(type);
-    if (type === 'Individual') {
-      setFormData({
-        firstName: '',
-        lastName: '',
-        identityNumber: '',
-        address: '',
-        city: '',
-        district: '',
-        zipCode: '',
-        phone: '',
-        email: '',
-        isDefault: true,
-      } as IndividualFormData);
-    } else {
-      setFormData({
-        companyName: '',
-        taxNumber: '',
-        taxOffice: '',
-        address: '',
-        city: '',
-        district: '',
-        zipCode: '',
-        phone: '',
-        email: '',
-        isDefault: true,
-      } as CorporateFormData);
-    }
-    setErrors({});
-  };
-
-  const handlePayment = async () => {
+  const handleEdit = async (id: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Form validasyonu
-      if (!cardNumber || !expiryDate || !cvv || !name) {
-        Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
-        return;
-      }
-
-      // Startup Plan ve ilk kez ödeme yapılıyorsa
-      if (planDetails.name === 'Startup Plan' && !planDetails.hasPaymentHistory) {
-        const freePaymentData = {
-          planType: planDetails.name,
-          billingCycle: planDetails.billingCycle,
-          billingInfo: formData,
-        };
-
-        await PaymentService.recordFreePayment(freePaymentData);
-        navigation.navigate('PaymentSuccess', {
-          message: 'Ücretsiz deneme süreniz başarıyla aktifleştirildi!',
+      const response = await BillingService.getBillingInfoById(id);
+      if (response.success && response.data) {
+        const billingInfo = Array.isArray(response.data) ? response.data[0] : response.data;
+        navigation.navigate('AddBillingInfo', {
+          planDetails,
+          editMode: true,
+          billingInfo,
         });
-        return;
-      }
-
-      // Normal ödeme işlemi
-      const paymentData = {
-        planType: planDetails.name,
-        amount: planDetails.price,
-        billingCycle: planDetails.billingCycle,
-        billingInfo: formData,
-        cardInfo: {
-          cardNumber: cardNumber.replace(/\s/g, ''),
-          expiryDate: expiryDate.replace('/', ''),
-          cvv,
-          cardHolderName: name,
-        },
-      };
-
-      const response = await PaymentService.processPayment(paymentData);
-
-      if (response.success) {
-        if (response.data.isRedirect) {
-          // 3D Secure işlemi için yönlendirme
-          navigation.navigate('ThreeDSecure', {
-            redirectUrl: response.data.redirectUrl,
-            paymentData: response.data,
-          });
-        } else {
-          // Başarılı ödeme
-          navigation.navigate('PaymentSuccess', {
-            message: 'Ödemeniz başarıyla gerçekleştirildi!',
-          });
-        }
       } else {
-        // Ödeme hatası
-        navigation.navigate('PaymentError', {
-          message: response.message || 'Ödeme işlemi sırasında bir hata oluştu.',
-        });
+        Alert.alert('Error', 'Could not load billing information');
       }
     } catch (error) {
-      console.error('Ödeme işlemi sırasında hata:', error);
-      navigation.navigate('PaymentError', {
-        message: 'Ödeme işlemi sırasında bir hata oluştu.',
-      });
+      Alert.alert('Error', 'Could not load billing information');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCardNumber = (text: string) => {
-    const cleaned = text.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted.slice(0, 19); // 16 digit + 3 spaces
-  };
-
-  const formatExpiryDate = (text: string) => {
-    const cleaned = text.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
-    }
-    return cleaned;
-  };
-
-  const renderError = (field: string) => {
-    if (errors[field]) {
-      return <Text style={styles.errorText}>{errors[field]}</Text>;
-    }
-    return null;
+  const handleDelete = async (id: string) => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this billing information?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const response = await BillingService.deleteBillingInfo(id);
+              if (response.success) {
+                Alert.alert('Success', 'Billing information deleted successfully');
+                navigation.goBack();
+              } else {
+                Alert.alert('Error', response.message || 'Could not delete billing information');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Could not delete billing information');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleContinueToPayment = () => {
@@ -299,7 +110,7 @@ const BillingInfoScreen: React.FC<BillingInfoScreenProps> = ({
         </View>
 
         <ScrollView style={styles.container}>
-          {/* Plan Detayları */}
+          {/* Plan Details */}
           <View style={styles.planCard}>
             <Text style={styles.planTitle}>{planDetails.name}</Text>
             <Text style={styles.planSubtitle}>For AI Startups & Developers</Text>
@@ -314,11 +125,13 @@ const BillingInfoScreen: React.FC<BillingInfoScreenProps> = ({
             </Text>
           </View>
 
-          {/* Kayıtlı Adres */}
+          {/* Saved Address */}
           {hasExistingBillingInfo && existingBillingInfo && (
             <View style={styles.savedAddressCard}>
               <View style={styles.addressHeader}>
-                <Text style={styles.addressTitle}>{existingBillingInfo.firstName} {existingBillingInfo.lastName}</Text>
+                <Text style={styles.addressTitle}>
+                  {existingBillingInfo.firstName} {existingBillingInfo.lastName}
+                </Text>
                 {existingBillingInfo.isDefault && (
                   <View style={styles.defaultBadge}>
                     <Text style={styles.defaultText}>Default</Text>
@@ -334,17 +147,21 @@ const BillingInfoScreen: React.FC<BillingInfoScreenProps> = ({
               </Text>
               <Text style={styles.addressText}>{existingBillingInfo.phone}</Text>
               <View style={styles.addressActions}>
-                <TouchableOpacity style={styles.editButton}>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => handleEdit(existingBillingInfo._id)}>
                   <Icon name="create-outline" size={20} color={Colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteButton}>
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(existingBillingInfo._id)}>
                   <Icon name="trash-outline" size={20} color={Colors.error} />
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
-          {/* Yeni Adres Ekleme Butonu */}
+          {/* Add New Button */}
           <TouchableOpacity
             style={styles.addNewButton}
             onPress={handleAddNewBillingInfo}>
@@ -352,7 +169,7 @@ const BillingInfoScreen: React.FC<BillingInfoScreenProps> = ({
             <Text style={styles.addNewText}>Add New Billing Information</Text>
           </TouchableOpacity>
 
-          {/* Devam Et Butonu */}
+          {/* Continue Button */}
           {hasExistingBillingInfo && existingBillingInfo && (
             <TouchableOpacity
               style={styles.continueButton}
