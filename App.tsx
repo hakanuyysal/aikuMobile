@@ -46,8 +46,10 @@ import {
   markOnboardingComplete,
 } from './src/hooks/useAppInitialization';
 import { Company } from './src/services/companyService';
+import { BillingInfo } from './src/types';
 import authService from './src/services/AuthService';
 import { useNavigation } from '@react-navigation/native';
+import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -80,8 +82,27 @@ export type RootStackParamList = {
   Chat: undefined;
   HowItWorks: undefined;
   CompanyProfile: { company: Company };
-  BillingInfo: {planDetails: {title: string; price: number; isYearly: boolean}};
+  BillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    hasExistingBillingInfo?: boolean;
+    existingBillingInfo?: BillingInfo;
+  };
   Payment: {planDetails: any; billingInfo: any};
+  AddBillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+  };
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -317,6 +338,14 @@ function AppContent(): React.JSX.Element {
             name="Payment"
             component={PaymentScreen}
             options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="AddBillingInfo"
+            component={AddBillingInfo}
+            options={{
+              title: 'Fatura Bilgileri',
+              headerShown: true,
+            }}
           />
         </RootStack.Navigator>
       </Animated.View>
