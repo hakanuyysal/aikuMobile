@@ -24,6 +24,7 @@ import ImageCropPicker from 'react-native-image-crop-picker';
 import axios from 'axios';
 import {storage} from '../storage/mmkv';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import countryCodes from '../services/countryCodes.json';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpdateProfile'>;
 
@@ -78,15 +79,35 @@ const UpdateProfileScreen = ({navigation}: Props) => {
   const handleSave = async () => {
     console.log("DEBUG: handleSave fonksiyonu başlatıldı.");
 
-    if (!form.firstName || !form.lastName || !form.email) {
-      Alert.alert(
-        'Missing Information',
-        'Please fill in all required fields (First Name, Last Name, Email)',
-        [{text: 'OK'}],
-      );
+    if (!form.firstName) {
+      Alert.alert('Eksik Bilgi', 'Lütfen adınızı girin.', [{text: 'Tamam'}]);
       return;
     }
-    
+    if (!form.lastName) {
+      Alert.alert('Eksik Bilgi', 'Lütfen soyadınızı girin.', [{text: 'Tamam'}]);
+      return;
+    }
+    if (!form.email) {
+      Alert.alert('Eksik Bilgi', 'Lütfen e-posta adresinizi girin.', [{text: 'Tamam'}]);
+      return;
+    }
+    if (!form.phone || form.phone.replace(/^\+\d+\s*/, '').trim() === '') {
+      Alert.alert('Eksik Bilgi', 'Lütfen telefon numaranızı girin.', [{text: 'Tamam'}]);
+      return;
+    }
+    if (!form.title) {
+      Alert.alert('Eksik Bilgi', 'Lütfen unvanınızı girin.', [{text: 'Tamam'}]);
+      return;
+    }
+    if (!form.location) {
+      Alert.alert('Eksik Bilgi', 'Lütfen konumunuzu girin.', [{text: 'Tamam'}]);
+      return;
+    }
+    if (!form.profileInfo) {
+      Alert.alert('Eksik Bilgi', 'Lütfen kendiniz hakkında bilgi girin.', [{text: 'Tamam'}]);
+      return;
+    }
+
     setIsSaving(true);
     console.log("DEBUG: setIsSaving(true) çalıştı.");
 
@@ -142,12 +163,36 @@ const UpdateProfileScreen = ({navigation}: Props) => {
         
         // 2. Metin verilerini güncelle
         const profileDataToUpdate = { ...form, photoURL: photoPathForUpdate, profilePhoto: photoPathForUpdate };
-        console.log("DEBUG: Profil güncelleme isteği gönderiliyor, data:", JSON.stringify(profileDataToUpdate, null, 2));
 
-        const response = await axios.put('https://api.aikuaiplatform.com/api/auth/updateUser', profileDataToUpdate, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
+        // Gereksiz veya boş alanları sil
+        if (!profileDataToUpdate.locale || Object.keys(profileDataToUpdate.locale).length === 0) {
+          delete profileDataToUpdate.locale;
+        }
+
+        // Sadece gerekli alanları seç
+        const {
+          id, firstName, lastName, email, phone, countryCode, localPhone,
+          title, location, profileInfo, profilePhoto, photoURL
+        } = profileDataToUpdate;
+
+        const cleanProfileData = {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone.replace(/\s/g, ''), // boşlukları kaldır
+          countryCode: country?.cca2 || 'TR',
+          title: form.title,
+          location: form.location,
+          profileInfo: form.profileInfo,
+          photoURL: photoPathForUpdate, // profilePhoto yerine photoURL gönder
+        };
+
+        console.log("DEBUG: Profil güncelleme isteği gönderiliyor, data:", JSON.stringify(cleanProfileData, null, 2));
+
+        const response = await axios.put('https://api.aikuaiplatform.com/api/auth/updateUser', cleanProfileData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         });
         console.log("DEBUG: Profil güncelleme cevabı alındı:", JSON.stringify(response.data, null, 2));
 
@@ -223,6 +268,15 @@ const UpdateProfileScreen = ({navigation}: Props) => {
     const uploadedUrl = uploadResult.url; // ör: /uploads/abc.jpg
     // 3. Profil güncelleme isteğinde bu yolu kullan
     await updateProfile({ photoURL: uploadedUrl, ...diğerAlanlar });
+  };
+
+  const getPhoneCode = (cca2: string) => {
+    const countryItem = countryCodes.find(
+      c =>
+        c.name.toLowerCase() === (country?.name?.toLowerCase() || '') ||
+        (cca2 === 'TR' && c.name.toLowerCase().includes('türkiye'))
+    );
+    return countryItem?.code || '+90';
   };
 
   return (
@@ -363,14 +417,13 @@ const UpdateProfileScreen = ({navigation}: Props) => {
                     visible={showCountryPicker}
                     onClose={() => setShowCountryPicker(false)}
                   />
-                  <Icon name="arrow-drop-down" size={24} color={Colors.lightText} />
                   <Icon name="chevron-down" size={24} color={Colors.lightText} />
                 </TouchableOpacity>
                 <TextInput
                   value={form.phone?.replace(/^\+\d+\s*/, '')}
                   onChangeText={text => {
-                    const callingCode = country?.callingCode[0] || '90';
-                    handleChange('phone', `+${callingCode} ${text}`);
+                    const phoneCode = getPhoneCode(countryCode);
+                    handleChange('phone', `${phoneCode} ${text}`);
                   }}
                   style={[styles.input, styles.phoneInput]}
                   mode="outlined"
@@ -537,12 +590,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.background,
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
     elevation: 8,
   },
   avatarHint: {
