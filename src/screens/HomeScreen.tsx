@@ -72,10 +72,10 @@ const HomeScreen = (props: HomeScreenProps) => {
   const handScale = useRef(new Animated.Value(1)).current;
   // Her kart için elin top, marginTop ve dönüş ayarları
   const handConfigs = [
-    { left: 1, top: 220, marginTop: -120, rotate: '0deg' },    // Startups
-    { left: 1, top: 220, marginTop: -120, rotate: '0deg' },    // Investor
-    { left: -50, top: -160, marginTop: -160, rotate: '180deg' },  // Business
-    { left: -50, top: -150, marginTop: -180, rotate: '180deg' },  // Marketplace
+    { left: 30, top: 70, marginTop: -30 },    // Startups
+    { left: 30, top: 70, marginTop: -30 },    // Investor
+    { left: 30, top: 50, marginTop: -10 },    // Business
+    { left: 30, top: 50, marginTop: -10 },    // Marketplace
   ];
   // Kapanış animasyonu için her kartın X kayması
   const cardEndX = [-30, 0, 30, 0];
@@ -184,7 +184,7 @@ const HomeScreen = (props: HomeScreenProps) => {
       communityItems.forEach((item, idx) => {
         Animated.parallel([
           Animated.timing(cardPositions[idx], {
-            toValue: { x: cardEndX[idx], y: 230 },
+            toValue: { x: cardEndX[idx], y: 80 },
             duration: 700,
             useNativeDriver: true,
           }),
@@ -326,7 +326,7 @@ const HomeScreen = (props: HomeScreenProps) => {
               }} />
               <View style={{
                 position: 'absolute',
-                top: SCREEN_HEIGHT / 2 - 250,
+                top: 100,
                 left: 0,
                 right: 0,
                 alignItems: 'center',
@@ -336,8 +336,9 @@ const HomeScreen = (props: HomeScreenProps) => {
                   <Animated.View
                     key={item.key}
                     style={{
-                      width: SCREEN_WIDTH * 0.7,
-                      minHeight: 90,
+                      width: SCREEN_WIDTH * 0.9,
+                      minHeight: 60,
+                      height: 60,
                       marginVertical: 10,
                       opacity: cardOpacities[idx],
                       transform: [
@@ -345,8 +346,8 @@ const HomeScreen = (props: HomeScreenProps) => {
                         { scale: cardScales[idx] },
                       ],
                       backgroundColor: activeCenterIndex === idx ? 'rgba(59,130,247,0.2)' : 'rgba(255,255,255,0.08)',
-                      borderRadius: 16,
-                      padding: 32,
+                      borderRadius: 12,
+                      padding: 16,
                       flexDirection: 'row',
                       alignItems: 'center',
                       borderWidth: activeCenterIndex === idx ? 2 : 1,
@@ -367,20 +368,24 @@ const HomeScreen = (props: HomeScreenProps) => {
                           marginTop: handConfigs[activeCenterIndex]?.marginTop ?? -120,
                           zIndex: 100,
                           transform: [
-                            { rotate: activeCenterIndex > 1 ? '180deg' : '0deg' },
                             { scale: handScale },
                           ],
                         }}
                         resizeMode="contain"
                       />
                     )}
-                    <View style={{ marginLeft: activeCenterIndex === idx ? 60 : 0, zIndex: 10 }}>
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{item.label}</Text>
-                      <Text style={{ color: '#fff', fontSize: 14, marginTop: 6 }}>
-                        {idx === 0 ? 'Special area for entrepreneurs' :
-                          idx === 1 ? 'Opportunities for investors' :
-                          idx === 2 ? 'Solutions for business world' :
-                          'Products and services'}
+                    <View style={{
+                      zIndex: 10,
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18, textAlign: 'center' }}>{item.label}</Text>
+                      <Text style={{ color: '#fff', fontSize: 12, marginTop: 6, textAlign: 'center' }}>
+                        {idx === 0 ? 'Tap here to explore startups and add them to your favorites.' :
+                          idx === 1 ? 'Tap here to explore investor.' :
+                          idx === 2 ? 'Tap here to explore business' :
+                          'Tap here to explore products and services'}
                       </Text>
                     </View>
                   </Animated.View>
