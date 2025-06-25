@@ -7,6 +7,8 @@ import {
   Image,
   Linking,
   Dimensions,
+  Platform,
+  SafeAreaView,
 } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -93,31 +95,33 @@ const Favorites = () => {
       end={{ x: 2, y: 1 }}
       style={styles.container}
     >
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#3B82F7" />
-        </TouchableOpacity>
-        <PaperText style={styles.header}>Favorites</PaperText>
-        <View style={styles.placeholder} />
-      </View>
-
-      {favorites.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Icon name="heart-outline" size={64} color="rgba(255,255,255,0.3)" />
-          <PaperText style={styles.emptyText}>No favorites yet</PaperText>
-          <PaperText style={styles.emptySubtext}>
-            Add startups to your favorites to see them here
-          </PaperText>
+      <SafeAreaView style={{flex: 1}}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back" size={24} color="#3B82F7" />
+          </TouchableOpacity>
+          <PaperText style={styles.header}>Favorites</PaperText>
+          <View style={styles.placeholder} />
         </View>
-      ) : (
-        <FlatList
-          data={favorites}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+
+        {favorites.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="heart-outline" size={64} color="rgba(255,255,255,0.3)" />
+            <PaperText style={styles.emptyText}>No favorites yet</PaperText>
+            <PaperText style={styles.emptySubtext}>
+              Add startups to your favorites to see them here
+            </PaperText>
+          </View>
+        ) : (
+          <FlatList
+            data={favorites}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -125,12 +129,14 @@ const Favorites = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 0,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 32 : 0,
+    paddingHorizontal: 16,
   },
   backButton: {
     marginRight: 10,
@@ -260,4 +266,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Favorites; 
+export default Favorites;

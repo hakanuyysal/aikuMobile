@@ -159,12 +159,10 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   };
 
   const getProfilePhoto = () => {
-    if (profile.photoURL) {
-      if (profile.photoURL.startsWith('http')) {
-        return profile.photoURL;
-      }
-      return `https://api.aikuaiplatform.com${profile.photoURL}`;
-    }
+    const url = profile.photoURL || profile.profilePhoto;
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
     return null;
   };
   const profilePhoto = getProfilePhoto();

@@ -7,6 +7,8 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Platform,
+  SafeAreaView
 } from 'react-native';
 import {Text, TextInput} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -42,16 +44,22 @@ const UpdateProfileScreen = ({navigation}: Props) => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Profil ve kullanıcı verisi yüklendiğinde avatar URI'ını ayarla
-    const initialPhotoURL = profile.photoURL || user?.photoURL || '';
-    if (initialPhotoURL && !initialPhotoURL.startsWith('file://')) {
-        // Eğer URL tam değilse, base URL ekle (backend kodundan anlaşıldığı üzere)
-        const baseUrl = 'https://api.aikuaiplatform.com';
-        setAvatarUri(initialPhotoURL.startsWith('http') ? initialPhotoURL : `${baseUrl}${initialPhotoURL}`);
+    // Öncelik: avatarUri (yeni seçilmişse), yoksa profile.photoURL veya profile.profilePhoto
+    if (avatarUri && avatarUri.startsWith('file://')) {
+      // Kullanıcı yeni fotoğraf seçtiyse onu göster
+      setAvatarUri(avatarUri);
     } else {
-        setAvatarUri(initialPhotoURL);
+      // Store'daki güncel fotoğrafı göster
+      const url = profile.photoURL || profile.profilePhoto || user?.photoURL || '';
+      if (url) {
+        setAvatarUri(url.startsWith('http') ? url : `https://api.aikuaiplatform.com${url}`);
+      } else {
+        setAvatarUri('');
+      }
     }
-  }, [profile.photoURL, user?.photoURL]);
+    // avatarUri'yi dependency'ye ekleme, yoksa sonsuz döngü olur!
+    // Sadece profile ve user değiştiğinde güncellesin yeter
+  }, [profile.photoURL, profile.profilePhoto, user?.photoURL]);
 
   const onSelect = (country: Country) => {
     setCountryCode(country.cca2);
@@ -145,9 +153,13 @@ const UpdateProfileScreen = ({navigation}: Props) => {
 
         if (response.data?.success) {
             const updatedUser = {
-                ...response.data.user,
-                photoURL: photoUrlForDisplay,
-                profilePhoto: photoUrlForDisplay, 
+              ...response.data.user,
+              photoURL: response.data.user.photoURL || response.data.user.profilePhoto
+                ? response.data.user.profilePhoto?.startsWith('/')
+                  ? `https://api.aikuaiplatform.com${response.data.user.profilePhoto}`
+                  : response.data.user.profilePhoto
+                : undefined,
+              profilePhoto: response.data.user.profilePhoto, 
             };
             updateProfile(updatedUser);
             Alert.alert('Success', 'Profile updated successfully', [
@@ -203,6 +215,16 @@ const UpdateProfileScreen = ({navigation}: Props) => {
     }
   };
 
+  // Fotoğrafı seçtikten sonra:
+  const uploadAndSavePhoto = async (image) => {
+    // 1. Fotoğrafı sunucuya yükle
+    const uploadResult = await uploadPhotoToServer(image); // backend'e yükle
+    // 2. Backend'den dönen yolu al (ör: /uploads/abc.jpg)
+    const uploadedUrl = uploadResult.url; // ör: /uploads/abc.jpg
+    // 3. Profil güncelleme isteğinde bu yolu kullan
+    await updateProfile({ photoURL: uploadedUrl, ...diğerAlanlar });
+  };
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -210,19 +232,21 @@ const UpdateProfileScreen = ({navigation}: Props) => {
       start={{x: 0, y: 0}}
       end={{x: 2, y: 1}}
       style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} disabled={isSaving}>
-          <Icon name="arrow-left" size={24} color={Colors.lightText} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} disabled={isSaving}>
-            {isSaving ? (
-                <ActivityIndicator color={Colors.primary} />
-            ) : (
-                <Icon name="check" size={24} color={Colors.primary} />
-            )}
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} disabled={isSaving}>
+            <Icon name="arrow-left" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                  <ActivityIndicator color={Colors.primary} />
+              ) : (
+                  <Icon name="check" size={24} color={Colors.primary} />
+              )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       <ScrollView
         style={styles.scrollView}
@@ -450,7 +474,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: metrics.padding.lg,
-    paddingTop: metrics.padding.lg,
+    paddingTop: Platform.OS === 'ios' ? metrics.padding.xl : metrics.padding.lg,
     paddingBottom: metrics.padding.lg,
   },
   headerTitle: {

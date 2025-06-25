@@ -106,8 +106,8 @@ class AuthService {
         if (data?.user) {
           await AsyncStorage.setItem('user_id', data.user.id);
           await AsyncStorage.setItem('user', JSON.stringify(data.user));
-          console.log('Successfully authenticated user:', { user: data.user });
-          // YENİ: Event tetikle
+          // Kullanıcıyı backend ile senkronize et
+          await this.syncSupabaseUser('linkedin_oidc', accessToken, data.user);
           this.authEvents.emit('login', data.user);
         }
       } else {

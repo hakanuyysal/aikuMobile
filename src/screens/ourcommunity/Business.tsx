@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Dimensions, Platform, SafeAreaView } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -63,12 +62,14 @@ const Business = () => {
       end={{ x: 2, y: 1 }}
       style={styles.container}
     >
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#3B82F7" />
-        </TouchableOpacity>
-        <PaperText style={styles.header}>Businesses</PaperText>
-      </View>
+      <SafeAreaView>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back" size={24} color="#3B82F7" />
+          </TouchableOpacity>
+          <PaperText style={styles.header}>Businesses</PaperText>
+        </View>
+      </SafeAreaView>
       <View style={styles.searchContainer}>
         <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
         <TextInput
@@ -101,6 +102,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 32 : 0, // iOS'ta üst boşluk ekle
   },
   backButton: {
     marginRight: 10,

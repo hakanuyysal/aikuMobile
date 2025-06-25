@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Image, Alert, Platform, SafeAreaView } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -164,34 +164,37 @@ const Startups = () => {
       end={{ x: 2, y: 1 }}
       style={styles.container}
     >
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#3B82F7" />
-        </TouchableOpacity>
-        <PaperText style={styles.header}>Startups</PaperText>
-      </View>
+      <SafeAreaView style={{flex: 1}}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back" size={24} color="#3B82F7" />
+          </TouchableOpacity>
+          <PaperText style={styles.header}>Startups</PaperText>
+          <View style={{width: 34}}/>{/* Sağda boşluk için */}
+        </View>
 
-      <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search startups..."
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          value={search}
-          onChangeText={setSearch}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search startups..."
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        <FlatList
+          data={filteredStartups}
+          renderItem={renderItem}
+          keyExtractor={item => item._id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchStartups}
+          extraData={favorites}
         />
-      </View>
-
-      <FlatList
-        data={filteredStartups}
-        renderItem={renderItem}
-        keyExtractor={item => item._id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        refreshing={loading}
-        onRefresh={fetchStartups}
-        extraData={favorites}
-      />
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -199,12 +202,14 @@ const Startups = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 0, // padding kaldırıldı
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 32 : 0,
+    paddingHorizontal: 16, // Yatay padding eklendi
   },
   backButton: {
     marginRight: 10,
@@ -225,6 +230,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    width: SCREEN_WIDTH - 32, // Ekran genişliğine göre ayarlandı
+    marginLeft: 16, // Sol kenardan boşluk
   },
   searchIcon: {
     marginRight: 8,

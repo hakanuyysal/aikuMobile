@@ -6,6 +6,8 @@ import {
   Dimensions,
   TouchableOpacity,
   TextInput,
+  Platform,
+  SafeAreaView,
 } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -84,31 +86,33 @@ const InvestmentScreen: React.FC = () => {
       end={{ x: 2, y: 1 }}
       style={styles.container}
     >
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#3B82F7" />
-        </TouchableOpacity>
-        <PaperText style={styles.header}>Investment Opportunities</PaperText>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <PaperText style={styles.subtext}>
-          Discover and invest in promising AI startups with high growth potential.
-        </PaperText>
-
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search investments..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value={search}
-            onChangeText={setSearch}
-          />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="chevron-back" size={24} color="#3B82F7" />
+          </TouchableOpacity>
+          <PaperText style={styles.header}>Investment Opportunities</PaperText>
         </View>
 
-        {investments.map((investment) => renderInvestmentCard(investment))}
-      </ScrollView>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <PaperText style={styles.subtext}>
+            Discover and invest in promising AI startups with high growth potential.
+          </PaperText>
+
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color={Colors.lightText} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search investments..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          {investments.map((investment) => renderInvestmentCard(investment))}
+        </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 };
@@ -116,12 +120,14 @@ const InvestmentScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: metrics.padding.md,
+    padding: 0,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: metrics.margin.md,
+    paddingTop: Platform.OS === 'ios' ? 32 : 0,
+    paddingHorizontal: 16,
   },
   backButton: {
     marginRight: metrics.margin.sm,
@@ -130,12 +136,14 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.xl,
     fontWeight: 'bold',
     color: '#fff',
-    marginLeft: '10%',
+    flex: 1,
+    textAlign: 'center',
   },
   subtext: {
     fontSize: metrics.fontSize.sm,
     color: '#ccc',
     marginBottom: metrics.margin.md,
+    paddingHorizontal: 24, // veya metrics.padding.lg
   },
   searchContainer: {
     flexDirection: 'row',

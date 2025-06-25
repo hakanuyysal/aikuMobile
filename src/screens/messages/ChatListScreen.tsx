@@ -360,11 +360,17 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       navigation.navigate('ChatDetail', params);
     };
 
+    // Avatar url düzeltmesi:
+    let avatarUrl = item.avatar;
+    if (avatarUrl?.startsWith('/uploads')) {
+      avatarUrl = `https://api.aikuaiplatform.com${avatarUrl}`;
+    }
+
     return (
       <TouchableOpacity style={styles.chatItem} onPress={handleChatPress}>
         <View style={styles.avatar}>
           <Image
-            source={{uri: item.avatar}}
+            source={{uri: avatarUrl || 'default_avatar_url_here'}}
             style={styles.avatarImage}
             resizeMode="contain"
           />
