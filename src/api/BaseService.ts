@@ -2,7 +2,7 @@ import axios from 'axios';
 import Config from 'react-native-config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const baseURL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
+const baseURL = Config.API_URL || 'https://api.aikuaiplatform.com';
 
 class BaseService {
   private axios;
@@ -31,14 +31,53 @@ class BaseService {
     );
   }
 
+  // Generic GET request
+  async getRequest(url: string, config?: any) {
+    try {
+      const response = await this.axios.get(url, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Generic POST request
+  async postRequest(url: string, data: any, config?: any) {
+    try {
+      const response = await this.axios.post(url, data, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Generic PUT request
+  async putRequest(url: string, data: any, config?: any) {
+    try {
+      const response = await this.axios.put(url, data, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Generic DELETE request
+  async deleteRequest(url: string, config?: any) {
+    try {
+      const response = await this.axios.delete(url, config);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getNews(page = 1, limit = 5, search = '') {
     try {
       const params: any = { limit, page };
       if (search.trim()) {
         params.search = search.trim();
       }
-      const response = await this.axios.get('/news', { params });
-      return response.data;
+      return await this.getRequest('/news', { params });
     } catch (error) {
       throw this.handleError(error);
     }
@@ -46,8 +85,7 @@ class BaseService {
 
   async getNewsById(id: string) {
     try {
-      const response = await this.axios.get(`/news/${id}`);
-      return response.data;
+      return await this.getRequest(`/news/${id}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -58,8 +96,7 @@ class BaseService {
   // Tüm ürünleri getirme
   async getAllProducts() {
     try {
-      const response = await this.axios.get(`/product/all`);
-      return response.data;
+      return await this.getRequest('/product/all');
     } catch (error) {
       throw this.handleError(error);
     }
@@ -68,8 +105,7 @@ class BaseService {
   // Belirli bir ürünü ID'ye göre getir (getProductById)
   async getProductById(productId: string) {
     try {
-      const response = await this.axios.get(`/product/${productId}`);
-      return response.data;
+      return await this.getRequest(`/product/${productId}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -79,8 +115,7 @@ class BaseService {
 
   async getBlogs(page = 1, limit = 5) {
     try {
-      const response = await this.axios.get(`/blog/all?page=${page}&limit=${limit}`);
-      return response.data;
+      return await this.getRequest(`/blog/all?page=${page}&limit=${limit}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -88,8 +123,7 @@ class BaseService {
 
   async getBlogById(blogId: string) {
     try {
-      const response = await this.axios.get(`/blog/${blogId}`);
-      return response.data;
+      return await this.getRequest(`/blog/${blogId}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -97,8 +131,7 @@ class BaseService {
 
   async createBlog(blogData: { title: string; fullContent: string }) {
     try {
-      const response = await this.axios.post('/blog', blogData);
-      return response.data;
+      return await this.postRequest('/blog', blogData);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -106,8 +139,7 @@ class BaseService {
 
   async updateBlog(blogId: string, updatedData: { title?: string; fullContent?: string }) {
     try {
-      const response = await this.axios.put(`/blog/${blogId}`, updatedData);
-      return response.data;
+      return await this.putRequest(`/blog/${blogId}`, updatedData);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -115,8 +147,7 @@ class BaseService {
 
   async deleteBlog(blogId: string) {
     try {
-      const response = await this.axios.delete(`/blog/${blogId}`);
-      return response.data;
+      return await this.deleteRequest(`/blog/${blogId}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -127,7 +158,7 @@ class BaseService {
       const formData = new FormData();
       formData.append('cover', file);
 
-      const response = await this.axios.post(
+      return await this.postRequest(
         `/upload/blog-cover/${blogId}`,
         formData,
         {
@@ -136,18 +167,14 @@ class BaseService {
           },
         }
       );
-      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-   async deleteBlogCover(blogId: string) {
+  async deleteBlogCover(blogId: string) {
     try {
-      const response = await this.axios.delete(
-        `/upload/blog-cover/${blogId}`
-      );
-      return response.data;
+      return await this.deleteRequest(`/upload/blog-cover/${blogId}`);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -156,14 +183,14 @@ class BaseService {
   // Hata yönetimi
   handleError(error: any) {
     console.error("API Hatası:", {
-     message: error.message,
-     status: error.response?.status,
-     data: error.response?.data || 'Response yok',
-     config: {
-       url: error.config?.url,
-       method: error.config?.method,
-       headers: error.config?.headers
-     }
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data || 'Response yok',
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
     });
 
     if (error.response) {

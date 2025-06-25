@@ -1,75 +1,77 @@
-import React, {useEffect} from 'react';
-import {View, Text, StyleSheet, SafeAreaView} from 'react-native';
+import React from 'react';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../../../App';
-import LinearGradient from 'react-native-linear-gradient';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../types';
 
-type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type PaymentSuccessProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  route: {
+    params: {
+      message: string;
+    };
+  };
+};
 
-const PaymentSuccess = () => {
-  const navigation = useNavigation<RootNavigationProp>();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'Main'}],
-      });
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [navigation]);
+const PaymentSuccess: React.FC<PaymentSuccessProps> = ({navigation, route}) => {
+  const {message} = route.params;
 
   return (
-    <LinearGradient
-      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
-      style={styles.gradientBackground}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <Icon name="checkmark-circle" size={100} color="#4CAF50" />
-          <Text style={styles.title}>Payment Successful!</Text>
-          <Text style={styles.subtitle}>
-            Your subscription has been activated successfully.{'\n'}
-          </Text>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Icon name="checkmark-circle" size={80} color={Colors.success} />
         </View>
-      </SafeAreaView>
-    </LinearGradient>
+        <Text style={styles.title}>Success!</Text>
+        <Text style={styles.message}>{message}</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.buttonText}>Back to Home</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  gradientBackground: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: metrics.padding.xl,
   },
-  title: {
-    fontSize: metrics.fontSize.xxxl,
-    color: Colors.lightText,
-    marginTop: metrics.margin.xl,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  content: {
+    alignItems: 'center',
   },
-  subtitle: {
+  iconContainer: {
+    marginBottom: metrics.margin.xl,
+  },
+  title: {
+    fontSize: metrics.fontSize.xxl,
+    fontWeight: 'bold',
+    color: Colors.lightText,
+    marginBottom: metrics.margin.md,
+  },
+  message: {
     fontSize: metrics.fontSize.lg,
     color: Colors.inactive,
-    marginTop: metrics.margin.lg,
     textAlign: 'center',
-    lineHeight: metrics.fontSize.lg * 1.5,
+    marginBottom: metrics.margin.xl,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    paddingVertical: metrics.padding.lg,
+    paddingHorizontal: metrics.padding.xxl,
+    borderRadius: metrics.borderRadius.circle,
+  },
+  buttonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.lg,
+    fontWeight: 'bold',
   },
 });
 

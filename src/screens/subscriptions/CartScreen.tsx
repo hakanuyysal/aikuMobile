@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Dimensions,
   Animated,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import {Colors} from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,15 +15,21 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import {RootStackParamList} from '../../types';
+import PaymentService from '../../services/PaymentService';
+import BillingService from '../../services/BillingService';
+import {BillingInfo} from '../../types';
 
 type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const CARD_WIDTH = metrics.getWidthPercentage(75);
-const CARD_SPACING = metrics.spacing.sm;
-const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2.5;
+type PlanDetails = {
+  name: string;
+  price: number;
+  description: string;
+  billingCycle: 'yearly' | 'monthly';
+  hasPaymentHistory: boolean;
+};
 
 interface PlanProps {
   title: string;
@@ -35,6 +42,11 @@ interface PlanProps {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const CARD_WIDTH = metrics.getWidthPercentage(75);
+const CARD_SPACING = metrics.spacing.sm;
+const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2.5;
+
 const PlanCard: React.FC<PlanProps> = ({
   title,
   subtitle,
@@ -45,9 +57,23 @@ const PlanCard: React.FC<PlanProps> = ({
   scrollX,
   navigation,
 }) => {
+  const [loading, setLoading] = useState(false);
+  const [hasHistory, setHasHistory] = useState(false);
   const yearlyPrice = Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
-  const displayPrice = isStartupPlan && !isYearly ? 0 : price;
+
+  // Component mount olduğunda history kontrolü yap
+  useEffect(() => {
+    const checkPaymentHistory = async () => {
+      try {
+        const response = await PaymentService.getPaymentHistory();
+        setHasHistory(response.data && response.data.length > 0);
+      } catch (error) {
+        console.error('Error checking payment history:', error);
+      }
+    };
+    checkPaymentHistory();
+  }, []);
 
   const inputRange = [
     (index - 1) * CARD_WIDTH,
@@ -80,6 +106,62 @@ const PlanCard: React.FC<PlanProps> = ({
     outputRange: [-15, 0, 15],
   });
 
+  const handleGetStarted = async () => {
+    try {
+      setLoading(true);
+      
+      // Startup Plan ve ücretsiz deneme kontrolü
+      if (isStartupPlan && !hasHistory) {
+        // Ödeme geçmişi yoksa direkt success ekranına git
+        navigation.navigate('PaymentSuccess', {
+          message: 'Your free trial has been successfully activated!',
+        });
+        return;
+      }
+
+      // Eğer ücretli bir plan ise billing info kontrolü yap
+      const billingResponse = await BillingService.getDefaultBillingInfo();
+      const billingInfo = billingResponse?.data as BillingInfo | undefined;
+      const hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
+      
+      // Fiyatı belirle
+      const finalPrice = isYearly ? yearlyPrice : price;
+      
+      // Plan detaylarını hazırla
+      const planDetails: PlanDetails = {
+        name: title,
+        price: finalPrice,
+        description: subtitle,
+        billingCycle: isYearly ? 'yearly' : 'monthly',
+        hasPaymentHistory: hasHistory,
+      };
+
+      // Her durumda önce BillingInfo ekranına git
+      navigation.navigate('BillingInfo', {
+        planDetails,
+        hasExistingBillingInfo: hasBillingInfo,
+        existingBillingInfo: billingInfo,
+      });
+
+    } catch (error) {
+      console.error('Error during plan selection:', error);
+      const errorPlanDetails: PlanDetails = {
+        name: title,
+        price: isYearly ? yearlyPrice : price,
+        description: subtitle,
+        billingCycle: isYearly ? 'yearly' : 'monthly',
+        hasPaymentHistory: hasHistory,
+      };
+      // Hata durumunda da BillingInfo ekranına git
+      navigation.navigate('BillingInfo', {
+        planDetails: errorPlanDetails,
+        hasExistingBillingInfo: false,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -100,18 +182,18 @@ const PlanCard: React.FC<PlanProps> = ({
       <Text style={styles.subtitle}>{subtitle}</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.price}>
-        {isStartupPlan && !isYearly ? (
+        {isStartupPlan && !hasHistory ? (
           <>
             <Text style={styles.originalPrice}>$49</Text>{' '}
             <Text style={styles.newPrice}>$0</Text>
           </>
         ) : (
-          `$${isYearly ? yearlyPrice : displayPrice}`
+          `$${isYearly ? yearlyPrice : price}`
         )}
         <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
         {isYearly && <Text style={styles.discount}> (10% off)</Text>}
       </Text>
-      {title === 'Startup Plan' && (
+      {isStartupPlan && !hasHistory && (
         <Text style={styles.trial}>⭐️ 6 month free trial!</Text>
       )}
       {isYearly && title !== 'Startup Plan' && (
@@ -122,10 +204,15 @@ const PlanCard: React.FC<PlanProps> = ({
           • {feature}
         </Text>
       ))}
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={() => navigation.navigate('BillingInfo', { planDetails: { title, price, isYearly } })}>
-        <Text style={styles.buttonText}>Get Started</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleGetStarted}
+        disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color={Colors.lightText} />
+        ) : (
+          <Text style={styles.buttonText}>Get Started</Text>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -134,42 +221,6 @@ const PlanCard: React.FC<PlanProps> = ({
 const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
   const [isYearly, setIsYearly] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
-
-  const plans = [
-    {
-      title: 'Startup Plan',
-      subtitle: 'For AI Startups & Developers',
-      price: 49,
-      features: [
-        'List AI solutions',
-        'Get investor access',
-        'Use premium AI tools',
-        'Chat with businesses and investors',
-      ],
-    },
-    {
-      title: 'Business Plan',
-      subtitle: 'For Companies & Enterprises',
-      price: 75,
-      features: [
-        'AI discovery',
-        'API integrations',
-        'Exclusive tools',
-        'Chat with all companies',
-      ],
-    },
-    {
-      title: 'Investor Plan',
-      subtitle: 'For VCs & Angel Investors',
-      price: 99,
-      features: [
-        'AI startup deal flow',
-        'Analytics',
-        'AI-powered investment insights',
-        'Chat with all companies',
-      ],
-    },
-  ];
 
   return (
     <LinearGradient
@@ -241,6 +292,42 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
     </LinearGradient>
   );
 };
+
+const plans = [
+  {
+    title: 'Startup Plan',
+    subtitle: 'For AI Startups & Developers',
+    price: 49,
+    features: [
+      'List AI solutions',
+      'Get investor access',
+      'Use premium AI tools',
+      'Chat with businesses and investors',
+    ],
+  },
+  {
+    title: 'Business Plan',
+    subtitle: 'For Companies & Enterprises',
+    price: 75,
+    features: [
+      'AI discovery',
+      'API integrations',
+      'Exclusive tools',
+      'Chat with all companies',
+    ],
+  },
+  {
+    title: 'Investor Plan',
+    subtitle: 'For VCs & Angel Investors',
+    price: 99,
+    features: [
+      'AI startup deal flow',
+      'Analytics',
+      'AI-powered investment insights',
+      'Chat with all companies',
+    ],
+  },
+];
 
 const styles = StyleSheet.create({
   gradientBackground: {
@@ -388,6 +475,9 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.xxxl,
     fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });
 

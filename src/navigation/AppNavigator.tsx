@@ -34,3 +34,33 @@ export const AppNavigator = () => {
     </Stack.Navigator>
   );
 };
+
+export type RootStackParamList = {
+  ChatList: undefined;
+  CompanyList: undefined;
+  ChatDetail: {
+    chatId: string;
+  };
+  LinkedInAuth: undefined;
+  LinkedInCallback: undefined;
+  BillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    hasExistingBillingInfo?: boolean;
+    existingBillingInfo?: BillingInfo;
+  };
+  AddBillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+  };
+};
