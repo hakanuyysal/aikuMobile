@@ -8,26 +8,48 @@ import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
 import { useFavoritesStore } from '../../store/favoritesStore';
 import { Colors } from '../../constants/colors';
+import { useAuth } from '../../contexts/AuthContext'; // token için
+import axios from 'axios';
 
 const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const Startups = () => {
   const navigation = useNavigation();
+  const { token } = useAuth(); // token al
+  console.log("TOKEN:", token);
   const [search, setSearch] = useState('');
   const [startups, setStartups] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const { favorites, addToFavorites, removeFromFavorites, isFavorite } = useFavoritesStore();
+  const { favorites, setFavorites, addToFavorites, removeFromFavorites, isFavorite } = useFavoritesStore();
 
   useEffect(() => {
     fetchStartups();
   }, []);
 
+  // Favori şirketleri çekmek için:
+  // const fetchFavorites = async () => {
+  //   try {
+  //     const res = await axios.get('https://api.aikuaiplatform.com/api/favorites', {
+  //       headers: { Authorization: `Bearer ${token}` }
+  //     });
+  //     setFavorites(res.data.favorites.favoriteCompanies); //
+  //   } catch (error) {
+  //     console.log('Favoriler yüklenirken hata:', error);
+  //     Alert.alert('Hata', 'Favoriler yüklenirken bir hata oluştu.');
+  //   }
+  // };
+
   const fetchStartups = async () => {
     try {
       setLoading(true);
       const data = await companyService.getStartups();
+      console.log("Backend'den gelen startup listesi:", data);
       const processedData = data.map(item => {
+        // Map id to _id if _id is missing
+        if (!item._id && item.id) {
+          return { ...item, _id: item.id };
+        }
         if (!item._id) {
           console.warn(`Startup ${item.companyName} has undefined _id. Generating a stable temporary ID.`);
           return { ...item, _id: `${item.companyName}-${item.companyWebsite || 'no-website'}` };
@@ -43,21 +65,59 @@ const Startups = () => {
     }
   };
 
-  const handleToggleFavorite = (startup: Company) => {
+  const handleToggleFavorite = async (startup: Company) => {
     const startupId = startup._id;
+    console.log('handleToggleFavorite çağrıldı:', {
+      startup,
+      startupId,
+      token,
+      isFavorite: isFavorite(startupId),
+    });
 
+    if (!token) {
+      console.log('TOKEN YOK! Favori işlemi yapılamaz.');
+      Alert.alert('Hata', 'Lütfen tekrar giriş yapın.');
+      return;
+    }
+    if (!startupId || startupId.includes('-')) {
+      console.log('GEÇERSİZ ID! Favori işlemi yapılamaz.', startupId);
+      Alert.alert('Hata', 'Bu startup için favori işlemi yapılamaz.');
+      return;
+    }
     if (isFavorite(startupId)) {
-      removeFromFavorites(startupId);
+      try {
+        console.log('Favoriden çıkarılıyor:', startupId);
+        await axios.delete('https://api.aikuaiplatform.com/api/auth/favorites', {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { type: 'company', itemId: startupId }
+        });
+        removeFromFavorites(startupId);
+        console.log('Favoriden çıkarıldı:', startupId);
+      } catch (e) {
+        console.log('Favoriden çıkarılamadı:', e?.response?.data || e.message || e);
+        Alert.alert('Hata', 'Favoriden çıkarılamadı.');
+      }
     } else {
-      const favoriteStartupData = {
-        id: startupId,
-        name: startup.companyName,
-        description: startup.companyInfo,
-        logo: startup.companyLogo,
-        website: startup.companyWebsite,
-        isHighlighted: startup.isHighlighted,
-      };
-      addToFavorites(favoriteStartupData);
+      try {
+        console.log('Favoriye ekleniyor:', startupId);
+        await axios.post('https://api.aikuaiplatform.com/api/auth/favorites', {
+          type: 'company',
+          itemId: startupId
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        const favoriteStartupData = {
+          id: startupId,
+          name: startup.companyName,
+          description: startup.companyInfo,
+          logo: startup.companyLogo,
+          website: startup.companyWebsite,
+          isHighlighted: startup.isHighlighted,
+        };
+        addToFavorites(favoriteStartupData);
+        console.log('Favoriye eklendi:', favoriteStartupData);
+      } catch (e) {
+        console.log('Favorilere eklenemedi:', e?.response?.data || e.message || e);
+        Alert.alert('Hata', 'Favorilere eklenemedi.');
+      }
     }
   };
 
@@ -76,6 +136,13 @@ const Startups = () => {
   const renderItem = ({ item }: { item: Company }) => {
     const itemIdForFavoriteCheck = item._id;
     const isCurrentlyFavorite = isFavorite(itemIdForFavoriteCheck);
+    console.log('renderItem:', {
+      item,
+      itemIdForFavoriteCheck,
+      isCurrentlyFavorite,
+      idValid: !!item._id && !item._id.includes('-'),
+    });
+
     return (
       <View style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
         <View style={styles.cardContent}>
@@ -111,13 +178,25 @@ const Startups = () => {
               <TouchableOpacity
                 style={styles.favoriteButton}
                 onPress={() => {
+                  console.log('Favori butonuna tıklandı:', {
+                    item,
+                    itemId: item._id,
+                    isCurrentlyFavorite,
+                    idValid: !!item._id && !item._id.includes('-'),
+                  });
                   handleToggleFavorite(item);
                 }}
               >
                 <Icon
                   name={isCurrentlyFavorite ? "heart" : "heart-outline"}
                   size={24}
-                  color={isCurrentlyFavorite ? Colors.primary : `${Colors.primary}70`}
+                  color={
+                    !item._id || item._id.includes('-')
+                      ? "#ccc"
+                      : isCurrentlyFavorite
+                      ? Colors.primary
+                      : `${Colors.primary}70`
+                  }
                 />
               </TouchableOpacity>
             </View>

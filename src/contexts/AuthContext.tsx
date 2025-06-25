@@ -12,6 +12,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null; // <-- EKLE
   loading: boolean;
   updateUser: (data: Partial<User>) => void;
   login: (email: string, password: string) => Promise<void>;
@@ -26,6 +27,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null); // <-- EKLE
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,21 +40,24 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       const userData = await AuthService.getCurrentUser();
       if (userData) {
         setUser(userData);
+        const storedToken = await AsyncStorage.getItem('token');
+        setToken(storedToken);
         return;
       }
 
       const storedUser = await AsyncStorage.getItem('user');
-      const token = await AsyncStorage.getItem('token');
-
-      if (storedUser && token) {
+      const storedToken = await AsyncStorage.getItem('token');
+      if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
+        setToken(storedToken);
       } else {
         setUser(null);
+        setToken(null);
         await AuthService.clearAuth();
       }
     } catch (error) {
-      console.error('Kullanıcı bilgileri yüklenirken hata:', error);
       setUser(null);
+      setToken(null);
       await AuthService.clearAuth();
     } finally {
       setLoading(false);
@@ -65,6 +70,10 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       if (response.user) {
         setUser(response.user);
       }
+      if (response.token) {
+        setToken(response.token);
+        await AsyncStorage.setItem('token', response.token);
+      }
       return response;
     } catch (error) {
       throw error;
@@ -75,6 +84,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       await AuthService.clearAuth();
       setUser(null);
+      setToken(null);
     } catch (error) {
       console.error('Çıkış yapılırken hata:', error);
     }
@@ -118,6 +128,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     <AuthContext.Provider
       value={{
         user,
+        token, // <-- EKLE
         loading,
         login,
         logout,

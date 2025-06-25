@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext'; // token için
 import {
   View,
   StyleSheet,
@@ -22,15 +24,50 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const Favorites = () => {
   const navigation = useNavigation();
-  const { favorites, removeFromFavorites } = useFavoritesStore();
+  const { token } = useAuth();
+  const { favorites, setFavorites, removeFromFavorites } = useFavoritesStore();
 
-  const handleRemoveFavorite = (startupId: string) => {
-    console.log(`Favorites.tsx - Attempting to remove ID: ${startupId}`);
-    removeFromFavorites(startupId);
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      const res = await axios.get('https://api.aikuaiplatform.com/api/auth/favorites', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFavorites(res.data.favorites.favoriteCompanies); // örnek: sadece şirketler
+    };
+    fetchFavorites();
+  }, []);
+
+  const handleRemoveFavorite = async (startupId: string) => {
+    await axios.delete('https://api.aikuaiplatform.com/api/auth/favorites', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { type: 'company', itemId: startupId }
+    });
+    removeFromFavorites(startupId); // local store’dan da çıkar
+  };
+
+  const handleToggleFavorite = async (item: any) => {
+    // id veya _id ile kontrol et
+    const itemId = item.id || item._id;
+    if (!itemId || (item._id && item._id.includes('-'))) return;
+
+    // id veya _id ile favori kontrolü
+    const isCurrentlyFavorite = favorites.some(
+      (fav) => fav.id === itemId || fav._id === itemId
+    );
+
+    if (isCurrentlyFavorite) {
+      await handleRemoveFavorite(itemId);
+    } else {
+      // Favoriye ekleme kodu buraya eklenebilir
+    }
   };
 
   const renderItem = ({ item }: { item: any }) => {
-    console.log(`Favorites.tsx - Rendering: ${item.name}, ID: ${item.id}, isHighlighted: ${item.isHighlighted}`);
+    const itemId = item.id || item._id;
+    const isCurrentlyFavorite = favorites.some(
+      (fav) => fav.id === itemId || fav._id === itemId
+    );
+
     return (
       <View style={[styles.cardContainer, item.isHighlighted && styles.highlightedCard]}>
         <View style={styles.cardContent}>
@@ -60,9 +97,20 @@ const Favorites = () => {
                 <PaperText style={styles.companyName}>{item.name}</PaperText>
                 <TouchableOpacity
                   style={styles.favoriteButton}
-                  onPress={() => handleRemoveFavorite(item.id)}
+                  onPress={() => handleToggleFavorite(item)}
+                  disabled={!itemId || (item._id && item._id.includes('-'))}
                 >
-                  <Icon name="heart" size={24} color={Colors.primary} />
+                  <Icon
+                    name={isCurrentlyFavorite ? "heart" : "heart-outline"}
+                    size={24}
+                    color={
+                      !itemId || (item._id && item._id.includes('-'))
+                        ? "#ccc"
+                        : isCurrentlyFavorite
+                        ? "#3B82F7" // Mavi renk
+                        : "#3B82F770" // Mavi'nin transparan tonu
+                    }
+                  />
                 </TouchableOpacity>
               </View>
             </View>
