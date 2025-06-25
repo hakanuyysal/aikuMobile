@@ -28,7 +28,12 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({navigation, route}) => {
         <Text style={styles.message}>{message}</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{name: 'Main'}],
+            })
+          }>
           <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>
       </View>
