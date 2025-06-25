@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Text,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -44,6 +45,40 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [products, setProducts] = useState(PRODUCTS);
   const [activeTab, setActiveTab] = useState<'blog' | 'pulse'>('blog');
   const { onMenuOpen } = props;
+  // ANİMASYON: Ortada gösterilecek kartlar için animated values
+  const [showCenterCards, setShowCenterCards] = useState(true);
+  const [activeCenterIndex, setActiveCenterIndex] = useState(0);
+  const cardOpacities = useRef([
+    new Animated.Value(1),
+    new Animated.Value(0.2),
+    new Animated.Value(0.2),
+    new Animated.Value(0.2),
+  ]).current;
+  // Her kart için pozisyon animasyonu (sonda kullanılacak)
+  const cardPositions = useRef([
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+  ]).current;
+  // Her kart için scale animasyonu
+  const cardScales = useRef([
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1),
+  ]).current;
+  // El için scale animasyonu
+  const handScale = useRef(new Animated.Value(1)).current;
+  // Her kart için elin top, marginTop ve dönüş ayarları
+  const handConfigs = [
+    { left: 1, top: 220, marginTop: -120, rotate: '0deg' },    // Startups
+    { left: 1, top: 220, marginTop: -120, rotate: '0deg' },    // Investor
+    { left: -50, top: -160, marginTop: -160, rotate: '180deg' },  // Business
+    { left: -50, top: -150, marginTop: -180, rotate: '180deg' },  // Marketplace
+  ];
+  // Kapanış animasyonu için her kartın X kayması
+  const cardEndX = [-30, 0, 30, 0];
 
   const handleProductPress = (_productId: string) => {};
 
@@ -75,41 +110,115 @@ const HomeScreen = (props: HomeScreenProps) => {
     )
     .slice(0, 3);
 
+  // Community kartlarını array ile oluştur
+  const communityItems = [
+    {
+      key: 'Startups',
+      icon: 'rocket-launch',
+      label: 'Startups',
+      nav: 'StartupsDetails',
+      desc: 'Startups: Girişimcilere özel alan',
+    },
+    {
+      key: 'Investor',
+      icon: 'account-group',
+      label: 'Investor',
+      nav: 'InvestorDetails',
+      desc: 'Investor: Yatırımcılar için fırsatlar',
+    },
+    {
+      key: 'Business',
+      icon: 'store',
+      label: 'Business',
+      nav: 'BusinessDetails',
+      desc: 'Business: İş dünyası için çözümler',
+    },
+    {
+      key: 'Marketplace',
+      icon: 'shopping',
+      label: 'Marketplace',
+      nav: 'MarketPlace',
+      desc: 'Marketplace: Ürün ve hizmetler',
+    },
+  ];
+
+  // Ortadaki kartlara tıklama ile animasyon
+  const handleCenterCardPress = () => {
+    if (activeCenterIndex < 3) {
+      // Opacity animasyonu
+      Animated.timing(cardOpacities[activeCenterIndex], {
+        toValue: 0.2,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      Animated.timing(cardOpacities[activeCenterIndex + 1], {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      // El önce küçülerek kaybolsun, sonra yeni kartta büyüsün
+      Animated.timing(handScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setActiveCenterIndex(prev => {
+          setTimeout(() => {
+            Animated.timing(handScale, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+          }, 0);
+          return prev + 1;
+        });
+      });
+    } else {
+      // El kaybolsun
+      Animated.timing(handScale, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+      // Kartlar aşağıya ve küçülerek gitsin
+      communityItems.forEach((item, idx) => {
+        Animated.parallel([
+          Animated.timing(cardPositions[idx], {
+            toValue: { x: cardEndX[idx], y: 230 },
+            duration: 700,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cardScales[idx], {
+            toValue: 0.7,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cardOpacities[idx], {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+      setTimeout(() => setShowCenterCards(false), 800);
+    }
+  };
+
+  // Güncellenmiş renderCommunitySection
   const renderCommunitySection = () => (
     <View style={styles.communitySection}>
       <Text style={styles.sectionTitle}>Our Community</Text>
       <View style={styles.communityItems}>
-        <TouchableOpacity 
-          style={styles.communityItem}
-          onPress={() => navigation.navigate('StartupsDetails')}
-        >
-          <MaterialCommunityIcons name="rocket-launch" size={24} color={Colors.lightText} />
-          <Text style={styles.communityItemText}>Startups</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.communityItem}
-          onPress={() => navigation.navigate('InvestorDetails')}
-        >
-          <MaterialCommunityIcons name="account-group" size={24} color={Colors.lightText} />
-          <Text style={styles.communityItemText}>Investor</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.communityItem}
-          onPress={() => navigation.navigate('BusinessDetails')}
-        >
-          <MaterialCommunityIcons name="store" size={24} color={Colors.lightText} />
-          <Text style={styles.communityItemText}>Business</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.communityItem}
-          onPress={() => navigation.navigate('MarketPlace')}
-        >
-          <MaterialCommunityIcons name="shopping" size={24} color={Colors.lightText} />
-          <Text style={styles.communityItemText}>Marketplace</Text>
-        </TouchableOpacity>
+        {communityItems.map((item) => (
+          <TouchableOpacity
+            key={item.key}
+            style={styles.communityItem}
+            onPress={() => navigation.navigate(item.nav as any)}
+          >
+            <MaterialCommunityIcons name={item.icon} size={24} color={Colors.lightText} />
+            <Text style={styles.communityItemText}>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -198,6 +307,93 @@ const HomeScreen = (props: HomeScreenProps) => {
             contentContainerStyle={styles.productsContent}
             style={styles.productsList}
           />
+
+          {/* ANİMASYONLU TOOLTIP: Ortada büyük kartlar */}
+          {showCenterCards && (
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 2000,
+            }}>
+              {/* Arka plan overlay */}
+              <View style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: 'rgba(0,0,0,0.92)',
+                zIndex: 1,
+              }} />
+              <View style={{
+                position: 'absolute',
+                top: SCREEN_HEIGHT / 2 - 250,
+                left: 0,
+                right: 0,
+                alignItems: 'center',
+                zIndex: 2,
+              }}>
+                {communityItems.map((item, idx) => (
+                  <Animated.View
+                    key={item.key}
+                    style={{
+                      width: SCREEN_WIDTH * 0.7,
+                      minHeight: 90,
+                      marginVertical: 10,
+                      opacity: cardOpacities[idx],
+                      transform: [
+                        ...cardPositions[idx].getTranslateTransform(),
+                        { scale: cardScales[idx] },
+                      ],
+                      backgroundColor: activeCenterIndex === idx ? 'rgba(59,130,247,0.2)' : 'rgba(255,255,255,0.08)',
+                      borderRadius: 16,
+                      padding: 32,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      borderWidth: activeCenterIndex === idx ? 2 : 1,
+                      borderColor: activeCenterIndex === idx ? Colors.primary : 'rgba(255,255,255,0.2)',
+                      position: 'relative',
+                      overflow: 'visible',
+                    }}
+                  >
+                    {activeCenterIndex === idx && (
+                      <Animated.Image
+                        source={require('../assets/images/Tooltipaihands.png')}
+                        style={{
+                          width: 350,
+                          height: 350,
+                          position: 'absolute',
+                          left: handConfigs[activeCenterIndex]?.left ?? 0,
+                          top: handConfigs[activeCenterIndex]?.top ?? 220,
+                          marginTop: handConfigs[activeCenterIndex]?.marginTop ?? -120,
+                          zIndex: 100,
+                          transform: [
+                            { rotate: activeCenterIndex > 1 ? '180deg' : '0deg' },
+                            { scale: handScale },
+                          ],
+                        }}
+                        resizeMode="contain"
+                      />
+                    )}
+                    <View style={{ marginLeft: activeCenterIndex === idx ? 60 : 0, zIndex: 10 }}>
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{item.label}</Text>
+                      <Text style={{ color: '#fff', fontSize: 14, marginTop: 6 }}>
+                        {idx === 0 ? 'Special area for entrepreneurs' :
+                          idx === 1 ? 'Opportunities for investors' :
+                          idx === 2 ? 'Solutions for business world' :
+                          'Products and services'}
+                      </Text>
+                    </View>
+                  </Animated.View>
+                ))}
+                {/* Tüm kartlara tıklama alanı */}
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 3 }}
+                  activeOpacity={1}
+                  onPress={handleCenterCardPress}
+                />
+              </View>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -436,6 +632,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     flex: 1,
+  },
+  tooltipHandContainer: {
+    position: 'absolute',
+    left: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1000,
+
+  },
+  communityItemSpotlight: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
 });
 
