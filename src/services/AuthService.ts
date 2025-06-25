@@ -89,7 +89,8 @@ class AuthService {
       urlObj.pathname === '/linkedin-callback'
     ) {
       // access_token hash kısmında geliyor, onu al
-      const params = new URLSearchParams(url.split('#')[1]);
+      const paramsString = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
+      const params = new URLSearchParams(paramsString);
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       const expiresIn = params.get('expires_in');
