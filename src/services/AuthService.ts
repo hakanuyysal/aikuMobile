@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 import { Linking } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { SimpleEventEmitter } from './SimpleEventEmitter';
 
 interface UserData {
   email: string;
@@ -39,6 +40,7 @@ interface GoogleSignInResponse {
 class AuthService {
   private baseURL: string;
   private axios: AxiosInstance;
+  public authEvents = new SimpleEventEmitter();
 
   constructor() {
     this.baseURL = Config.API_URL || 'https://api.aikuaiplatform.com/api';
@@ -105,6 +107,8 @@ class AuthService {
           await AsyncStorage.setItem('user_id', data.user.id);
           await AsyncStorage.setItem('user', JSON.stringify(data.user));
           console.log('Successfully authenticated user:', { user: data.user });
+          // YENİ: Event tetikle
+          this.authEvents.emit('login', data.user);
         }
       } else {
         console.warn('No access_token found in callback URL');

@@ -108,6 +108,12 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     setUser(prev => (prev ? {...prev, ...data} : null));
   };
 
+  const refreshUser = async () => {
+    // AsyncStorage'den user'ı oku ve set et
+    const userStr = await AsyncStorage.getItem('user');
+    setUser(userStr ? JSON.parse(userStr) : null);
+  };
+
   return (
     <AuthContext.Provider
       value={{

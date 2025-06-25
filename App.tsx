@@ -46,6 +46,8 @@ import {
   markOnboardingComplete,
 } from './src/hooks/useAppInitialization';
 import { Company } from './src/services/companyService';
+import authService from './src/services/AuthService';
+import { useNavigation } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -113,11 +115,23 @@ const navigationTheme = {
 };
 
 function AppContent(): React.JSX.Element {
-  const {user} = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const {showSplash, initialRoute} = useAppInitialization();
+  const navigation = useNavigation<import('@react-navigation/native-stack').NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    const onLogin = async (user: any) => {
+      await refreshUser?.(); // context'teki kullanıcıyı güncelle
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    };
+    authService.authEvents.on('login', onLogin);
+    return () => {
+      authService.authEvents.off('login', onLogin);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
