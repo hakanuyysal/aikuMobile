@@ -46,8 +46,11 @@ import {
   markOnboardingComplete,
 } from './src/hooks/useAppInitialization';
 import { Company } from './src/services/companyService';
+import { BillingInfo } from './src/types';
 import authService from './src/services/AuthService';
 import { useNavigation } from '@react-navigation/native';
+import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
+import ThreeDSecure from './src/screens/subscriptions/ThreeDSecure';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -80,8 +83,31 @@ export type RootStackParamList = {
   Chat: undefined;
   HowItWorks: undefined;
   CompanyProfile: { company: Company };
-  BillingInfo: {planDetails: {title: string; price: number; isYearly: boolean}};
+  BillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    hasExistingBillingInfo?: boolean;
+    existingBillingInfo?: BillingInfo;
+  };
   Payment: {planDetails: any; billingInfo: any};
+  AddBillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+  };
+  ThreeDSecure: {
+    htmlContent: string;
+    returnUrl: string;
+  };
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -187,6 +213,15 @@ function AppContent(): React.JSX.Element {
             name="SubscriptionDetails"
             component={SubscriptionDetails}
             options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="ThreeDSecure"
+            component={ThreeDSecure}
+            options={{
+              headerShown: false,
+              presentation: 'modal',
+              gestureEnabled: false
+            }}
           />
           <RootStack.Screen
             name="Favorites"
@@ -317,6 +352,14 @@ function AppContent(): React.JSX.Element {
             name="Payment"
             component={PaymentScreen}
             options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="AddBillingInfo"
+            component={AddBillingInfo}
+            options={{
+              title: 'Billing Information',
+              headerShown: false,
+            }}
           />
         </RootStack.Navigator>
       </Animated.View>

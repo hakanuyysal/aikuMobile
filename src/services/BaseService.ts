@@ -1,6 +1,7 @@
 import {storage} from '../storage/mmkv';
 import axios, {AxiosInstance, AxiosError} from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppConfig from '../config/Config';
 
 const API_URL = 'https://api.aikuaiplatform.com/api';
 
@@ -12,7 +13,7 @@ export class BaseService {
   private constructor(baseURL = '') {
     this.baseURL = baseURL;
     this.axios = axios.create({
-      baseURL: 'https://api.aikuaiplatform.com/api',
+      baseURL: AppConfig.API_URL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -276,13 +277,16 @@ export class BaseService {
 
   // Hata yönetimi
   private handleError(error: unknown) {
-    if (error instanceof AxiosError && error.response) {
-      throw error.response.data;
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Bir hata oluştu',
+        data: error.response?.data,
+      };
     }
-    throw {
-      status: 500,
-      message: 'Server connection failed. Please try again later.',
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Bir hata oluştu',
     };
   }
 

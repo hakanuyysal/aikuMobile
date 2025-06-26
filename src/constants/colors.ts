@@ -20,4 +20,7 @@ export const Colors = {
   gradientStart: '#1A1E29',
   gradientEnd: '#3B82F780',
   inputBackground: '#242C3B',
-};
+  success: '#4CAF50',
+  text: '#FFFFFF',
+  secondaryText: '#667085',
+} as const;

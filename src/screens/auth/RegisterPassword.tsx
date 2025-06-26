@@ -13,9 +13,9 @@ import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useAuth} from '../../contexts/AuthContext';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/AuthNavigator';
+import BaseService from '../../api/BaseService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterPassword'>;
 
@@ -24,12 +24,12 @@ const RegisterPassword = ({navigation, route}: Props) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
     password: '',
     confirmPassword: '',
   });
 
-  const {register, loading} = useAuth();
   const {firstName, lastName, email} = route.params;
 
   const validatePassword = () => {
@@ -56,15 +56,19 @@ const RegisterPassword = ({navigation, route}: Props) => {
 
   const handleSignUp = async () => {
     if (validatePassword()) {
+      setLoading(true);
       try {
-        await register({
+        await BaseService.register({
+          firstName,
+          lastName,
           email,
           password,
-          name: `${firstName} ${lastName}`,
         });
         navigation.navigate('EmailVerification');
       } catch (error) {
         Alert.alert('Hata', error instanceof Error ? error.message : 'Kayıt işlemi başarısız oldu');
+      } finally {
+        setLoading(false);
       }
     }
   };

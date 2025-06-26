@@ -8,4 +8,10 @@ declare module 'react-native-config' {
   }
 }
 
-export default Config;
+const AppConfig = {
+  API_URL: 'https://api.aikuaiplatform.com', // Production URL
+  // API_URL: 'http://localhost:3000', // Development URL
+  // Diğer konfigürasyon değerleri buraya eklenebilir
+};
+
+export default AppConfig;

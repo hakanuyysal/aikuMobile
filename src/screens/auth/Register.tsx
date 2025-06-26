@@ -7,13 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  ActivityIndicator,
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useAuth} from '../../contexts/AuthContext';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/AuthNavigator';
 
@@ -28,8 +26,6 @@ const Register = ({navigation}: Props) => {
     lastName: '',
     email: '',
   });
-
-  const {loading} = useAuth();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -193,13 +189,8 @@ const Register = ({navigation}: Props) => {
 
               <TouchableOpacity
                 style={styles.continueButton}
-                onPress={handleContinue}
-                disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color={Colors.lightText} />
-                ) : (
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                )}
+                onPress={handleContinue}>
+                <Text style={styles.continueButtonText}>Continue</Text>
               </TouchableOpacity>
 
               <View style={styles.footer}>

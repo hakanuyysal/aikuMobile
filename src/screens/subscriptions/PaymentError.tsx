@@ -1,39 +1,78 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../../../App';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../types';
 import LinearGradient from 'react-native-linear-gradient';
 
-type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type PaymentErrorScreenParams = {
+  message: string;
+  planDetails?: {
+    name: string;
+    price: number;
+    description: string;
+    billingCycle: 'yearly' | 'monthly';
+    hasPaymentHistory?: boolean;
+  };
+  billingInfo?: any;
+};
 
-const PaymentError = () => {
-  const navigation = useNavigation<RootNavigationProp>();
+type PaymentErrorProps = NativeStackScreenProps<
+  RootStackParamList,
+  'PaymentError'
+>;
+
+const PaymentError: React.FC<PaymentErrorProps> = ({navigation, route}) => {
+  const {message, planDetails, billingInfo} = route.params as PaymentErrorScreenParams;
 
   const handleTryAgain = () => {
-    navigation.goBack();
+    if (planDetails && billingInfo) {
+      navigation.navigate('Payment', {
+        planDetails,
+        billingInfo,
+      });
+    } else {
+      navigation.navigate('Main');
+    }
+  };
+
+  const handleClose = () => {
+    navigation.navigate('Main');
   };
 
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-      locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
-      style={styles.gradientBackground}>
+      style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <Icon name="close-circle" size={100} color="#FF4444" />
-          <Text style={styles.title}>Payment Failed!</Text>
-          <Text style={styles.subtitle}>
-            An error occurred during the payment process.{'\n'}
-            Please try again.
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={handleTryAgain}>
-            <Text style={styles.buttonText}>Try Again</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Icon name="close" size={24} color={Colors.lightText} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          {/* Error Icon */}
+          <View style={styles.iconContainer}>
+            <Icon name="close-circle" size={80} color="#FF4B55" />
+          </View>
+
+          {/* Error Message */}
+          <Text style={styles.title}>Error!</Text>
+          <Text style={styles.message}>{message}</Text>
+
+          {/* Try Again Button */}
+          <TouchableOpacity style={styles.tryAgainButton} onPress={handleTryAgain}>
+            <Text style={styles.tryAgainText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -42,45 +81,59 @@ const PaymentError = () => {
 };
 
 const styles = StyleSheet.create({
-  gradientBackground: {
+  container: {
     flex: 1,
   },
   safeArea: {
     flex: 1,
   },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: metrics.padding.md,
+    paddingVertical: metrics.padding.sm,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
-    padding: metrics.padding.xl,
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: metrics.padding.lg,
+  },
+  iconContainer: {
+    marginBottom: metrics.margin.lg,
   },
   title: {
-    fontSize: metrics.fontSize.xxxl,
+    fontSize: metrics.fontSize.xl,
     color: Colors.lightText,
-    marginTop: metrics.margin.xl,
     fontWeight: 'bold',
-    textAlign: 'center',
+    marginBottom: metrics.margin.sm,
   },
-  subtitle: {
-    fontSize: metrics.fontSize.lg,
-    color: Colors.inactive,
-    marginTop: metrics.margin.lg,
+  message: {
+    fontSize: metrics.fontSize.md,
+    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
-    lineHeight: metrics.fontSize.lg * 1.5,
+    marginBottom: metrics.margin.xl,
   },
-  button: {
+  tryAgainButton: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: metrics.padding.xxl,
-    paddingVertical: metrics.padding.lg,
-    borderRadius: metrics.borderRadius.lg,
-    marginTop: metrics.margin.xxl,
-    width: '80%',
+    paddingHorizontal: metrics.padding.xl,
+    paddingVertical: metrics.padding.md,
+    borderRadius: metrics.borderRadius.circle,
+    minWidth: 200,
+    alignItems: 'center',
   },
-  buttonText: {
+  tryAgainText: {
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: '600',
   },
 });
 

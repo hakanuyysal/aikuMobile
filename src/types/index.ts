@@ -64,6 +64,51 @@ export interface TabBarProps {
 }
 
 export type RootStackParamList = {
+  Home: undefined;
+  Chat: undefined;
+  HowItWorks: undefined;
+  BillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    hasExistingBillingInfo?: boolean;
+    existingBillingInfo?: BillingInfo;
+  };
+  AddBillingInfo: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    editMode?: boolean;
+    billingInfo?: BillingInfo;
+  };
+  Payment: {
+    planDetails: {
+      name: string;
+      price: number;
+      description: string;
+      billingCycle: 'yearly' | 'monthly';
+      hasPaymentHistory?: boolean;
+    };
+    billingInfo: BillingInfo;
+  };
+  PaymentSuccess: {
+    message: string;
+  };
+  PaymentError: {
+    message: string;
+  };
+  ThreeDSecure: {
+    htmlContent: string;
+    returnUrl: string;
+  };
   Main: undefined;
   Auth: undefined;
   UpdateProfile: undefined;
@@ -77,8 +122,6 @@ export type RootStackParamList = {
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
   PersonalDataProtection: undefined;
-  PaymentSuccess: undefined;
-  PaymentError: undefined;
   InvestmentDetails: undefined;
   Onboarding: undefined;
   TalentPool: undefined;
@@ -91,13 +134,57 @@ export type RootStackParamList = {
   InvestorMenuDetails: undefined;
   AddBlogPost: undefined;
   AddProduct: undefined;
-  Chat: undefined;
-  HowItWorks: undefined;
-  BillingInfo: { planDetails: any };
-  Payment: { planDetails: any; billingInfo: any };
+  Message: { state?: NavigationState };
+  TabNavigator: undefined;
 };
 
 export type BillingInfoScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'BillingInfo'
 >;
+
+export interface BillingInfo {
+  _id: string;
+  user: string;
+  billingType: 'individual' | 'corporate';
+  identityNumber: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  district: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+  isDefault: boolean;
+  companyName?: string;
+  taxNumber?: string;
+  taxOffice?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillingResponse {
+  success: boolean;
+  data?: BillingInfo | BillingInfo[] | null;
+  message?: string;
+}
+
+export interface PaymentHistory {
+  _id: string;
+  amount: number;
+  date: string;
+  status: 'success' | 'failed' | 'pending';
+  transactionId: string;
+  description: string;
+  type: 'subscription' | 'one-time';
+  plan: 'startup' | 'business' | 'investor';
+  period: 'monthly' | 'yearly';
+  id: string;
+}
+
+export interface PaymentHistoryResponse {
+  success: boolean;
+  data: PaymentHistory[];
+  message?: string;
+}
