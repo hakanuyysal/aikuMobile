@@ -22,6 +22,7 @@ import ProductCard from '../components/ProductCard';
 import FeaturedProduct from '../components/FeaturedProduct';
 import { Product } from '../types';
 import AIBlogSection from 'components/AiBlogSection';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -46,7 +47,7 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [activeTab, setActiveTab] = useState<'blog' | 'pulse'>('blog');
   const { onMenuOpen } = props;
   // ANİMASYON: Ortada gösterilecek kartlar için animated values
-  const [showCenterCards, setShowCenterCards] = useState(true);
+  const [showCenterCards, setShowCenterCards] = useState(false);
   const [activeCenterIndex, setActiveCenterIndex] = useState(0);
   const cardOpacities = useRef([
     new Animated.Value(1),
@@ -143,7 +144,7 @@ const HomeScreen = (props: HomeScreenProps) => {
   ];
 
   // Ortadaki kartlara tıklama ile animasyon
-  const handleCenterCardPress = () => {
+  const handleCenterCardPress = async () => {
     if (activeCenterIndex < 3) {
       // Opacity animasyonu
       Animated.timing(cardOpacities[activeCenterIndex], {
@@ -200,9 +201,22 @@ const HomeScreen = (props: HomeScreenProps) => {
           }),
         ]).start();
       });
-      setTimeout(() => setShowCenterCards(false), 800);
+      setTimeout(async () => {
+        setShowCenterCards(false);
+        await AsyncStorage.setItem('centerCardsTooltipShown', 'true');
+      }, 800);
     }
   };
+
+  React.useEffect(() => {
+    const checkTooltipShown = async () => {
+      const shown = await AsyncStorage.getItem('centerCardsTooltipShown');
+      if (!shown) {
+        setShowCenterCards(true);
+      }
+    };
+    checkTooltipShown();
+  }, []);
 
   // Güncellenmiş renderCommunitySection
   const renderCommunitySection = () => (

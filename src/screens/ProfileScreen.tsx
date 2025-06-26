@@ -98,7 +98,7 @@ const ProfileScreen = () => {
       title: 'Product Details',
       subtitle: 'Product information',
       iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('MarketPlaceProductDetails'),
+      onPress: () => navigation.navigate('ProductDetails', { id: '' }),
       gradient: ['#6366F1', '#8B5CF6'],
     },
   ];
@@ -158,7 +158,7 @@ const ProfileScreen = () => {
                   <Text style={styles.userName}>
                     {profile.firstName && profile.lastName
                       ? `${profile.firstName} ${profile.lastName}`
-                      : user?.name || 'Murat Tanrıyakul'}
+                      : user?.name || 'User Name'}
                   </Text>
                   <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
                   <View style={styles.roleWrapper}>

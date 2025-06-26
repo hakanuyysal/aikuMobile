@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
     paddingBottom: metrics.isIOS ? metrics.padding.lg : metrics.padding.sm,
     marginTop: metrics.margin.xs,
-    marginBottom: -35,
+
   },
   input: {
     flex: 1,

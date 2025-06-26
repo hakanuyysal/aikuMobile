@@ -764,39 +764,34 @@ const CompanyDetails = ({ navigation }: Props) => {
                     style={styles.companyLogo}
                     resizeMode="contain"
                   />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.companyName}>{company.companyName}</Text>
-                    <View style={styles.companyActions}>
-                      <TouchableOpacity 
-                        onPress={() => handleEditCompany(company)}
-                        style={{
-                          backgroundColor: Colors.primary,
-                          padding: 8,
-                          borderRadius: 8,
-                          flexDirection: 'column-reverse',
-                          alignItems: 'center',
-                          marginRight: 8,
-                        }}
-                      >
-                        <MaterialCommunityIcons name="pencil" size={20} color={Colors.lightText} />
-           
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        onPress={() => handleDeleteCompany(company._id)} 
-                        style={{
-                          backgroundColor: '#ff4d4f',
-                          padding: 8,
-                          borderRadius: 8,
-                          flexDirection: 'column-reverse',
-                          alignItems: 'center',
-                          marginLeft:'70%'
-                        }}
-                      >
-                        <MaterialCommunityIcons name="delete" size={20} color={Colors.lightText} />
-                     
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                  <Text style={styles.companyName}>{company.companyName}</Text>
+                  {/* Edit icon - top right */}
+                  <TouchableOpacity
+                    onPress={() => handleEditCompany(company)}
+                    style={styles.editIcon}
+                  >
+                    <MaterialCommunityIcons name="pencil" size={20} color={Colors.lightText} />
+                  </TouchableOpacity>
+                  {/* Delete icon - bottom left */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        'Confirm Deletion',
+                        'Are you sure you want to delete this company?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: () => handleDeleteCompany(company._id),
+                          },
+                        ]
+                      );
+                    }}
+                    style={styles.deleteIcon}
+                  >
+                    <MaterialCommunityIcons name="delete" size={20} color={Colors.lightText} />
+                  </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity style={styles.addCompanyCard} onPress={() => setModalVisible(true)}>
@@ -1130,6 +1125,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    position: 'relative', // <-- önemli!
+    minHeight: 70,
   },
   companyLogo: { width: 50, height: 50, marginRight: metrics.margin.md },
   companyName: { fontSize: metrics.fontSize.lg, color: Colors.lightText, fontWeight: '500' },
@@ -1210,6 +1207,24 @@ const styles = StyleSheet.create({
     padding: metrics.padding.md,
     margin: metrics.margin.lg,
     maxHeight: '80%',
+  },
+  editIcon: {
+    position: 'absolute',
+    top: 5,
+    right: 8,
+    zIndex: 2,
+  
+    borderRadius: 16,
+    padding: 6,
+  },
+  deleteIcon: {
+ position: 'absolute',
+    top: 55,
+    right: 8,
+    zIndex: 2,
+ 
+    borderRadius: 16,
+    padding: 6,
   },
 });
 
