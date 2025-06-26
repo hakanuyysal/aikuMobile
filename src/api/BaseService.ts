@@ -1,34 +1,64 @@
-import axios from 'axios';
-import Config from 'react-native-config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosInstance, AxiosError } from 'axios';
+import { MMKV } from 'react-native-mmkv';
+import Config from '../config/Config';
 
-const baseURL = Config.API_URL || 'https://api.aikuaiplatform.com';
+export const storage = new MMKV();
 
 class BaseService {
-  private axios;
+  protected axios: AxiosInstance;
 
   constructor() {
     this.axios = axios.create({
-      baseURL,
-      timeout: 30000,
+      baseURL: `${Config.API_URL}/api`,
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor to add the auth token
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
     this.axios.interceptors.request.use(
-      async (config) => {
-        const token = await AsyncStorage.getItem('token');
+      config => {
+        const token = storage.getString('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => {
+      error => {
         return Promise.reject(error);
-      }
+      },
     );
+  }
+
+  protected handleError(error: unknown) {
+    if (error instanceof AxiosError) {
+      const message =
+        error.response?.data?.message || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+      throw new Error(message);
+    }
+    throw error;
+  }
+
+  async register(userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) {
+    try {
+      const response = await this.axios.post('/auth/register', userData);
+
+      if (response.data.token) {
+        storage.set('token', response.data.token);
+      }
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
   }
 
   // Generic GET request
@@ -178,29 +208,6 @@ class BaseService {
     } catch (error) {
       throw this.handleError(error);
     }
-  }
-
-  // Hata yönetimi
-  handleError(error: any) {
-    console.error("API Hatası:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data || 'Response yok',
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers
-      }
-    });
-
-    if (error.response) {
-      return error.response.data; // Return backend error response
-    }
-    return {
-      status: 500,
-      message: "Server connection failed. Please try again later.",
-      error: error.message,
-    };
   }
 }
 
