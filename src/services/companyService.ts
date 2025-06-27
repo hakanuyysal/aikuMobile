@@ -74,7 +74,7 @@ export const companyService = {
   // Tüm şirketleri getir
   getAllCompanies: async (): Promise<{ success: boolean; companies: Company[] }> => {
     try {
-      const response = await api.get('/company/all');
+      const response = await api.get('https://api.aikuaiplatform.com/api/company/all');
       console.log('API Response:', response.data);
       return {
         success: true,
@@ -92,7 +92,7 @@ export const companyService = {
   // Sadece startup'ları getir
   getStartups: async (): Promise<Company[]> => {
     try {
-      const response = await api.get('/company/all');
+      const response = await api.get('https://api.aikuaiplatform.com/api/company/all');
       if (response.data.success) {
         const startups = response.data.companies
           .filter((c: Company) => c.companyType === "Startup")
@@ -112,7 +112,7 @@ export const companyService = {
   // Sadece yatırımcıları getir
   getInvestors: async (): Promise<Company[]> => {
     try {
-      const response = await api.get('/company/all');
+      const response = await api.get('https://api.aikuaiplatform.com/api/company/all');
       if (response.data.success) {
         const investors = response.data.companies
           .filter((c: Company) => c.companyType === "Investor")
@@ -141,7 +141,7 @@ export const companyService = {
       };
 
       console.log('Gönderilen veri:', companyData);
-      const response = await api.post('/company', companyData, config);
+      const response = await api.post('https://api.aikuaiplatform.com/api/company', companyData, config);
       console.log('API yanıtı:', response.data);
       return processCompanyLogo(response.data.company);
     } catch (error) {
@@ -161,7 +161,7 @@ export const companyService = {
         },
       };
 
-      const response = await api.put(`/company/${id}`, companyData, config);
+      const response = await api.put(`https://api.aikuaiplatform.com/api/company/${id}`, companyData, config);
       return processCompanyLogo(response.data.company);
     } catch (error) {
       console.error('Şirket güncellenirken hata oluştu:', error);
@@ -172,7 +172,7 @@ export const companyService = {
   // Şirket sil
   deleteCompany: async (id: string): Promise<void> => {
     try {
-      await api.delete(`/company/${id}`);
+      await api.delete(`https://api.aikuaiplatform.com/api/company/${id}`);
     } catch (error) {
       console.error('Şirket silinirken hata oluştu:', error);
       throw error;
@@ -182,7 +182,7 @@ export const companyService = {
   // AI ile şirket analizi
   analyzeWebsite: async (url: string): Promise<any> => {
     try {
-      const response = await api.post('/ai/analyze-website', { url });
+      const response = await api.post('https://api.aikuaiplatform.com/api/ai/analyze-website', { url });
       return response.data;
     } catch (error) {
       console.error('Website analizi sırasında hata oluştu:', error);
@@ -193,7 +193,7 @@ export const companyService = {
   // AI ile dosya analizi
   analyzeDocument: async (file: FormData): Promise<any> => {
     try {
-      const response = await api.post('/ai/analyze-document', file, {
+      const response = await api.post('https://api.aikuaiplatform.com/api/ai/analyze-document', file, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -9,6 +9,7 @@ import PaymentError from '../screens/subscriptions/PaymentError';
 import ThreeDSecure from '../screens/subscriptions/ThreeDSecure';
 import TabNavigator from './TabNavigator';
 import {RootStackParamList} from '../types';
+import SubscriptionDetails from '../screens/settings/SubscriptionDetails';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -31,6 +32,7 @@ export const AppNavigator = () => {
           gestureEnabled: false
         }}
       />
+      <Stack.Screen name="SubscriptionDetails" component={SubscriptionDetails} />
     </Stack.Navigator>
   );
 };

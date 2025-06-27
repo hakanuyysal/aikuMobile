@@ -246,7 +246,7 @@ const HomeScreen = (props: HomeScreenProps) => {
       style={styles.gradientBackground}
     >
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, {paddingBottom: 90}]}>
         <View style={styles.container}>
           <Surface style={styles.header} elevation={0}>
             <View style={styles.logoAndTitleContainer}>
@@ -318,7 +318,7 @@ const HomeScreen = (props: HomeScreenProps) => {
             renderItem={renderProduct}
             keyExtractor={item => item.id}
             scrollEnabled={true}
-            contentContainerStyle={styles.productsContent}
+            contentContainerStyle={[styles.productsContent, {paddingBottom: 100}]}
             style={styles.productsList}
           />
 
@@ -331,6 +331,7 @@ const HomeScreen = (props: HomeScreenProps) => {
               right: 0,
               bottom: 0,
               zIndex: 2000,
+              paddingBottom: 90,
             }}>
               {/* Arka plan overlay */}
               <View style={{

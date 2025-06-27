@@ -179,33 +179,35 @@ const PlanCard: React.FC<PlanProps> = ({
           opacity,
         },
       ]}>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.price}>
-        {isStartupPlan && !hasHistory ? (
-          <>
-            <Text style={styles.originalPrice}>$49</Text>{' '}
-            <Text style={styles.newPrice}>$0</Text>
-          </>
-        ) : (
-          `$${isYearly ? yearlyPrice : price}`
-        )}
-        <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
-        {isYearly && <Text style={styles.discount}> (10% off)</Text>}
-      </Text>
-      {isStartupPlan && !hasHistory && (
-        <Text style={styles.trial}>⭐️ 6 month free trial!</Text>
-      )}
-      {isYearly && title !== 'Startup Plan' && (
-        <Text style={styles.trial}>+3 months free with annual plan!</Text>
-      )}
-      {features.map((feature, idx) => (
-        <Text key={idx} style={styles.feature}>
-          • {feature}
+      <View style={{flex: 1, paddingBottom: 64}}>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.price}>
+          {isStartupPlan && !hasHistory ? (
+            <>
+              <Text style={styles.originalPrice}>$49</Text>{' '}
+              <Text style={styles.newPrice}>$0</Text>
+            </>
+          ) : (
+            `$${isYearly ? yearlyPrice : price}`
+          )}
+          <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
+          {isYearly && <Text style={styles.discount}> (10% off)</Text>}
         </Text>
-      ))}
+        {isStartupPlan && !hasHistory && (
+          <Text style={styles.trial}>⭐️ 6 month free trial!</Text>
+        )}
+        {isYearly && title !== 'Startup Plan' && (
+          <Text style={styles.trial}>+3 months free with annual plan!</Text>
+        )}
+        {features.map((feature, idx) => (
+          <Text key={idx} style={styles.feature}>
+            • {feature}
+          </Text>
+        ))}
+      </View>
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        style={[styles.button, styles.absoluteButton, loading && styles.buttonDisabled]}
         onPress={handleGetStarted}
         disabled={loading}>
         {loading ? (
@@ -394,12 +396,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(20),
     elevation: 15,
-    height: metrics.getHeightPercentage(42),
+    height: metrics.getHeightPercentage(48),
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     backgroundColor: `${Colors.cardBackground}dd`,
+    paddingBottom: 64,
   },
   subtitle: {
     color: Colors.inactive,
@@ -459,6 +462,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(12),
     elevation: 8,
+  },
+  absoluteButton: {
+    position: 'absolute',
+    left: metrics.padding.xl,
+    right: metrics.padding.xl,
+    bottom: metrics.padding.xl,
   },
   buttonText: {
     color: Colors.lightText,

@@ -98,7 +98,7 @@ export class BaseService {
   // Kullanıcı Giriş
   async login(email: string, password: string) {
     try {
-      const response = await this.axios.post('/auth/login', {email, password});
+      const response = await this.axios.post('https://api.aikuaiplatform.com/api/auth/login', {email, password});
       if (response.data.token) {
         storage.set('auth_token', response.data.token);
       }
@@ -111,7 +111,7 @@ export class BaseService {
   // Kullanıcı Kayıt
   async register(userData: any) {
     try {
-      const response = await this.axios.post('/auth/register', userData);
+      const response = await this.axios.post('https://api.aikuaiplatform.com/api/auth/register', userData);
       if (response.data.token) {
         storage.set('auth_token', response.data.token);
       }
@@ -193,7 +193,7 @@ export class BaseService {
         throw new Error('Yetkisiz erişim');
       }
 
-      const response = await this.axios.get('/auth/currentUser', {
+      const response = await this.axios.get('https://api.aikuaiplatform.com/api/auth/currentUser', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
