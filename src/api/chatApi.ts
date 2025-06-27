@@ -8,7 +8,7 @@ import socketService from '../services/socketService';
 // Gerçek cihaz veya iOS simülatörü için: Bilgisayarınızın yerel IP adresi (örn: http://192.168.1.XX:3004/api)
 const API_URL = __DEV__ 
   ? 'http://10.0.2.2:3004/api'  // Android emülatör için localhost
-  : Config.API_URL || 'https://api.aikuaiplatform.com';
+  : Config.API_URL || 'https://api.aikuaiplatform.com/api';
 
 const SOCKET_URL = __DEV__
   ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
@@ -56,7 +56,7 @@ api.interceptors.response.use(
           console.error('Token temizlenirken hata:', e);
         }
       }
-      
+
       // Hata mesajını daha detaylı hale getir
       const errorMessage = error.response.data?.message || error.message;
       console.error('API Hatası:', {
@@ -83,7 +83,7 @@ const chatApi = {
   // Update getChatSessions function to match web implementation
   getChatSessions: async (companyId: string): Promise<ChatSession[]> => {
     try {
-      const response = await api.get(`/chat/sessions/${companyId}`);
+      const response = await api.get(`https://api.aikuaiplatform.com/api/chat/sessions/${companyId}`);
       return response.data;
     } catch (error) {
       console.error('Sohbet oturumları alınırken hata:', error);
@@ -93,7 +93,7 @@ const chatApi = {
 
   getMessages: async (chatSessionId: string, companyId: string): Promise<Message[]> => {
     try {
-      const response = await api.get(`/chat/messages/${chatSessionId}`, { 
+      const response = await api.get(`https://api.aikuaiplatform.com/api/chat/messages/${chatSessionId}`, { 
         params: { companyId } 
       });
       return response.data;
@@ -111,7 +111,7 @@ const chatApi = {
     attachment?: string;
   }): Promise<Message> => {
     try {
-      const response = await api.post('/chat/messages', message);
+      const response = await api.post('https://api.aikuaiplatform.com/api/chat/messages', message);
       return response.data;
     } catch (error) {
       console.error('Mesaj gönderilirken hata:', error);
@@ -119,24 +119,7 @@ const chatApi = {
     }
   },
 
-  markAsRead: async (
-    chatSessionId: string,
-    userId: string,
-    messageId?: string
-  ): Promise<void> => {
-    try {
-      const payload: { chatSessionId: string; userId: string; messageId?: string } = {
-        chatSessionId,
-        userId,
-      };
-      if (messageId) {
-        payload.messageId = messageId;
-      }
-      await api.put('/chat/messages/read', payload);
-    } catch (error) {
-      throw error;
-    }
-  },
+ 
 
   // Update createChatSession to match backend implementation
   createChatSession: async (data: {
@@ -193,7 +176,7 @@ const chatApi = {
   // Kullanıcı durumunu güncelle
   updateUserStatus: async (userId: string, isOnline: boolean): Promise<void> => {
     try {
-      await api.put(`/auth/users/${userId}/status`, { isOnline });
+      await api.put(`https://api.aikuaiplatform.com/api/auth/users/${userId}/status`, { isOnline });
     } catch (error) {
       throw error;
     }
@@ -202,7 +185,7 @@ const chatApi = {
   // Kullanıcı bilgilerini getir
   getUserInfo: async (userId: string) => {
     try {
-      const response = await api.get(`/auth/users/${userId}`);
+      const response = await api.get(`https://api.aikuaiplatform.com/api/auth/users/${userId}`);
       if (!response.data || !response.data.user) {
         throw new Error('Kullanıcı bilgisi bulunamadı');
       }
@@ -221,7 +204,7 @@ const chatApi = {
   // getCompanies endpoint'i
   getCompanies: async (): Promise<Company[]> => {
     try {
-      const response = await api.get('/company/all');
+      const response = await api.get('https://api.aikuaiplatform.com/api/company/all');
       const companies = response.data.companies || response.data;
       
       // Filter companies based on criteria
@@ -302,7 +285,7 @@ const chatApi = {
     archive: boolean;
   }): Promise<any> => {
     try {
-      const response = await api.patch(`/chat/archive/${chatSessionId}`, data);
+      const response = await api.patch(`https://api.aikuaiplatform.com/api/chat/archive/${chatSessionId}`, data);
       return response.data;
     } catch (error) {
       console.error('Sohbet arşivlenirken hata:', error);
@@ -312,7 +295,7 @@ const chatApi = {
 
   deleteChat: async (chatSessionId: string, companyId: string): Promise<any> => {
     try {
-      const response = await api.delete(`/chat/sessions/${chatSessionId}`, {
+      const response = await api.delete(`https://api.aikuaiplatform.com/api/chat/sessions/${chatSessionId}`, {
         data: { companyId }
       });
       return response.data;

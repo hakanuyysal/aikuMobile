@@ -19,6 +19,7 @@ interface Profile {
   profileInfo?: string;
   photoURL?: string;
   social: Social;
+  isSubscriber?: boolean;
 }
 
 interface ProfileState {
@@ -33,7 +34,14 @@ export const useProfileStore = create<ProfileState>()(
       profile: {
         social: {},
       },
-      updateProfile: (newProfile) => set(() => ({profile: newProfile})),
+      updateProfile: (newProfile) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            ...newProfile,
+            isSubscriber: newProfile.isSubscriber ?? state.profile.isSubscriber,
+          },
+        })),
       updateProfilePhoto: (photoURL) =>
         set((state) => ({
           profile: {

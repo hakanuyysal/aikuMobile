@@ -18,6 +18,8 @@ import AuthService from '../../services/AuthService';
 import {useAuth} from '../../contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../../App';
+import { useProfileStore } from '../../store/profileStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SettingsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -44,6 +46,10 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
         onPress: async () => {
           try {
             await AuthService.logout();
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('user_id');
+            useProfileStore.getState().updateProfile({ social: {} });
             if (updateUser) {
               updateUser({} as any);
             }

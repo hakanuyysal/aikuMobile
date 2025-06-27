@@ -132,7 +132,6 @@ export type RootStackParamList = {
   InvestorDetails: undefined;
   BusinessDetails: undefined;
   InvestorMenuDetails: undefined;
-  AddBlogPost: undefined;
   AddProduct: undefined;
   Message: { state?: NavigationState };
   TabNavigator: undefined;

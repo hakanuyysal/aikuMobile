@@ -22,14 +22,6 @@ import metrics from '../constants/aikuMetric';
 import {useProfileStore} from '../store/profileStore';
 
 interface MenuProps {
-  user: {
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    avatar?: string;
-    email?: string;
-    role?: string;
-  } | null;
   onClose: () => void;
   mainViewRef: Animated.AnimatedValue;
   scaleRef: Animated.AnimatedValue;
@@ -39,7 +31,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.8;
 const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
+const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const {profile} = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
@@ -205,12 +197,12 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   <Text style={styles.userName}>
-                    {user?.firstName && user?.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : 'Murat Tanrıyakul'}
+                    {profile?.firstName && profile?.lastName
+                      ? `${profile.firstName} ${profile.lastName}`
+                      : 'Kullanıcı Adı'}
                   </Text>
-                  {user?.email && (
-                    <Text style={styles.userEmail}>{user.email}</Text>
+                  {profile?.email && (
+                    <Text style={styles.userEmail}>{profile.email}</Text>
                   )}
                   <View style={styles.planContainer}>
                     <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />

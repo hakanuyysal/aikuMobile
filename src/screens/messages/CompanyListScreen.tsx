@@ -36,6 +36,33 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
+  // fetchCurrentCompany fonksiyonunu buraya taşıdım
+  const fetchCurrentCompany = useCallback(async (userId: string) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        return null;
+      }
+      const response = await fetch(
+        `https://api.aikuaiplatform.com/api/company/current?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      const data = await response.json();
+      if (data.success && data.companies.length > 0) {
+        const companyId = data.companies[0].id;
+        return companyId;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }, []);
+
   // setupUser fonksiyonunu güncelleyelim
   const setupUser = useCallback(async () => {
     try {
@@ -53,8 +80,7 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
         Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
         navigation.getParent()?.navigate('Auth');
       }
-    } catch (error) {
-      console.error('Kullanıcı bilgisi alınırken hata:', error);
+    } catch (error: any) {
       Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
       navigation.getParent()?.navigate('Auth');
     }
@@ -64,18 +90,11 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const loadCompanies = useCallback(async () => {
     try {
       setRefreshing(true);
-      console.log('Mevcut kullanıcı şirketi ID:', currentUserId);
       
       const response = await chatApi.getCompanies();
-      console.log('Gelen şirketler:', response);
       
-      const filteredCompanies = response.filter(company => {
+      const filteredCompanies = response.filter((company: Company) => {
         const companyId = company._id || company.id;
-        console.log('Filtrelenen şirket:', {
-          id: companyId,
-          name: company.companyName,
-          type: company.companyType
-        });
         return (
           companyId !== currentUserId &&
           company.acceptMessages !== false &&
@@ -84,8 +103,7 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       });
       
       setCompanies(filteredCompanies);
-    } catch (error) {
-      console.error('Şirketler yüklenirken hata:', error);
+    } catch (error: any) {
       Alert.alert('Hata', 'Şirket listesi yüklenemedi');
     } finally {
       setRefreshing(false);
@@ -103,72 +121,25 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     }
   }, [currentUserId, loadCompanies]);
 
-  const fetchCurrentCompany = async (userId: string) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      console.log('Token:', token);
-      console.log('UserId:', userId);
-
-      if (!token) {
-        console.error('Token bulunamadı');
-        return null;
-      }
-
-      const response = await fetch(
-        `https://api.aikuaiplatform.com/api/company/current?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      console.log('Company API Response Status:', response.status);
-      const data = await response.json();
-      console.log('Company API Response:', data);
-
-      if (data.success && data.companies.length > 0) {
-        const companyId = data.companies[0].id;
-        console.log('Seçilen Company ID:', companyId);
-        setCurrentUserId(companyId);
-        return companyId;
-      }
-      console.error('Şirket bulunamadı veya API yanıtı başarısız');
-      return null;
-    } catch (error) {
-      console.error('Şirket bilgisi alınırken hata:', error);
-      return null;
-    }
-  };
-
   // handleCompanyPress fonksiyonunu güncelleyelim
   const handleCompanyPress = async (company: Company) => {
     try {
-      console.log('Seçilen şirket:', company);
-      console.log('Mevcut kullanıcı şirketi:', currentUserId);
-
       if (!currentUserId) {
         Alert.alert('Hata', 'Kullanıcı şirket bilgisi bulunamadı');
         return;
       }
-
       const chatSession = await chatApi.createChatSession({
         initiatorCompanyId: currentUserId,
         targetCompanyId: company._id || company.id,
         title: `${company.companyName} ile sohbet`
       });
-
-      console.log('Oluşturulan sohbet:', chatSession);
-
       navigation.navigate('ChatDetail', {
-        chatSessionId: chatSession._id,
-        receiverId: company._id || company.id,
+        chatSessionId: (chatSession && (chatSession as any)._id) ? (chatSession as any)._id : '',
+        receiverId: company._id || company.id || '',
         receiverName: company.companyName,
         companyId: currentUserId,
       });
-    } catch (error) {
-      console.error('Sohbet oturumu oluşturulurken hata:', error);
+    } catch (error: any) {
       Alert.alert('Hata', 'Sohbet oturumu oluşturulamadı: ' + error.message);
     }
   };
@@ -247,7 +218,7 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
             company.companyName.toLowerCase().includes(searchQuery.toLowerCase())
           )}
           renderItem={renderItem}
-          keyExtractor={item => item._id || item.id}
+          keyExtractor={item => (item._id || item.id || `${Math.random()}`)}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

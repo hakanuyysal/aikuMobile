@@ -36,11 +36,9 @@ import Startups from 'screens/ourcommunity/Startups';
 import Investor from 'screens/ourcommunity/Investor';
 import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
-import AddBlogPostScreen from './src/screens/AddBlogPostScreen';
 import AddProduct from './src/screens/AddProduct';
 import {ChatProvider} from './src/contexts/ChatContext';
 import ChatScreen from './src/screens/ChatScreen';
-import SubscriptionNavigator from './src/navigation/SubscriptionNavigator';
 import {
   useAppInitialization,
   markOnboardingComplete,
@@ -78,7 +76,6 @@ export type RootStackParamList = {
   InvestorDetails: undefined;
   BusinessDetails: undefined;
   InvestorMenuDetails: undefined;
-  AddBlogPost: undefined;
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
@@ -321,11 +318,6 @@ function AppContent(): React.JSX.Element {
           <RootStack.Screen
             name="InvestorMenuDetails"
             component={InvestorDetails}
-            options={{headerShown: false}}
-          />
-          <RootStack.Screen
-            name="AddBlogPost"
-            component={AddBlogPostScreen}
             options={{headerShown: false}}
           />
           <RootStack.Screen

@@ -25,6 +25,7 @@ import axios from 'axios';
 import {storage} from '../storage/mmkv';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import countryCodes from '../services/countryCodes.json';
+import AuthService from '../services/AuthService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpdateProfile'>;
 
@@ -43,6 +44,17 @@ const UpdateProfileScreen = ({navigation}: Props) => {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [avatarUri, setAvatarUri] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      var latestProfile = await AuthService.getCurrentUser();
+      if (latestProfile) {
+        updateProfile(latestProfile);
+        setForm(latestProfile);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     // Öncelik: avatarUri (yeni seçilmişse), yoksa profile.photoURL veya profile.profilePhoto

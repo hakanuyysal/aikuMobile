@@ -1,5 +1,5 @@
-import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
+import React, {useEffect} from 'react';
+import {View, TouchableOpacity, StyleSheet, Text, Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import {useRoute} from '@react-navigation/native';
@@ -7,10 +7,19 @@ import {TabBarProps} from '../types';
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import metrics from '../constants/aikuMetric';
+import {useProfileStore} from '../store/profileStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const {profile} = useProfileStore();
+
+  console.log('isSubscriber:', profile.isSubscriber);
+
+  useEffect(() => {
+    fetchAndSetSubscription();
+  }, []);
 
   if (route.name === 'ChatDetail') {
     return null;
@@ -58,8 +67,24 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
             const {options} = descriptors[route.key];
             const isFocused = state.index === index;
 
-            const onPress = () => {
+            const handleMessageTabPress = () => {
+              if (!profile.isSubscriber) {
+                Alert.alert(
+                  'Subscription Required',
+                  'You need to be a subscriber to use the messaging feature.',
+                  [{text: 'OK'}]
+                );
+                return;
+              }
               if (!isFocused) {
+                navigation.navigate(route.name, {merge: true});
+              }
+            };
+
+            const onPress = () => {
+              if (route.name === 'Message') {
+                handleMessageTabPress();
+              } else if (!isFocused) {
                 navigation.navigate(route.name, {merge: true});
               }
             };
@@ -174,5 +199,24 @@ const styles = StyleSheet.create({
     marginTop: metrics.spacing.xs,
   },
 });
+
+async function fetchAndSetSubscription() {
+  const token = await AsyncStorage.getItem('token');
+  if (!token) return;
+  const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  const data = await response.json();
+  console.log('SUBSCRIPTION RESPONSE:', data);
+  // Doğru alanı kullan!
+  const isSubscriber = data.data?.isSubscriptionActive === true;
+  useProfileStore.getState().updateProfile({
+    ...useProfileStore.getState().profile,
+    isSubscriber: isSubscriber
+  });
+}
 
 export default TabBar;

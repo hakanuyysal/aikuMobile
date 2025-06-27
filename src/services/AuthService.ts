@@ -6,6 +6,7 @@ import Config from 'react-native-config';
 import { Linking } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { SimpleEventEmitter } from './SimpleEventEmitter';
+import { useProfileStore } from '../store/profileStore';
 
 interface UserData {
   email: string;
@@ -110,6 +111,7 @@ class AuthService {
           // Kullanıcıyı backend ile senkronize et
           await this.syncSupabaseUser('linkedin_oidc', accessToken, data.user);
           this.authEvents.emit('login', data.user);
+          console.log('Google/LinkedIn login response user:', data.user);
         }
       } else {
         console.warn('No access_token found in callback URL');
@@ -142,7 +144,7 @@ class AuthService {
     }
   }
 
-  async logout() {
+  async logout(navigation) {
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
@@ -153,6 +155,11 @@ class AuthService {
         }
       }
       await AsyncStorage.multiRemove(['token', 'user', 'user_id']);
+      useProfileStore.getState().updateProfile({ social: {} });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -231,14 +238,12 @@ class AuthService {
       if (response.data && response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
         if (response.data.user) {
-          await AsyncStorage.setItem(
-            'user',
-            JSON.stringify(response.data.user),
-          );
+          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
           if (response.data.user.id) {
             await AsyncStorage.setItem('user_id', response.data.user.id);
           }
         }
+        console.log('Google/LinkedIn login response user:', response.data.user);
         return {
           success: true,
           user: response.data.user,

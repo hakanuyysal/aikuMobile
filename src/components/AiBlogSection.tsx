@@ -59,13 +59,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Add Blog Modal States
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [newBlogTitle, setNewBlogTitle] = useState('');
-  const [newBlogContent, setNewBlogContent] = useState('');
-  const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
-
   const listRef = useRef<FlatList>(null);
   const scrollOffset = useRef(0);
   const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
@@ -92,60 +85,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
   useEffect(() => {
     fetchBlogs();
   }, []);
-
-  const handleImagePick = () => {
-    ImagePicker.launchImageLibrary({
-      mediaType: 'photo',
-      quality: 1,
-    }, (response) => {
-      if (response.didCancel) {
-        return;
-      }
-      if (response.errorCode) {
-        setError('Resim seçilirken bir hata oluştu.');
-        return;
-      }
-      if (response.assets && response.assets[0]) {
-        setSelectedImage(response.assets[0]);
-      }
-    });
-  };
-
-  const handleSaveBlog = async () => {
-    if (!newBlogTitle.trim() || !newBlogContent.trim()) {
-      setError('Başlık ve içerik zorunludur.');
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError(null);
-
-      const createdBlog = await blogService.createBlog({
-        title: newBlogTitle,
-        fullContent: newBlogContent,
-      });
-
-      if (selectedImage && createdBlog._id) {
-        await blogService.uploadBlogCover(createdBlog._id, selectedImage);
-      }
-
-      await fetchBlogs();
-      setAddModalVisible(false);
-      resetForm();
-    } catch (err: any) {
-      setError(err.message || 'Blog kaydedilirken bir hata oluştu.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const resetForm = () => {
-    setNewBlogTitle('');
-    setNewBlogContent('');
-    setSelectedImage(null);
-    setError(null);
-  };
 
   useEffect(() => {
     if (blogs.length === 0 || !isScrolling) return;
@@ -214,13 +153,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                   </Text>
                 </View>
               </View>
-              <IconButton
-                icon="plus"
-                iconColor={Colors.lightText}
-                size={20}
-                onPress={() => navigation?.navigate('AddBlogPost')}
-                style={styles.addButton}
-              />
             </View>
 
             <View style={styles.blogsSection}>
@@ -358,91 +290,6 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
           </LinearGradient>
         </View>
       </Modal>
-
-      {/* Add Blog Modal */}
-      <Modal
-        transparent
-        visible={addModalVisible}
-        animationType="fade"
-        onRequestClose={() => setAddModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.addModalContainer}>
-            <View style={styles.addModalHeader}>
-              <Text style={styles.addModalTitle}>Yeni Blog Yazısı</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setAddModalVisible(false);
-                  resetForm();
-                }}
-                style={styles.closeIconContainer}
-              >
-                <Text style={styles.closeIcon}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.addModalContent}>
-              <TextInput
-                style={styles.input}
-                placeholder="Blog Başlığı"
-                value={newBlogTitle}
-                onChangeText={setNewBlogTitle}
-                placeholderTextColor={Colors.lightText}
-              />
-
-              <TouchableOpacity
-                style={styles.imagePickerButton}
-                onPress={handleImagePick}
-              >
-                <Icon name="image-outline" size={24} color={Colors.lightText} />
-                <Text style={styles.imagePickerText}>
-                  {selectedImage ? 'Resim Seçildi' : 'Kapak Resmi Seç'}
-                </Text>
-              </TouchableOpacity>
-
-              <TextInput
-                style={[styles.input, styles.contentInput]}
-                placeholder="Blog İçeriği"
-                value={newBlogContent}
-                onChangeText={setNewBlogContent}
-                multiline
-                numberOfLines={8}
-                textAlignVertical="top"
-                placeholderTextColor={Colors.lightText}
-              />
-
-              {error && <Text style={styles.errorText}>{error}</Text>}
-
-              <Text style={styles.infoText}>
-                Blog yazınız yönetici onayından sonra yayınlanacaktır.
-              </Text>
-
-              <View style={styles.addModalActions}>
-                <Button
-                  mode="contained"
-                  onPress={handleSaveBlog}
-                  loading={saving}
-                  disabled={saving}
-                  style={styles.saveButton}
-                >
-                  {saving ? 'Kaydediliyor...' : 'Kaydet'}
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setAddModalVisible(false);
-                    resetForm();
-                  }}
-                  disabled={saving}
-                  style={styles.cancelButton}
-                >
-                  İptal
-                </Button>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -497,11 +344,6 @@ const styles = StyleSheet.create({
   },
   bookIcon: {
     marginLeft: 8,
-  },
-  addButton: {
-    borderRadius: 12,
-    padding: 0,
-    marginRight: 8,
   },
   blogsSection: {
     flex: 1,
@@ -638,73 +480,6 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: 14,
     textAlign: 'center',
-  },
-  addModalContainer: {
-    backgroundColor: '#1A1E29',
-    borderRadius: 24,
-    width: '90%',
-    maxHeight: '80%',
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  addModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  addModalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.lightText,
-  },
-  addModalContent: {
-    flex: 1,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    color: Colors.lightText,
-  },
-  contentInput: {
-    height: 200,
-  },
-  imagePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  imagePickerText: {
-    color: Colors.lightText,
-    marginLeft: 8,
-  },
-  addModalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
-    gap: 12,
-  },
-  saveButton: {
-    backgroundColor: Colors.primary,
-  },
-  cancelButton: {
-    borderColor: Colors.lightText,
-  },
-  infoText: {
-    color: Colors.lightText,
-    opacity: 0.7,
-    fontSize: 12,
-    marginTop: 8,
-  },
-  errorText: {
-    color: '#ff6b6b',
-    marginBottom: 12,
   },
   modalDate: {
     color: Colors.lightText,

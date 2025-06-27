@@ -20,6 +20,8 @@ import chatApi from '../../api/chatApi';
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ChatProvider} from '../../components/Chat/ChatProvider';
+import { useProfileStore } from '../../store/profileStore';
+
 
 interface Company {
   id: string;
@@ -62,6 +64,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
+  const { profile } = useProfileStore();
 
   const fetchCurrentCompany = async (userId: string) => {
     try {
@@ -344,6 +347,14 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
 
   const renderItem = ({item}: {item: Chat}) => {
     const handleChatPress = () => {
+      if (route.name === 'Message' && !profile.isSubscriber) {
+        Alert.alert(
+          'Subscription Required',
+          'You need to be a subscriber to use the messaging feature.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
       const otherParticipantId = item.participants.find(p => p !== currentCompanyId);
       if (!otherParticipantId) {
         console.error('Karşı katılımcı bulunamadı');

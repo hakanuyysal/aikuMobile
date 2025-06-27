@@ -237,6 +237,9 @@ const HomeScreen = (props: HomeScreenProps) => {
     </View>
   );
 
+  const CARD_TOP = 120; // Kartın yukarıdan uzaklığı
+  const CARD_HEIGHT = 60; // Kartın yüksekliği
+
   return (
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
@@ -300,7 +303,7 @@ const HomeScreen = (props: HomeScreenProps) => {
 
           {activeTab === 'blog' ? (
             <AIBlogSection
-  
+              title=""
               navigation={navigation}
             />
           ) : (
@@ -330,8 +333,10 @@ const HomeScreen = (props: HomeScreenProps) => {
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 2000,
-              paddingBottom: 90,
+              width: SCREEN_WIDTH,
+              height: SCREEN_HEIGHT,
+              zIndex: 9999,
+              paddingBottom: 0,
             }}>
               {/* Arka plan overlay */}
               <View style={{
@@ -340,11 +345,9 @@ const HomeScreen = (props: HomeScreenProps) => {
                 zIndex: 1,
               }} />
               <View style={{
-                position: 'absolute',
-                top: 100,
-                left: 0,
-                right: 0,
+                flex: 1,
                 alignItems: 'center',
+                justifyContent: 'center',
                 zIndex: 2,
               }}>
                 {communityItems.map((item, idx) => (
@@ -375,16 +378,13 @@ const HomeScreen = (props: HomeScreenProps) => {
                       <Animated.Image
                         source={require('../assets/images/Tooltipaihands.png')}
                         style={{
-                          width: 350,
-                          height: 350,
+                          width: SCREEN_WIDTH * 0.35,
+                          height: SCREEN_WIDTH * 0.35,
                           position: 'absolute',
-                          left: handConfigs[activeCenterIndex]?.left ?? 0,
-                          top: handConfigs[activeCenterIndex]?.top ?? 220,
-                          marginTop: handConfigs[activeCenterIndex]?.marginTop ?? -120,
+                          left: SCREEN_WIDTH * 0.5 - (SCREEN_WIDTH * 0.35) / 2,
+                          top: CARD_TOP + CARD_HEIGHT - 120, // Kartın hemen altı
                           zIndex: 100,
-                          transform: [
-                            { scale: handScale },
-                          ],
+                          transform: [{ scale: handScale }],
                         }}
                         resizeMode="contain"
                       />
@@ -619,17 +619,19 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
     width: 200,
   },
-  communitySection: {
-    paddingHorizontal: 0,
-    paddingVertical: 20,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.lightText,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
+communitySection: {
+  paddingHorizontal: 0,
+  paddingVertical: 10,
+  marginTop: -10,
+},
+sectionTitle: {
+  fontSize: 24,
+  fontWeight: 'bold',
+  color: Colors.lightText,
+  marginBottom: 20,
+  marginTop: -10,
+  textAlign: 'center',
+},
   communityItems: {
     gap: 12,
   },
