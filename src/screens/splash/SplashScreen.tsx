@@ -22,7 +22,7 @@ interface Props {
   navigation?: NavigationProp<ParamListBase>;
 }
 
-const {width: WIDTH} = Dimensions.get('window');
+const WIDTH = Dimensions.get('window').width;
 
 const SplashScreen: React.FC<Props> = ({navigation}) => {
   const logoScale = useMemo(() => new Animated.Value(0.1), []);
