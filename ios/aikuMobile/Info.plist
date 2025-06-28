@@ -88,5 +88,7 @@
 	<false/>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To upload and share your profile photo, access to your photo gallery is required.</string>
 </dict>
 </plist>
