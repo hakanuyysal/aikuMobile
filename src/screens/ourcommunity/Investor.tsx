@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Alert, Image } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, Linking, TextInput, Alert, Image, Platform, Dimensions } from 'react-native';
 import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { companyService, Company } from '../../services/companyService';
 
+// Responsive ölçekleme fonksiyonu
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const guidelineBaseWidth = 375;
+const scale = (size: number) => (SCREEN_WIDTH / guidelineBaseWidth) * size;
 
 const Investor = () => {
   const navigation = useNavigation();
@@ -37,7 +39,7 @@ const Investor = () => {
     item =>
       item.companyName?.toLowerCase().includes(search.toLowerCase()) ||
       item.companyInfo?.toLowerCase().includes(search.toLowerCase()) ||
-      item.companySector?.join(' ').toLowerCase().includes(search.toLowerCase())
+      (Array.isArray(item.companySector) ? item.companySector.join(' ').toLowerCase() : '').includes(search.toLowerCase())
   );
 
   const renderItem = ({ item }: { item: Company }) => (
@@ -47,7 +49,7 @@ const Investor = () => {
           <View style={styles.companyHeader}>
             {item.isHighlighted && (
               <View style={styles.highlightedBadge}>
-                <Icon name="star" size={16} color="#FFD700" />
+                <Icon name="star" size={scale(16)} color="#FFD700" />
               </View>
             )}
             {item.companyLogo ? (
@@ -63,7 +65,7 @@ const Investor = () => {
               />
             ) : (
               <View style={styles.placeholderLogo}>
-                <Icon name="business" size={24} color="#666" />
+                <Icon name="business" size={scale(24)} color="#666" />
               </View>
             )}
             <PaperText style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
@@ -128,12 +130,12 @@ const Investor = () => {
     >
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#3B82F7" />
+          <Icon name="chevron-back" size={scale(24)} color="#3B82F7" />
         </TouchableOpacity>
         <PaperText style={styles.header}>Investors</PaperText>
       </View>
       <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
+        <Icon name="search" size={scale(20)} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search investors..."
@@ -160,18 +162,18 @@ export default Investor;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: scale(12),
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(12),
   },
   backButton: {
-    marginRight: 10,
+    marginRight: scale(8),
   },
   header: {
-    fontSize: 20,
+    fontSize: scale(20),
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
@@ -181,35 +183,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    marginVertical: scale(12),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(10),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: scale(6),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 8,
-    fontSize: 16,
+    paddingVertical: Platform.OS === 'ios' ? scale(10) : scale(8),
+    fontSize: scale(16),
     color: '#fff',
   },
   list: {
-    paddingBottom: 20,
+    paddingBottom: scale(16),
   },
   cardContainer: {
-    width: SCREEN_WIDTH - 32,
-    minHeight: 180,
-    marginBottom: 18,
+    width: '100%',
+    minHeight: scale(160),
+    marginBottom: scale(14),
     alignSelf: 'center',
-    borderRadius: 12,
+    borderRadius: scale(10),
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-    padding: 16,
-    marginTop: 18,
+    padding: scale(12),
+    marginTop: scale(12),
   },
   highlightedCard: {
     borderColor: '#FFD700',
@@ -225,70 +227,70 @@ const styles = StyleSheet.create({
   companyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: scale(10),
   },
   highlightedBadge: {
     position: 'absolute',
-    top: -10,
-    right: -10,
+    top: -scale(8),
+    right: -scale(8),
     backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: scale(10),
+    padding: scale(3),
     zIndex: 1,
   },
   companyLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    marginRight: scale(8),
+    borderRadius: scale(6),
   },
   placeholderLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    marginRight: scale(8),
+    borderRadius: scale(6),
     backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   companyName: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: scale(16),
     fontWeight: '600',
-    marginBottom: 14,
+    marginBottom: scale(10),
   },
   detailsContainer: {
     flexDirection: 'column',
-    marginBottom: 20,
+    marginBottom: scale(14),
   },
   detail: {
-    marginBottom: 12,
+    marginBottom: scale(8),
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: scale(12),
     color: 'rgba(255,255,255,0.5)',
-    marginBottom: 4,
+    marginBottom: scale(2),
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: scale(14),
     color: '#fff',
     fontWeight: '400',
   },
   description: {
-    fontSize: 14,
+    fontSize: scale(12),
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: 15,
+    marginBottom: scale(10),
   },
   visitButton: {
     backgroundColor: '#3B82F7',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+    paddingVertical: scale(6),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(4),
     alignSelf: 'flex-start',
   },
   visitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: scale(12),
   }
 });

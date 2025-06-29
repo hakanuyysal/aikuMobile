@@ -63,13 +63,3 @@ export const useProfileStore = create<ProfileState>()(
     },
   ),
 );
-
-const subscriptionRes = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-  headers: { Authorization: `Bearer ${token}` }
-});
-const subscriptionPlan = subscriptionRes.data?.data?.subscriptionPlan; // "startup" veya null
-
-updateProfile({
-  ...profile,
-  subscriptionPlan: subscriptionPlan // "startup", "business", "investor" veya null
-});

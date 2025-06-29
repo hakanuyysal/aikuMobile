@@ -98,21 +98,21 @@ const ProfileScreen = () => {
       title: 'Product Details',
       subtitle: 'Product information',
       iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('MarketPlaceProductDetails'),
+      onPress: () => navigation.navigate('ProductDetails', { id: '' }),
       gradient: ['#6366F1', '#8B5CF6'],
     },
   ];
 
   const getProfilePhoto = () => {
-    if (profile.photoURL) {
-      if (profile.photoURL.startsWith('http')) {
-        return profile.photoURL;
-      }
-      return `https://api.aikuaiplatform.com${profile.photoURL}`;
-    }
+    // Öncelik sırası: photoURL > profilePhoto
+    const url = profile.photoURL || profile.profilePhoto;
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
     return null;
   };
   const profilePhoto = getProfilePhoto();
+  console.log('ProfileScreen profilePhoto:', profilePhoto);
 
   return (
     <LinearGradient
@@ -126,7 +126,11 @@ const ProfileScreen = () => {
           <View style={styles.headerContent}>
             <View style={styles.avatarContainer}>
               {profilePhoto ? (
-                <Image source={{uri: profilePhoto}} style={styles.avatar} />
+                <Image
+                  source={{uri: profilePhoto}}
+                  style={styles.avatar}
+                  onError={e => console.log('Profile image load error:', e.nativeEvent)}
+                />
               ) : (
                 <LinearGradient
                   colors={['#2A2D3E', '#424867']}
@@ -154,7 +158,7 @@ const ProfileScreen = () => {
                   <Text style={styles.userName}>
                     {profile.firstName && profile.lastName
                       ? `${profile.firstName} ${profile.lastName}`
-                      : user?.name || 'Murat Tanrıyakul'}
+                      : user?.name || 'User Name'}
                   </Text>
                   <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
                   <View style={styles.roleWrapper}>

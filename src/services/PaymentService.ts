@@ -2,6 +2,7 @@ import BaseService from '../api/BaseService';
 import {MMKVInstance} from '../storage/mmkv';
 import {PaymentHistoryResponse} from '../types';
 import {Platform} from 'react-native';
+import axios from 'axios';
 
 class PaymentService {
   private baseURL: string;
@@ -260,6 +261,22 @@ class PaymentService {
     } catch (error) {
       throw error;
     }
+  }
+}
+
+// Doğrudan API'ye istek atan fonksiyon
+export async function getPaymentHistoryDirect(): Promise<PaymentHistoryResponse> {
+  try {
+    // AsyncStorage yerine MMKV veya başka bir storage kullanıyorsan buradan token al
+    const token = MMKVInstance.getString('token');
+    const response = await axios.get('https://api.aikuaiplatform.com/api/payments/history', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error;
   }
 }
 

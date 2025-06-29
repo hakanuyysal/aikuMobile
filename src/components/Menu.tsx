@@ -22,14 +22,6 @@ import metrics from '../constants/aikuMetric';
 import {useProfileStore} from '../store/profileStore';
 
 interface MenuProps {
-  user: {
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    avatar?: string;
-    email?: string;
-    role?: string;
-  } | null;
   onClose: () => void;
   mainViewRef: Animated.AnimatedValue;
   scaleRef: Animated.AnimatedValue;
@@ -39,7 +31,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.8;
 const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
+const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const {profile} = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
@@ -159,12 +151,10 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   };
 
   const getProfilePhoto = () => {
-    if (profile.photoURL) {
-      if (profile.photoURL.startsWith('http')) {
-        return profile.photoURL;
-      }
-      return `https://api.aikuaiplatform.com${profile.photoURL}`;
-    }
+    const url = profile.photoURL || profile.profilePhoto;
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
     return null;
   };
   const profilePhoto = getProfilePhoto();
@@ -207,12 +197,12 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   <Text style={styles.userName}>
-                    {user?.firstName && user?.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : 'Murat Tanrıyakul'}
+                    {profile?.firstName && profile?.lastName
+                      ? `${profile.firstName} ${profile.lastName}`
+                      : 'Kullanıcı Adı'}
                   </Text>
-                  {user?.email && (
-                    <Text style={styles.userEmail}>{user.email}</Text>
+                  {profile?.email && (
+                    <Text style={styles.userEmail}>{profile.email}</Text>
                   )}
                   <View style={styles.planContainer}>
                     <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />
@@ -278,14 +268,14 @@ const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
                     onPress={() =>
                       openSocialMedia('https://www.instagram.com/aikuai_platform/')
                     }>
-                    <FontAwesome name="instagram" size={24} color={Colors.primary} />
+                    <MaterialCommunityIcons name="instagram" size={28} color={Colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.socialButton, {marginRight: 0}]}
                     onPress={() =>
                       openSocialMedia('https://www.linkedin.com/company/aiku-ai-platform/')
                     }>
-                    <FontAwesome name="linkedin-square" size={24} color={Colors.primary} />
+                    <MaterialCommunityIcons name="linkedin" size={28} color={Colors.primary} />
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.brandText}>Aiku</Text>
@@ -438,11 +428,19 @@ const styles = StyleSheet.create({
   socialButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: metrics.margin.xl,
+    alignItems: 'center',
     marginBottom: metrics.margin.md,
+    // gap: metrics.margin.xl, // <-- gap yerine aşağıdaki gibi marginRight kullan
   },
   socialButton: {
     padding: metrics.padding.sm,
+    marginRight: metrics.margin.xl, // Sonuncuda sıfırlayacağız
+    backgroundColor: Colors.cardBackground, // Arka plan ekle
+    borderRadius: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primary,
   },
   brandText: {
     fontSize: metrics.fontSize.xl,
