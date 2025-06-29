@@ -16,13 +16,20 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import {useProfileStore} from '../store/profileStore';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MenuProps {
+  user: {
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    email?: string;
+    role?: string;
+  } | null;
   onClose: () => void;
   mainViewRef: Animated.AnimatedValue;
   scaleRef: Animated.AnimatedValue;
@@ -32,7 +39,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.8;
 const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
+const Menu: React.FC<MenuProps> = ({user, onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const {profile} = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
@@ -40,13 +47,8 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [currentPlan, setCurrentPlan] = useState('');
-  const [subscriptionPlan, setSubscriptionPlan] = useState(null);
-
-  console.log('Menu profile:', profile);
 
   useEffect(() => {
-    console.log('PROFILE:', profile);
     Animated.parallel([
       Animated.timing(menuSlideAnim, {
         toValue: 0,
@@ -70,25 +72,6 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
       }),
     ]).start();
   }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
-
-  useEffect(() => {
-    setCurrentPlan(profile?.planDetails?.name || profile?.subscriptionInfo?.subscriptionPlan || 'No Subscription');
-  }, [profile]);
-
-  useEffect(() => {
-    const fetchPlan = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const res = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSubscriptionPlan(res.data?.data?.subscriptionPlan);
-      } catch (err) {
-        setSubscriptionPlan(null);
-      }
-    };
-    fetchPlan();
-  }, []);
 
   const handleClose = () => {
     Animated.parallel([
@@ -134,7 +117,7 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
       } else if (title === 'Company Details') {
         navigation.navigate({ name: 'CompanyDetails', params: undefined });
       } else if (title === 'Product Details') {
-        navigation.navigate({ name: 'ProductDetails', params: { id: 'GERÇEK_ID' } });
+        navigation.navigate({ name: 'ProductDetails', params: { id: '' } });
       } else if (title === 'Investment Details') {
         navigation.navigate({ name: 'InvestmentDetails', params: undefined });
       } else if (title === 'Settings') {
@@ -176,30 +159,15 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   };
 
   const getProfilePhoto = () => {
-    const url = profile.photoURL;
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
+    if (profile.photoURL) {
+      if (profile.photoURL.startsWith('http')) {
+        return profile.photoURL;
+      }
+      return `https://api.aikuaiplatform.com${profile.photoURL}`;
+    }
     return null;
   };
   const profilePhoto = getProfilePhoto();
-
-  const getPlanName = (plan) => {
-    if (!plan) return 'No Subscription';
-    const planMap = {
-      startup: 'Startup Plan',
-      business: 'Business Plan',
-      investor: 'Investor Plan',
-    };
-    return planMap[plan] || plan;
-  };
-
-  const getPlanText = (plan) => {
-    if (plan === 'startup') return 'Startup Plan';
-    if (plan === 'business') return 'Business Plan';
-    if (plan === 'investor') return 'Investor Plan';
-    return 'No Subscription';
-  };
 
   return (
     <TouchableWithoutFeedback onPress={handleClose}>
@@ -239,18 +207,16 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   <Text style={styles.userName}>
-                    {profile?.firstName && profile?.lastName
-                      ? `${profile.firstName} ${profile.lastName}`
-                      : 'Kullanıcı Adı'}
+                    {user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : 'Murat Tanrıyakul'}
                   </Text>
-                  {profile?.email && (
-                    <Text style={styles.userEmail}>{profile.email}</Text>
+                  {user?.email && (
+                    <Text style={styles.userEmail}>{user.email}</Text>
                   )}
                   <View style={styles.planContainer}>
                     <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />
-                    <Text style={styles.planText}>
-                      {getPlanText(subscriptionPlan)}
-                    </Text>
+                    <Text style={styles.planText}>Startup Plan</Text>
                   </View>
                 </View>
               </View>
@@ -312,14 +278,14 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                     onPress={() =>
                       openSocialMedia('https://www.instagram.com/aikuai_platform/')
                     }>
-                    <MaterialCommunityIcons name="instagram" size={28} color={Colors.primary} />
+                    <FontAwesome name="instagram" size={24} color={Colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.socialButton, {marginRight: 0}]}
+                    style={styles.socialButton}
                     onPress={() =>
                       openSocialMedia('https://www.linkedin.com/company/aiku-ai-platform/')
                     }>
-                    <MaterialCommunityIcons name="linkedin" size={28} color={Colors.primary} />
+                    <FontAwesome name="linkedin-square" size={24} color={Colors.primary} />
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.brandText}>Aiku</Text>
@@ -472,19 +438,11 @@ const styles = StyleSheet.create({
   socialButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: metrics.margin.xl,
     marginBottom: metrics.margin.md,
-    // gap: metrics.margin.xl, // <-- gap yerine aşağıdaki gibi marginRight kullan
   },
   socialButton: {
     padding: metrics.padding.sm,
-    marginRight: metrics.margin.xl, // Sonuncuda sıfırlayacağız
-    backgroundColor: Colors.cardBackground, // Arka plan ekle
-    borderRadius: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
   brandText: {
     fontSize: metrics.fontSize.xl,

@@ -92,31 +92,31 @@ const UpdateProfileScreen = ({navigation}: Props) => {
     console.log("DEBUG: handleSave fonksiyonu başlatıldı.");
 
     if (!form.firstName) {
-      Alert.alert('Eksik Bilgi', 'Lütfen adınızı girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your first name.', [{text: 'OK'}]);
       return;
     }
     if (!form.lastName) {
-      Alert.alert('Eksik Bilgi', 'Lütfen soyadınızı girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your last name.', [{text: 'OK'}]);
       return;
     }
     if (!form.email) {
-      Alert.alert('Eksik Bilgi', 'Lütfen e-posta adresinizi girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your email address.', [{text: 'OK'}]);
       return;
     }
     if (!form.phone || form.phone.replace(/^\+\d+\s*/, '').trim() === '') {
-      Alert.alert('Eksik Bilgi', 'Lütfen telefon numaranızı girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your phone number.', [{text: 'OK'}]);
       return;
     }
     if (!form.title) {
-      Alert.alert('Eksik Bilgi', 'Lütfen unvanınızı girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your title.', [{text: 'OK'}]);
       return;
     }
     if (!form.location) {
-      Alert.alert('Eksik Bilgi', 'Lütfen konumunuzu girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter your location.', [{text: 'OK'}]);
       return;
     }
     if (!form.profileInfo) {
-      Alert.alert('Eksik Bilgi', 'Lütfen kendiniz hakkında bilgi girin.', [{text: 'Tamam'}]);
+      Alert.alert('Missing Information', 'Please enter information about yourself.', [{text: 'OK'}]);
       return;
     }
 
@@ -226,7 +226,7 @@ const UpdateProfileScreen = ({navigation}: Props) => {
                 },
             ]);
         } else {
-             console.error("DEBUG: Profil güncelleme başarısız.");
+             console.error("DEBUG: Profile update failed.");
              throw new Error(response.data.message || 'Failed to update profile.');
         }
 

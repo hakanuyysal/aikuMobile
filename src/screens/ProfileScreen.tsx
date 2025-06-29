@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,8 @@ import {RootStackParamList} from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
 import {useProfileStore} from '../store/profileStore';
 import AuthService from '../services/AuthService';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
-
-const BASE_URL = "https://api.aikuaiplatform.com/api/";
 
 const ProfileScreen = () => {
   const {user} = useAuth();
@@ -31,7 +27,6 @@ const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const isFocused = useIsFocused();
   const scrollY = new Animated.Value(0);
-  const [subscriptionPlan, setSubscriptionPlan] = useState(null);
 
   useEffect(() => {
     const fetchLatestProfile = async () => {
@@ -39,53 +34,18 @@ const ProfileScreen = () => {
         try {
           console.log('Profil ekranı odakta, güncel veri çekiliyor...');
           const latestProfile = await AuthService.getCurrentUser();
-          // Subscription bilgisini çek
-          const token = await AsyncStorage.getItem('token');
-          console.log('Subscription URL:', 'https://api.aikuaiplatform.com/api/subscriptions/my-subscription');
-          console.log('Token:', token);
-          const subscriptionRes = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const subscriptionPlan = subscriptionRes.data?.data?.subscriptionPlan;
-          console.log('Subscription response:', subscriptionPlan);
-          // Profile'a ekle
-          if (latestProfile && subscriptionPlan) {
-            updateProfile({
-              ...latestProfile,
-              subscriptionPlan: subscriptionPlan,
-            });
+          if (latestProfile) {
+            updateProfile(latestProfile);
+            console.log('Profil verisi güncellendi.');
           }
-          console.log('Profil verisi güncellendi.');
         } catch (error) {
-          console.error('Profil veya subscription verisi çekilirken hata:', error);
+          console.error('Profil verisi çekilirken hata:', error);
         }
       }
     };
 
     fetchLatestProfile();
   }, [isFocused, updateProfile]);
-
-  useEffect(() => {
-    const fetchPlan = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const res = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSubscriptionPlan(res.data?.data?.subscriptionPlan);
-      } catch (err) {
-        setSubscriptionPlan(null);
-      }
-    };
-    fetchPlan();
-  }, []);
-
-  const getPlanText = (plan) => {
-    if (plan === 'startup') return 'Startup Plan';
-    if (plan === 'business') return 'Business Plan';
-    if (plan === 'investor') return 'Investor Plan';
-    return 'No Subscription';
-  };
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -138,21 +98,21 @@ const ProfileScreen = () => {
       title: 'Product Details',
       subtitle: 'Product information',
       iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('ProductDetails', { id: '' }),
+      onPress: () => navigation.navigate('MarketPlaceProductDetails'),
       gradient: ['#6366F1', '#8B5CF6'],
     },
   ];
 
   const getProfilePhoto = () => {
-    // Öncelik sırası: photoURL > profilePhoto
-    const url = profile.photoURL || profile.profilePhoto;
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
+    if (profile.photoURL) {
+      if (profile.photoURL.startsWith('http')) {
+        return profile.photoURL;
+      }
+      return `https://api.aikuaiplatform.com${profile.photoURL}`;
+    }
     return null;
   };
   const profilePhoto = getProfilePhoto();
-  console.log('ProfileScreen profilePhoto:', profilePhoto);
 
   return (
     <LinearGradient
@@ -166,11 +126,7 @@ const ProfileScreen = () => {
           <View style={styles.headerContent}>
             <View style={styles.avatarContainer}>
               {profilePhoto ? (
-                <Image
-                  source={{uri: profilePhoto}}
-                  style={styles.avatar}
-                  onError={e => console.log('Profile image load error:', e.nativeEvent)}
-                />
+                <Image source={{uri: profilePhoto}} style={styles.avatar} />
               ) : (
                 <LinearGradient
                   colors={['#2A2D3E', '#424867']}
@@ -198,7 +154,7 @@ const ProfileScreen = () => {
                   <Text style={styles.userName}>
                     {profile.firstName && profile.lastName
                       ? `${profile.firstName} ${profile.lastName}`
-                      : user?.name || 'User Name'}
+                      : user?.name || 'Murat Tanrıyakul'}
                   </Text>
                   <Text style={styles.userEmail}>{profile.email || user?.email}</Text>
                   <View style={styles.roleWrapper}>
@@ -208,9 +164,7 @@ const ProfileScreen = () => {
                       color="#FFD700"
                       style={styles.roleIcon}
                     />
-                    <Text style={styles.roleText}>
-                      {getPlanText(subscriptionPlan)}
-                    </Text>
+                    <Text style={styles.roleText}>Startup Plan</Text>
                   </View>
                 </View>
                 <TouchableOpacity

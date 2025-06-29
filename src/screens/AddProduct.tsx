@@ -207,8 +207,8 @@ const AddProduct = ({ navigation, route }: Props) => {
       !formData.companyId
     ) {
       Alert.alert(
-        'Eksik Bilgi',
-        'Lütfen tüm zorunlu alanları doldurun: Ürün Adı, Kategori, Açıklama, Detaylı Açıklama, Fiyatlandırma Modeli, Şirket'
+        'Missing Information',
+        'Please fill in all required fields: Product Name, Category, Short Description, Detailed Description, Pricing Model, Company'
       );
       setFormErrors([
         'Please fill in all required fields: Product Name, Category, Short Description, Detailed Description, Pricing Model, Company',
@@ -220,11 +220,11 @@ const AddProduct = ({ navigation, route }: Props) => {
       setLoading(true);
       if (selectedProduct) {
         await productService.updateProduct(selectedProduct.id, formData);
-        Alert.alert('Başarılı', 'Ürün başarıyla güncellendi!');
+        Alert.alert('Success', 'Product successfully updated!');
         setMessage('Product successfully updated!');
       } else {
         const response = await productService.createProduct(formData);
-        Alert.alert('Başarılı', 'Ürün başarıyla eklendi!');
+        Alert.alert('Success', 'Product successfully added!');
         setMessage('Product successfully added!');
         navigation.navigate('ProductDetails', { id: response.product.id });
       }
@@ -235,15 +235,15 @@ const AddProduct = ({ navigation, route }: Props) => {
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const errorMessages =
-          error.response?.data?.errors?.map((err: any) => err.msg) || ['Ürün işlenirken bir hata oluştu.'];
+          error.response?.data?.errors?.map((err: any) => err.msg) || ['An error occurred while processing the product.'];
         setFormErrors(errorMessages);
-        Alert.alert('Hata', errorMessages.join(', '));
-        console.error('API Hatası Durumu:', error.response?.status);
-        console.error('API Hatası Verisi:', error.response?.data);
+        Alert.alert('Error', errorMessages.join(', '));
+        console.error('API Error Status:', error.response?.status);
+        console.error('API Error Data:', error.response?.data);
       } else {
-        setFormErrors(['Bilinmeyen bir hata oluştu.']);
-        Alert.alert('Hata', 'Bilinmeyen bir hata oluştu.');
-        console.error('Ürün işleme hatası:', error);
+        setFormErrors(['An unknown error occurred.']);
+        Alert.alert('Error', 'An unknown error occurred.');
+        console.error('Product processing error:', error);
       }
     } finally {
       setLoading(false);
@@ -252,18 +252,18 @@ const AddProduct = ({ navigation, route }: Props) => {
 
   const handleDeleteProduct = () => {
     Alert.alert(
-      'Ürünü Sil',
-      `"${selectedProduct?.productName}" ürününü silmek istediğinizden emin misiniz?`,
+      'Delete Product',
+      `Are you sure you want to delete the product "${selectedProduct?.productName}"?`,
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Sil',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
               setLoading(true);
               await productService.deleteProduct(selectedProduct!.id);
-              Alert.alert('Başarılı', 'Ürün başarıyla silindi!');
+              Alert.alert('Success', 'Product deleted successfully!');
               setMessage('Product deleted successfully!');
               await fetchUserProducts();
               setShowProductForm(false);
@@ -272,12 +272,12 @@ const AddProduct = ({ navigation, route }: Props) => {
             } catch (error: unknown) {
               if (axios.isAxiosError(error)) {
                 const errorMessages =
-                  error.response?.data?.errors?.map((err: any) => err.msg) || ['Ürün silinirken bir hata oluştu.'];
+                  error.response?.data?.errors?.map((err: any) => err.msg) || ['An error occurred while deleting the product.'];
                 setFormErrors(errorMessages);
-                Alert.alert('Hata', errorMessages.join(', '));
+                Alert.alert('Error', errorMessages.join(', '));
               } else {
-                setFormErrors(['Bilinmeyen bir hata oluştu.']);
-                Alert.alert('Hata', 'Bilinmeyen bir hata oluştu.');
+                setFormErrors(['An unknown error occurred.']);
+                Alert.alert('Error', 'An unknown error occurred.');
               }
             } finally {
               setLoading(false);
