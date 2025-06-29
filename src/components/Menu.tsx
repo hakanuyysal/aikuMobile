@@ -109,7 +109,7 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
       } else if (title === 'Company Details') {
         navigation.navigate({ name: 'CompanyDetails', params: undefined });
       } else if (title === 'Product Details') {
-        navigation.navigate({ name: 'ProductDetails', params: { id: '' } });
+        navigation.navigate({ name: 'ProductDetails', params: { id: 'GERÇEK_ID' } });
       } else if (title === 'Investment Details') {
         navigation.navigate({ name: 'InvestmentDetails', params: undefined });
       } else if (title === 'Settings') {

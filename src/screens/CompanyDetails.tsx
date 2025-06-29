@@ -29,6 +29,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
 import countryCodes from '../services/countryCodes.json';
 import { launchImageLibrary } from 'react-native-image-picker';
+import ImageCropPicker from 'react-native-image-crop-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
@@ -124,8 +125,8 @@ const CompanyDetails = ({ navigation }: Props) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [slideAnim] = useState(new Animated.Value(0));
-  const [visibleSteps, setVisibleSteps] = useState(5);
+  const [_slideAnim] = useState(new Animated.Value(0));
+  const [_visibleSteps, _setVisibleSteps] = useState(5);
   const [sectorPickerVisible, setSectorPickerVisible] = useState(false);
 
   const [aiModalVisible, setAiModalVisible] = useState(false);
@@ -137,6 +138,16 @@ const CompanyDetails = ({ navigation }: Props) => {
   const [aiFile, setAiFile] = useState<DocumentPickerResponse | null>(null);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
+
+  // Logo URL'lerini doğru şekilde işlemek için fonksiyon
+  const getCompanyLogo = (logoUrl: string | null | undefined) => {
+    if (!logoUrl) return null;
+    // Base64 data URL kontrolü
+    if (logoUrl.startsWith('data:')) return logoUrl;
+    if (logoUrl.startsWith('http')) return logoUrl;
+    if (logoUrl.startsWith('/uploads')) return `https://api.aikuaiplatform.com${logoUrl}`;
+    return logoUrl;
+  };
 
   // Axios instance for API calls
   const api = axios.create({
@@ -156,7 +167,7 @@ const CompanyDetails = ({ navigation }: Props) => {
 
   const formSteps = [
     { label: 'Company Name', placeholder: 'Enter your company name', key: 'companyName', type: 'text' },
-    { label: 'Company Logo', placeholder: 'Dosya seçilmedi', key: 'companyLogo', type: 'file' },
+    { label: 'Company Logo', placeholder: 'No file selected', key: 'companyLogo', type: 'file' },
     { label: 'Company Type', key: 'companyType', type: 'picker', options: ['Startup'] },
     { label: 'Open for Investments', key: 'openForInvestments', type: 'boolean' },
     { label: 'Has the company been incorporated?', key: 'incorporated', type: 'picker', options: ['Yes', 'No'] },
@@ -189,7 +200,7 @@ const CompanyDetails = ({ navigation }: Props) => {
       // Kullanıcı ID'sini al
       const userId = user?._id || user?.id;
       if (!userId) {
-        Alert.alert('Hata', 'Kullanıcı ID\'si bulunamadı, lütfen tekrar giriş yapın.');
+        Alert.alert('Error', 'User ID not found, please login again.');
         setCompanies([]);
         setLoading(false);
         return;
@@ -203,12 +214,12 @@ const CompanyDetails = ({ navigation }: Props) => {
       }));
       setCompanies(companies);
     } catch (error: any) {
-      let errorMsg = 'Şirketler alınamadı. Ağ bağlantınızı veya giriş durumunuzu kontrol edin.';
+      let errorMsg = 'Failed to fetch companies. Check your network connection or login status.';
       if (error.response) {
         if (error.response.status === 401) {
-          errorMsg = 'Yetkisiz. Lütfen tekrar giriş yapın.';
+          errorMsg = 'Unauthorized. Please login again.';
         } else if (error.response.status === 404) {
-          errorMsg = 'Endpoint /company/current bulunamadı. Backend çalışıyor mu ve route doğru mu?';
+          errorMsg = 'Endpoint /company/current not found. Is backend running and route correct?';
         } else if (error.response.data && error.response.data.message) {
           errorMsg = error.response.data.message;
         }
@@ -216,7 +227,7 @@ const CompanyDetails = ({ navigation }: Props) => {
         errorMsg = error.message;
       }
       console.error('Error fetching companies:', error.response ? error.response.data : error.message);
-      Alert.alert('Hata', errorMsg);
+      Alert.alert('Error', errorMsg);
       setCompanies([]);
     } finally {
       setLoading(false);
@@ -241,11 +252,11 @@ const CompanyDetails = ({ navigation }: Props) => {
 
     // If validating a specific step, check only the field for that step
     if (stepIndex !== undefined) {
-      const stepField = mandatoryFields.find(field => formSteps[stepIndex].key === field.key);
+      const stepField = mandatoryFields.find(field => formSteps[stepIndex].key === field);
       if (stepField) {
-        const value = formData[stepField.key];
+        const value = (formData as any)[stepField];
         if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
-          return { isValid: false, message: `${stepField.label} is required.` };
+          return { isValid: false, message: `${stepField} is required.` };
         }
       }
       return { isValid: true };
@@ -253,7 +264,7 @@ const CompanyDetails = ({ navigation }: Props) => {
 
     // Full form validation
     for (const field of mandatoryFields) {
-      const value = formData[field];
+      const value = (formData as any)[field];
       if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
         return { isValid: false, message: `${field} is required.` };
       }
@@ -277,7 +288,7 @@ const CompanyDetails = ({ navigation }: Props) => {
         companyName: formData.companyName,
         companyType: formData.companyType,
         businessModel: formData.businessModel,
-        companySector: formData.companySector.join(', '),
+        companySector: formData.companySector,
         companySize: formData.companySize,
         companyInfo: formData.summarizedInfo,
         companyWebsite: formData.companyWebsite,
@@ -289,18 +300,18 @@ const CompanyDetails = ({ navigation }: Props) => {
         openForInvestments: formData.openForInvestments,
         incorporated: formData.incorporated,
         businessScale: formData.businessScale,
-        detailedDescription: formData.detailedInfo, // Changed to match backend field name
+        detailedDescription: formData.detailedInfo,
         companyInstagram: formData.companyInstagram || '',
         acceptMessages: formData.acceptMessages,
-        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers.join(', ') : '',
+        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers : [],
+        companyLogo: formData.companyLogo,
       };
 
-      let response;
       if (editingCompanyId) {
-        response = await api.put(`/company/${editingCompanyId}`, payload);
+        await api.put(`/company/${editingCompanyId}`, payload);
         Alert.alert('Success', 'Company updated successfully.');
       } else {
-        response = await api.post('/company', payload);
+        await api.post('/company', payload);
         Alert.alert('Success', 'Company created successfully.');
       }
 
@@ -331,9 +342,15 @@ const CompanyDetails = ({ navigation }: Props) => {
         acceptMessages: false,
         teamMembers: [],
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting company:', error.response ? error.response.data : error.message);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to save company.');
+      // Backend'den gelen alan hatalarını kullanıcıya göster
+      if (error.response && error.response.data && error.response.data.errors && Array.isArray(error.response.data.errors)) {
+        const messages = error.response.data.errors.map((e: any) => e.msg).join('\n');
+        Alert.alert('Validation Error', messages);
+      } else {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to save company.');
+      }
     } finally {
       setLoading(false);
     }
@@ -386,7 +403,7 @@ const CompanyDetails = ({ navigation }: Props) => {
               await api.delete(`/company/${companyId}`);
               await fetchCompanies();
               Alert.alert('Success', 'Company deleted successfully.');
-            } catch (error) {
+            } catch (error: any) {
               console.error('Error deleting company:', error.response ? error.response.data : error.message);
               Alert.alert('Error', 'Failed to delete company.');
             } finally {
@@ -422,9 +439,44 @@ const CompanyDetails = ({ navigation }: Props) => {
   };
 
   const handlePickLogo = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.7 });
-    if (result.assets && result.assets.length > 0) {
-      setFormData({ ...formData, companyLogo: result.assets[0].uri });
+    try {
+      const result = await launchImageLibrary({ 
+        mediaType: 'photo', 
+        quality: 0.7,
+        includeBase64: true,
+        selectionLimit: 1
+      });
+      
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        if (asset.uri) {
+          // Logo kırpma işlemi
+          try {
+            const croppedImage = await ImageCropPicker.openCropper({
+              path: asset.uri,
+              mediaType: 'photo',
+              width: 300,
+              height: 300,
+              cropperCircleOverlay: false,
+              cropperActiveWidgetColor: Colors.primary,
+              cropperStatusBarColor: Colors.primary,
+              cropperToolbarColor: Colors.primary,
+              cropperToolbarTitle: 'Crop Logo',
+              cropperCancelText: 'Cancel',
+              cropperChooseText: 'Choose',
+            });
+            
+            setFormData({ ...formData, companyLogo: croppedImage.path });
+          } catch (cropError) {
+            // Kırpma iptal edildiyse normal resmi kullan
+            const logoData = asset.base64 ? `data:${asset.type};base64,${asset.base64}` : asset.uri;
+            setFormData({ ...formData, companyLogo: logoData });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Logo seçme hatası:', error);
+      Alert.alert('Error', 'Error selecting logo.');
     }
   };
 
@@ -447,7 +499,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     ];
 
     return (
-      <ScrollView style={styles.formScrollView}>
+      <ScrollView style={styles.content}>
         <View>
           {visibleFormSteps.map((step, index) => {
             const actualIndex = startIndex + index;
@@ -479,7 +531,7 @@ const CompanyDetails = ({ navigation }: Props) => {
             style={styles.input}
             placeholder={step.placeholder}
             placeholderTextColor={Colors.lightText}
-            value={formData[step.key]}
+            value={(formData as any)[step.key]}
             onChangeText={text => handleInputChange(step.key, text)}
             maxLength={step.maxLength}
             multiline={step.maxLength > 500}
@@ -488,7 +540,7 @@ const CompanyDetails = ({ navigation }: Props) => {
       case 'picker':
         return (
           <Picker
-            selectedValue={formData[step.key]}
+            selectedValue={(formData as any)[step.key]}
             style={styles.picker}
             onValueChange={value => handleInputChange(step.key, value)}>
             <Picker.Item label={`Select ${step.label}`} value="" />
@@ -501,13 +553,13 @@ const CompanyDetails = ({ navigation }: Props) => {
         return (
           <TouchableOpacity
             style={styles.checkbox}
-            onPress={() => handleInputChange(step.key, !formData[step.key])}>
+            onPress={() => handleInputChange(step.key, !(formData as any)[step.key])}>
             <MaterialCommunityIcons
-              name={formData[step.key] ? 'checkbox-marked' : 'checkbox-blank-outline'}
+              name={(formData as any)[step.key] ? 'checkbox-marked' : 'checkbox-blank-outline'}
               size={24}
               color={Colors.primary}
             />
-            <Text style={styles.checkboxText}>{formData[step.key] ? 'Yes' : 'No'}</Text>
+            <Text style={styles.checkboxText}>{(formData as any)[step.key] ? 'Yes' : 'No'}</Text>
           </TouchableOpacity>
         );
       case 'multi-select':
@@ -524,11 +576,25 @@ const CompanyDetails = ({ navigation }: Props) => {
         );
       case 'file':
         return (
-          <TouchableOpacity style={styles.fileButton} onPress={handlePickLogo}>
-            <Text style={styles.fileButtonText}>
-              {formData[step.key] ? 'File Selected' : step.placeholder}
-            </Text>
-          </TouchableOpacity>
+          <View>
+            {(formData as any)[step.key] ? (
+              <View style={{ alignItems: 'center', marginBottom: metrics.margin.md }}>
+                <Image
+                  source={{ uri: getCompanyLogo((formData as any)[step.key]) || '' }}
+                  style={{ width: 100, height: 100, borderRadius: 8, marginBottom: 8 }}
+                  resizeMode="cover"
+                />
+                <Text style={{ color: Colors.lightText, fontSize: 12, textAlign: 'center' }}>
+                  Logo selected
+                </Text>
+              </View>
+            ) : null}
+            <TouchableOpacity style={styles.fileButton} onPress={handlePickLogo}>
+              <Text style={styles.fileButtonText}>
+                {(formData as any)[step.key] ? 'Change Logo' : step.placeholder}
+              </Text>
+            </TouchableOpacity>
+          </View>
         );
       case 'phone':
         return (
@@ -727,7 +793,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     ];
     const currentStepKey = formSteps[stepIndex].key;
     if (mandatoryFields.includes(currentStepKey)) {
-      const value = formData[currentStepKey];
+      const value = (formData as any)[currentStepKey];
       if (!value || (Array.isArray(value) && value.length === 0) || (typeof value === 'string' && value.trim() === '')) {
         return false;
       }
@@ -760,38 +826,43 @@ const CompanyDetails = ({ navigation }: Props) => {
               {companies.map(company => (
                 <View key={company._id} style={styles.companyCard}>
                   <Image
-                    source={{ uri: company.companyLogo || 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png' }}
+                    source={{ uri: getCompanyLogo(company.companyLogo) || 'https://turkaumining.vercel.app/static/media/turkau-logo.904055d9d6e7dd0213c5.png' }}
                     style={styles.companyLogo}
                     resizeMode="contain"
                   />
-                  <Text style={styles.companyName}>{company.companyName}</Text>
-                  {/* Edit icon - top right */}
-                  <TouchableOpacity
-                    onPress={() => handleEditCompany(company)}
-                    style={styles.editIcon}
-                  >
-                    <MaterialCommunityIcons name="pencil" size={20} color={Colors.lightText} />
-                  </TouchableOpacity>
-                  {/* Delete icon - bottom left */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert(
-                        'Confirm Deletion',
-                        'Are you sure you want to delete this company?',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: () => handleDeleteCompany(company._id),
-                          },
-                        ]
-                      );
-                    }}
-                    style={styles.deleteIcon}
-                  >
-                    <MaterialCommunityIcons name="delete" size={20} color={Colors.lightText} />
-                  </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.companyName}>{company.companyName}</Text>
+                    <View style={styles.companyActions}>
+                      <TouchableOpacity 
+                        onPress={() => handleEditCompany(company)}
+                        style={{
+                        
+                          padding: 8,
+                          borderRadius: 8,
+                          flexDirection: 'column-reverse',
+                          alignItems: 'center',
+                          marginRight: 8,
+                        }}
+                      >
+                        <MaterialCommunityIcons name="pencil" size={20} color={Colors.lightText} />
+           
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        onPress={() => handleDeleteCompany(company._id)} 
+                        style={{
+                         
+                          padding: 8,
+                          borderRadius: 8,
+                          flexDirection: 'column-reverse',
+                          alignItems: 'center',
+                          marginLeft:'70%'
+                        }}
+                      >
+                        <MaterialCommunityIcons name="delete" size={20} color={Colors.lightText} />
+                     
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
               ))}
               <TouchableOpacity style={styles.addCompanyCard} onPress={() => setModalVisible(true)}>
@@ -1125,8 +1196,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    position: 'relative', // <-- önemli!
-    minHeight: 70,
   },
   companyLogo: { width: 50, height: 50, marginRight: metrics.margin.md },
   companyName: { fontSize: metrics.fontSize.lg, color: Colors.lightText, fontWeight: '500' },
@@ -1207,24 +1276,6 @@ const styles = StyleSheet.create({
     padding: metrics.padding.md,
     margin: metrics.margin.lg,
     maxHeight: '80%',
-  },
-  editIcon: {
-    position: 'absolute',
-    top: 5,
-    right: 8,
-    zIndex: 2,
-  
-    borderRadius: 16,
-    padding: 6,
-  },
-  deleteIcon: {
- position: 'absolute',
-    top: 55,
-    right: 8,
-    zIndex: 2,
- 
-    borderRadius: 16,
-    padding: 6,
   },
 });
 

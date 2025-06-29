@@ -59,7 +59,7 @@ interface ChatDetailParams {
   companyId: string;
 }
 
-const ChatListScreen = ({navigation}: ChatListScreenProps) => {
+const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
