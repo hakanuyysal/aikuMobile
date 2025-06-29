@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -18,8 +18,12 @@ import {RootStackParamList} from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
 import {useProfileStore} from '../store/profileStore';
 import AuthService from '../services/AuthService';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
+const BASE_URL = "https://api.aikuaiplatform.com/api/";
 
 const ProfileScreen = () => {
   const {user} = useAuth();
@@ -27,6 +31,7 @@ const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const isFocused = useIsFocused();
   const scrollY = new Animated.Value(0);
+  const [subscriptionPlan, setSubscriptionPlan] = useState(null);
 
   useEffect(() => {
     const fetchLatestProfile = async () => {
@@ -34,18 +39,53 @@ const ProfileScreen = () => {
         try {
           console.log('Profil ekranı odakta, güncel veri çekiliyor...');
           const latestProfile = await AuthService.getCurrentUser();
-          if (latestProfile) {
-            updateProfile(latestProfile);
-            console.log('Profil verisi güncellendi.');
+          // Subscription bilgisini çek
+          const token = await AsyncStorage.getItem('token');
+          console.log('Subscription URL:', 'https://api.aikuaiplatform.com/api/subscriptions/my-subscription');
+          console.log('Token:', token);
+          const subscriptionRes = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const subscriptionPlan = subscriptionRes.data?.data?.subscriptionPlan;
+          console.log('Subscription response:', subscriptionPlan);
+          // Profile'a ekle
+          if (latestProfile && subscriptionPlan) {
+            updateProfile({
+              ...latestProfile,
+              subscriptionPlan: subscriptionPlan,
+            });
           }
+          console.log('Profil verisi güncellendi.');
         } catch (error) {
-          console.error('Profil verisi çekilirken hata:', error);
+          console.error('Profil veya subscription verisi çekilirken hata:', error);
         }
       }
     };
 
     fetchLatestProfile();
   }, [isFocused, updateProfile]);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const res = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSubscriptionPlan(res.data?.data?.subscriptionPlan);
+      } catch (err) {
+        setSubscriptionPlan(null);
+      }
+    };
+    fetchPlan();
+  }, []);
+
+  const getPlanText = (plan) => {
+    if (plan === 'startup') return 'Startup Plan';
+    if (plan === 'business') return 'Business Plan';
+    if (plan === 'investor') return 'Investor Plan';
+    return 'No Subscription';
+  };
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -168,7 +208,9 @@ const ProfileScreen = () => {
                       color="#FFD700"
                       style={styles.roleIcon}
                     />
-                    <Text style={styles.roleText}>Startup Plan</Text>
+                    <Text style={styles.roleText}>
+                      {getPlanText(subscriptionPlan)}
+                    </Text>
                   </View>
                 </View>
                 <TouchableOpacity

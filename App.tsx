@@ -49,6 +49,7 @@ import authService from './src/services/AuthService';
 import { useNavigation } from '@react-navigation/native';
 import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
 import ThreeDSecure from './src/screens/subscriptions/ThreeDSecure';
+import CartScreen from 'screens/subscriptions/CartScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -79,6 +80,7 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
+  Cart:undefined;
   CompanyProfile: { company: Company };
   BillingInfo: {
     planDetails: {
@@ -233,6 +235,11 @@ function AppContent(): React.JSX.Element {
           <RootStack.Screen
             name="ProductDetails"
             component={ProductDetails}
+            options={{headerShown: false}}
+          />
+          <RootStack.Screen
+            name="Cart"
+            component={CartScreen}
             options={{headerShown: false}}
           />
           <RootStack.Screen

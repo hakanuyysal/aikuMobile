@@ -16,10 +16,11 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import {useProfileStore} from '../store/profileStore';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MenuProps {
   onClose: () => void;
@@ -39,8 +40,13 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState('');
+  const [subscriptionPlan, setSubscriptionPlan] = useState(null);
+
+  console.log('Menu profile:', profile);
 
   useEffect(() => {
+    console.log('PROFILE:', profile);
     Animated.parallel([
       Animated.timing(menuSlideAnim, {
         toValue: 0,
@@ -64,6 +70,25 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
       }),
     ]).start();
   }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
+
+  useEffect(() => {
+    setCurrentPlan(profile?.planDetails?.name || profile?.subscriptionInfo?.subscriptionPlan || 'No Subscription');
+  }, [profile]);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const res = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSubscriptionPlan(res.data?.data?.subscriptionPlan);
+      } catch (err) {
+        setSubscriptionPlan(null);
+      }
+    };
+    fetchPlan();
+  }, []);
 
   const handleClose = () => {
     Animated.parallel([
@@ -151,13 +176,30 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   };
 
   const getProfilePhoto = () => {
-    const url = profile.photoURL || profile.profilePhoto;
+    const url = profile.photoURL;
     if (!url) return null;
     if (url.startsWith('http')) return url;
     if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
     return null;
   };
   const profilePhoto = getProfilePhoto();
+
+  const getPlanName = (plan) => {
+    if (!plan) return 'No Subscription';
+    const planMap = {
+      startup: 'Startup Plan',
+      business: 'Business Plan',
+      investor: 'Investor Plan',
+    };
+    return planMap[plan] || plan;
+  };
+
+  const getPlanText = (plan) => {
+    if (plan === 'startup') return 'Startup Plan';
+    if (plan === 'business') return 'Business Plan';
+    if (plan === 'investor') return 'Investor Plan';
+    return 'No Subscription';
+  };
 
   return (
     <TouchableWithoutFeedback onPress={handleClose}>
@@ -206,7 +248,9 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                   )}
                   <View style={styles.planContainer}>
                     <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />
-                    <Text style={styles.planText}>Startup Plan</Text>
+                    <Text style={styles.planText}>
+                      {getPlanText(subscriptionPlan)}
+                    </Text>
                   </View>
                 </View>
               </View>

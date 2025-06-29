@@ -256,7 +256,16 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
       }));
       setCompanies(companiesData);
       if (companiesData.length === 0) {
-        Alert.alert('Warning', 'No registered companies found. Please add a company first.');
+        Alert.alert(
+          'Warning',
+          'No registered companies found. Please add a company first.',
+          [
+            {
+              text: 'Go to Company Details',
+              onPress: () => navigation.navigate('CompanyDetails'),
+            },
+          ]
+        );
       }
     } catch (e: any) {
       console.error('fetchCompanies error:', e.message, e.response?.data);

@@ -61,6 +61,16 @@ const SubscriptionDetails = ({navigation}: Props) => {
     }
   };
 
+  const getPlanName = (plan) => {
+    if (!plan) return 'No Subscription';
+    const planMap = {
+      startup: 'Startup Plan',
+      business: 'Business Plan',
+      investor: 'Investor Plan',
+    };
+    return planMap[plan] || plan;
+  };
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Subscription Details',

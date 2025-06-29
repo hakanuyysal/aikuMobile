@@ -1,6 +1,7 @@
 import {create} from 'zustand';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 interface Social {
   linkedin?: string;
@@ -20,6 +21,12 @@ interface Profile {
   photoURL?: string;
   social: Social;
   isSubscriber?: boolean;
+  planDetails?: {
+    name: string;
+    // ... diğer plan bilgileri ...
+  };
+  subscriptionInfo?: any;
+  subscriptionPlan?: string;
 }
 
 interface ProfileState {
@@ -56,3 +63,13 @@ export const useProfileStore = create<ProfileState>()(
     },
   ),
 );
+
+const subscriptionRes = await axios.get('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const subscriptionPlan = subscriptionRes.data?.data?.subscriptionPlan; // "startup" veya null
+
+updateProfile({
+  ...profile,
+  subscriptionPlan: subscriptionPlan // "startup", "business", "investor" veya null
+});
