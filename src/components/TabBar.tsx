@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, TouchableOpacity, StyleSheet, Text, Alert} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Text, Alert, Platform} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
 import {useRoute} from '@react-navigation/native';
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     width: metrics.WIDTH,
     position: 'absolute',
-    bottom: 22,
+    bottom: Platform.OS === 'ios' ? 0 :22,
     left: 0,
     right: 0,
   },
