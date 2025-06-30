@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {RootStackParamList} from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
 import {useProfileStore} from '../store/profileStore';
 import AuthService from '../services/AuthService';
+import PaymentService from '../services/PaymentService';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -27,6 +28,7 @@ const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const isFocused = useIsFocused();
   const scrollY = new Animated.Value(0);
+  const [planName, setPlanName] = useState('');
 
   useEffect(() => {
     const fetchLatestProfile = async () => {
@@ -46,6 +48,22 @@ const ProfileScreen = () => {
 
     fetchLatestProfile();
   }, [isFocused, updateProfile]);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const response = await PaymentService.getSubscriptionDetails();
+        if (response && response.data && response.data.planDetails && response.data.planDetails.name) {
+          setPlanName(response.data.planDetails.name);
+        } else {
+          setPlanName("No Subscription");
+        }
+      } catch (error) {
+        setPlanName("No Subscription");
+      }
+    };
+    fetchPlan();
+  }, []);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -168,7 +186,7 @@ const ProfileScreen = () => {
                       color="#FFD700"
                       style={styles.roleIcon}
                     />
-                    <Text style={styles.roleText}>Startup Plan</Text>
+                    <Text style={styles.roleText}>{planName}</Text>
                   </View>
                 </View>
                 <TouchableOpacity

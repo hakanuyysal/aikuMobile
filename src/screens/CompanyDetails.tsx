@@ -22,7 +22,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
+
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,15 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../../App';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Colors} from '../constants/colors';
+import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
-import {useProfileStore} from '../store/profileStore';
+import { useProfileStore } from '../store/profileStore';
 import AuthService from '../services/AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MenuProps {
   onClose: () => void;
@@ -32,16 +33,20 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.8;
 const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
+const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const {profile, updateProfile} = useProfileStore();
+  const { profile, updateProfile } = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
   const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [planName, setPlanName] = useState('Loading...');
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     Animated.parallel([
       Animated.timing(menuSlideAnim, {
         toValue: 0,
@@ -64,16 +69,88 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
         useNativeDriver: true,
       }),
     ]).start();
+    return () => {
+      isMounted = false;
+    };
   }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
 
   useEffect(() => {
-    const fetchAndUpdateProfile = async () => {
-      const user = await AuthService.getCurrentUser();
-      if (user) {
-        updateProfile(user);
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        // Fetch profile
+        try {
+          const user = await AuthService.getCurrentUser();
+          console.log('PROFILE FETCH RESPONSE:', JSON.stringify(user, null, 2));
+          if (user && isMounted) {
+            updateProfile(user);
+          }
+        } catch (profileError) {
+          console.error('Error fetching profile:', profileError);
+          if (isMounted) {
+            setErrorMessage('Profil bilgileri alınamadı.');
+          }
+        }
+
+        // Fetch subscription
+        try {
+          const token = await AsyncStorage.getItem('token');
+          console.log('SUBSCRIPTION TOKEN:', token ? 'Token exists' : 'No token found');
+          if (!token) {
+            throw new Error('No auth token found');
+          }
+
+          const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('SUBSCRIPTION RESPONSE:', JSON.stringify(data, null, 2));
+          if (isMounted) {
+            if (
+              data?.success &&
+              data.data?.isSubscriptionActive &&
+              data.data?.planDetails?.name &&
+              typeof data.data.planDetails.name === 'string'
+            ) {
+              console.log('Setting planName to:', data.data.planDetails.name);
+              setPlanName(data.data.planDetails.name);
+            } else {
+              console.warn('No active subscription or invalid response:', data);
+              setPlanName('No Subscription');
+              setErrorMessage('No Subscription.');
+            }
+          }
+        } catch (subscriptionError: any) {
+          console.error('Error fetching subscription:', subscriptionError.message, subscriptionError.stack);
+          if (isMounted) {
+            setPlanName('No Subscription');
+            setErrorMessage('Error fetching subscription: ' + (subscriptionError.message || 'Error fetching subscription'));
+          }
+        }
+      } catch (error: any) {
+        console.error('Unexpected error in fetchData:', error.message, error.stack);
+        if (isMounted) {
+          setPlanName('No Subscription');
+          setErrorMessage('Error fetching subscription: ' + (error.message || 'Error fetching subscription'));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
-    fetchAndUpdateProfile();
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [updateProfile]);
 
   const handleClose = () => {
@@ -138,20 +215,20 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   };
 
   const menuItems = [
-    {title: 'Personal Details', icon: 'account-outline'},
-    {title: 'Favorites', icon: 'heart-outline'},
-    {title: 'Subscription Details', icon: 'crown-outline'},
-    {title: 'Company Details', icon: 'domain'},
-    {title: 'Product Details', icon: 'view-grid-outline'},
-    {title: 'Investment Details', icon: 'cash-multiple'},
-    {title: 'Resources', icon: 'folder-outline', isSection: true},
-    {title: 'Settings', icon: 'cog'},
+    { title: 'Personal Details', icon: 'account-outline' },
+    { title: 'Favorites', icon: 'heart-outline' },
+    { title: 'Subscription Details', icon: 'crown-outline' },
+    { title: 'Company Details', icon: 'domain' },
+    { title: 'Product Details', icon: 'view-grid-outline' },
+    { title: 'Investment Details', icon: 'cash-multiple' },
+    { title: 'Resources', icon: 'folder-outline', isSection: true },
+    { title: 'Settings', icon: 'cog' },
   ];
 
   const resourceItems = [
-    {title: 'Talent Pool', icon: 'account-group-outline'},
-    {title: 'Investment Opportunities', icon: 'trending-up'},
-    {title: 'How It Works', icon: 'help-circle-outline'},
+    { title: 'Talent Pool', icon: 'account-group-outline' },
+    { title: 'Investment Opportunities', icon: 'trending-up' },
+    { title: 'How It Works', icon: 'help-circle-outline' },
   ];
 
   const openSocialMedia = (url: string) => {
@@ -170,21 +247,21 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   };
   const profilePhoto = getProfilePhoto();
 
+  console.log('RENDER PLAN NAME:', planName);
+
   return (
     <TouchableWithoutFeedback onPress={handleClose}>
-      <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
+      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
         <TouchableWithoutFeedback>
-          <Animated.View 
+          <Animated.View
             style={[
               styles.menuContent,
               {
-                transform: [{translateX: menuSlideAnim}],
+                transform: [{ translateX: menuSlideAnim }],
               },
             ]}>
             <View style={styles.header}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleClose}>
+              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
                 <MaterialCommunityIcons
                   name="close"
                   size={metrics.scale(24)}
@@ -194,7 +271,7 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
               <View style={styles.profileSection}>
                 <View style={styles.avatarContainer}>
                   {profilePhoto ? (
-                    <Image source={{uri: profilePhoto}} style={styles.avatar} />
+                    <Image source={{ uri: profilePhoto }} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       <MaterialCommunityIcons
@@ -214,13 +291,23 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                       {profile.firstName} {profile.lastName}
                     </Text>
                   )}
-                  {profile?.email && (
-                    <Text style={styles.userEmail}>{profile.email}</Text>
+                  {profile?.email && <Text style={styles.userEmail}>{profile.email}</Text>}
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  ) : errorMessage ? (
+                    <Text style={[styles.planText, { color: Colors.error }]}>
+                      {errorMessage}
+                    </Text>
+                  ) : (
+                    <View style={styles.planContainer}>
+                      <MaterialCommunityIcons
+                        name="crown-outline"
+                        size={metrics.scale(18)}
+                        color={Colors.primary}
+                      />
+                      <Text style={styles.planText}>{planName}</Text>
+                    </View>
                   )}
-                  <View style={styles.planContainer}>
-                    <MaterialCommunityIcons name="crown-outline" size={metrics.scale(18)} color={Colors.primary} />
-                    <Text style={styles.planText}>Startup Plan</Text>
-                  </View>
                 </View>
               </View>
             </View>
@@ -232,7 +319,7 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                     style={[
                       styles.menuItem,
                       item.title === 'Resources' && styles.sectionHeader,
-                      item.title === 'Settings' && styles.settingsItem
+                      item.title === 'Settings' && styles.settingsItem,
                     ]}
                     onPress={() => handleMenuItemPress(item.title)}>
                     <MaterialCommunityIcons
@@ -240,10 +327,13 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                       size={metrics.scale(24)}
                       color={Colors.primary}
                     />
-                    <Text style={[
-                      styles.menuItemText,
-                      item.title === 'Resources' && styles.sectionHeaderText
-                    ]}>{item.title}</Text>
+                    <Text
+                      style={[
+                        styles.menuItemText,
+                        item.title === 'Resources' && styles.sectionHeaderText,
+                      ]}>
+                      {item.title}
+                    </Text>
                     {item.title === 'Resources' && (
                       <MaterialCommunityIcons
                         name={expandedSection === 'Resources' ? 'chevron-up' : 'chevron-down'}
@@ -253,7 +343,7 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                       />
                     )}
                   </TouchableOpacity>
-                  
+
                   {item.title === 'Resources' && expandedSection === 'Resources' && (
                     <View style={styles.subMenuContainer}>
                       {resourceItems.map((subItem, subIndex) => (
@@ -278,13 +368,11 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                 <View style={styles.socialButtons}>
                   <TouchableOpacity
                     style={styles.socialButton}
-                    onPress={() =>
-                      openSocialMedia('https://www.instagram.com/aikuai_platform/')
-                    }>
+                    onPress={() => openSocialMedia('https://www.instagram.com/aikuai_platform/')}>
                     <MaterialCommunityIcons name="instagram" size={28} color={Colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.socialButton, {marginRight: 0}]}
+                    style={[styles.socialButton, { marginRight: 0 }]}
                     onPress={() =>
                       openSocialMedia('https://www.linkedin.com/company/aiku-ai-platform/')
                     }>
@@ -424,15 +512,6 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontWeight: '500',
   },
-  logoutItem: {
-    marginTop: 'auto',
-    borderTopWidth: 1,
-    borderTopColor: `${Colors.border}50`,
-  },
-  logoutText: {
-    color: Colors.error,
-    fontWeight: '600',
-  },
   socialSection: {
     marginTop: metrics.margin.xl,
     alignItems: 'center',
@@ -443,12 +522,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: metrics.margin.md,
-    // gap: metrics.margin.xl, // <-- gap yerine aşağıdaki gibi marginRight kullan
   },
   socialButton: {
     padding: metrics.padding.sm,
-    marginRight: metrics.margin.xl, // Sonuncuda sıfırlayacağız
-    backgroundColor: Colors.cardBackground, // Arka plan ekle
+    marginRight: metrics.margin.xl,
+    backgroundColor: Colors.cardBackground,
     borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
@@ -498,4 +576,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Menu;
+export default React.memo(Menu);
