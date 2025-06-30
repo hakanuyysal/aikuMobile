@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../types';
@@ -149,217 +152,247 @@ const AddBillingInfo: React.FC<Props> = ({navigation, route}) => {
           </Text>
         </View>
 
-        <View style={styles.container}>
-          {/* Billing Type Selection */}
-          <View style={styles.billingTypeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.billingTypeButton,
-                billingType === 'individual' && styles.selectedBillingType,
-              ]}
-              onPress={() => setBillingType('individual')}>
-              <Text
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{flex: 1}}
+          keyboardVerticalOffset={56}>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            {/* Billing Type Selection */}
+            <View style={styles.billingTypeContainer}>
+              <TouchableOpacity
                 style={[
-                  styles.billingTypeText,
-                  billingType === 'individual' && styles.selectedBillingTypeText,
-                ]}>
-                Individual
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.billingTypeButton,
-                billingType === 'corporate' && styles.selectedBillingType,
-              ]}
-              onPress={() => setBillingType('corporate')}>
-              <Text
+                  styles.billingTypeButton,
+                  billingType === 'individual' && styles.selectedBillingType,
+                ]}
+                onPress={() => setBillingType('individual')}>
+                <Text
+                  style={[
+                    styles.billingTypeText,
+                    billingType === 'individual' &&
+                      styles.selectedBillingTypeText,
+                  ]}>
+                  Individual
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
-                  styles.billingTypeText,
-                  billingType === 'corporate' && styles.selectedBillingTypeText,
-                ]}>
-                Corporate
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Form Fields */}
-          {billingType === 'individual' ? (
-            <View style={styles.rowContainer}>
-              <View style={styles.halfInput}>
-                <TextInput
-                  style={[styles.input, errors.firstName && styles.inputError]}
-                  placeholder="First Name"
-                  placeholderTextColor={Colors.inactive}
-                  value={formData.firstName}
-                  onChangeText={value => handleInputChange('firstName', value)}
-                />
-                {errors.firstName && (
-                  <Text style={styles.errorText}>{errors.firstName}</Text>
-                )}
-              </View>
-              <View style={styles.halfInput}>
-                <TextInput
-                  style={[styles.input, errors.lastName && styles.inputError]}
-                  placeholder="Last Name"
-                  placeholderTextColor={Colors.inactive}
-                  value={formData.lastName}
-                  onChangeText={value => handleInputChange('lastName', value)}
-                />
-                {errors.lastName && (
-                  <Text style={styles.errorText}>{errors.lastName}</Text>
-                )}
-              </View>
+                  styles.billingTypeButton,
+                  billingType === 'corporate' && styles.selectedBillingType,
+                ]}
+                onPress={() => setBillingType('corporate')}>
+                <Text
+                  style={[
+                    styles.billingTypeText,
+                    billingType === 'corporate' &&
+                      styles.selectedBillingTypeText,
+                  ]}>
+                  Corporate
+                </Text>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <>
-              <TextInput
-                style={[styles.input, errors.companyName && styles.inputError]}
-                placeholder="Company Name"
-                placeholderTextColor={Colors.inactive}
-                value={formData.companyName}
-                onChangeText={value => handleInputChange('companyName', value)}
-              />
-              {errors.companyName && (
-                <Text style={styles.errorText}>{errors.companyName}</Text>
-              )}
 
+            {/* Form Fields */}
+            {billingType === 'individual' ? (
               <View style={styles.rowContainer}>
                 <View style={styles.halfInput}>
                   <TextInput
-                    style={[styles.input, errors.taxNumber && styles.inputError]}
-                    placeholder="Tax Number"
+                    style={[styles.input, errors.firstName && styles.inputError]}
+                    placeholder="First Name"
                     placeholderTextColor={Colors.inactive}
-                    value={formData.taxNumber}
-                    onChangeText={value => handleInputChange('taxNumber', value)}
-                    keyboardType="numeric"
+                    value={formData.firstName}
+                    onChangeText={value => handleInputChange('firstName', value)}
                   />
-                  {errors.taxNumber && (
-                    <Text style={styles.errorText}>{errors.taxNumber}</Text>
+                  {errors.firstName && (
+                    <Text style={styles.errorText}>{errors.firstName}</Text>
                   )}
                 </View>
                 <View style={styles.halfInput}>
                   <TextInput
-                    style={[styles.input, errors.taxOffice && styles.inputError]}
-                    placeholder="Tax Office"
+                    style={[styles.input, errors.lastName && styles.inputError]}
+                    placeholder="Last Name"
                     placeholderTextColor={Colors.inactive}
-                    value={formData.taxOffice}
-                    onChangeText={value => handleInputChange('taxOffice', value)}
+                    value={formData.lastName}
+                    onChangeText={value => handleInputChange('lastName', value)}
                   />
-                  {errors.taxOffice && (
-                    <Text style={styles.errorText}>{errors.taxOffice}</Text>
+                  {errors.lastName && (
+                    <Text style={styles.errorText}>{errors.lastName}</Text>
                   )}
                 </View>
               </View>
-            </>
-          )}
-
-          {billingType === 'individual' && (
-            <TextInput
-              style={[styles.input, errors.identityNumber && styles.inputError]}
-              placeholder="Identity Number"
-              placeholderTextColor={Colors.inactive}
-              value={formData.identityNumber}
-              onChangeText={value => handleInputChange('identityNumber', value)}
-              keyboardType="numeric"
-              maxLength={11}
-            />
-          )}
-
-          <TextInput
-            style={[styles.input, errors.address && styles.inputError]}
-            placeholder="Address"
-            placeholderTextColor={Colors.inactive}
-            value={formData.address}
-            onChangeText={value => handleInputChange('address', value)}
-            multiline
-          />
-          {errors.address && (
-            <Text style={styles.errorText}>{errors.address}</Text>
-          )}
-
-          <View style={styles.rowContainer}>
-            <View style={styles.halfInput}>
-              <TextInput
-                style={[styles.input, errors.city && styles.inputError]}
-                placeholder="City"
-                placeholderTextColor={Colors.inactive}
-                value={formData.city}
-                onChangeText={value => handleInputChange('city', value)}
-              />
-              {errors.city && (
-                <Text style={styles.errorText}>{errors.city}</Text>
-              )}
-            </View>
-            <View style={styles.halfInput}>
-              <TextInput
-                style={[styles.input, errors.district && styles.inputError]}
-                placeholder="District"
-                placeholderTextColor={Colors.inactive}
-                value={formData.district}
-                onChangeText={value => handleInputChange('district', value)}
-              />
-              {errors.district && (
-                <Text style={styles.errorText}>{errors.district}</Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.rowContainer}>
-            <View style={styles.halfInput}>
-              <TextInput
-                style={[styles.input, errors.zipCode && styles.inputError]}
-                placeholder="Zip Code"
-                placeholderTextColor={Colors.inactive}
-                value={formData.zipCode}
-                onChangeText={value => handleInputChange('zipCode', value)}
-                keyboardType="numeric"
-              />
-              {errors.zipCode && (
-                <Text style={styles.errorText}>{errors.zipCode}</Text>
-              )}
-            </View>
-            <View style={styles.halfInput}>
-              <TextInput
-                style={[styles.input, errors.phone && styles.inputError]}
-                placeholder="Phone"
-                placeholderTextColor={Colors.inactive}
-                value={formData.phone}
-                onChangeText={value => handleInputChange('phone', value)}
-                keyboardType="phone-pad"
-              />
-              {errors.phone && (
-                <Text style={styles.errorText}>{errors.phone}</Text>
-              )}
-            </View>
-          </View>
-
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Email"
-            placeholderTextColor={Colors.inactive}
-            value={formData.email}
-            onChangeText={value => handleInputChange('email', value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          )}
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color={Colors.lightText} />
             ) : (
-              <Text style={styles.submitButtonText}>
-                {editMode ? 'Update' : 'Continue'}
-              </Text>
+              <>
+                <TextInput
+                  style={[
+                    styles.input,
+                    errors.companyName && styles.inputError,
+                  ]}
+                  placeholder="Company Name"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.companyName}
+                  onChangeText={value =>
+                    handleInputChange('companyName', value)
+                  }
+                />
+                {errors.companyName && (
+                  <Text style={styles.errorText}>{errors.companyName}</Text>
+                )}
+
+                <View style={styles.rowContainer}>
+                  <View style={styles.halfInput}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        errors.taxNumber && styles.inputError,
+                      ]}
+                      placeholder="Tax Number"
+                      placeholderTextColor={Colors.inactive}
+                      value={formData.taxNumber}
+                      onChangeText={value =>
+                        handleInputChange('taxNumber', value)
+                      }
+                      keyboardType="numeric"
+                    />
+                    {errors.taxNumber && (
+                      <Text style={styles.errorText}>{errors.taxNumber}</Text>
+                    )}
+                  </View>
+                  <View style={styles.halfInput}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        errors.taxOffice && styles.inputError,
+                      ]}
+                      placeholder="Tax Office"
+                      placeholderTextColor={Colors.inactive}
+                      value={formData.taxOffice}
+                      onChangeText={value =>
+                        handleInputChange('taxOffice', value)
+                      }
+                    />
+                    {errors.taxOffice && (
+                      <Text style={styles.errorText}>{errors.taxOffice}</Text>
+                    )}
+                  </View>
+                </View>
+              </>
             )}
-          </TouchableOpacity>
-        </View>
+
+            {billingType === 'individual' && (
+              <TextInput
+                style={[
+                  styles.input,
+                  errors.identityNumber && styles.inputError,
+                ]}
+                placeholder="Identity Number"
+                placeholderTextColor={Colors.inactive}
+                value={formData.identityNumber}
+                onChangeText={value =>
+                  handleInputChange('identityNumber', value)
+                }
+                keyboardType="numeric"
+                maxLength={11}
+              />
+            )}
+
+            <TextInput
+              style={[styles.input, errors.address && styles.inputError]}
+              placeholder="Address"
+              placeholderTextColor={Colors.inactive}
+              value={formData.address}
+              onChangeText={value => handleInputChange('address', value)}
+              multiline
+            />
+            {errors.address && (
+              <Text style={styles.errorText}>{errors.address}</Text>
+            )}
+
+            <View style={styles.rowContainer}>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.city && styles.inputError]}
+                  placeholder="City"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.city}
+                  onChangeText={value => handleInputChange('city', value)}
+                />
+                {errors.city && (
+                  <Text style={styles.errorText}>{errors.city}</Text>
+                )}
+              </View>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.district && styles.inputError]}
+                  placeholder="District"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.district}
+                  onChangeText={value => handleInputChange('district', value)}
+                />
+                {errors.district && (
+                  <Text style={styles.errorText}>{errors.district}</Text>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.rowContainer}>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.zipCode && styles.inputError]}
+                  placeholder="Zip Code"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.zipCode}
+                  onChangeText={value => handleInputChange('zipCode', value)}
+                  keyboardType="numeric"
+                />
+                {errors.zipCode && (
+                  <Text style={styles.errorText}>{errors.zipCode}</Text>
+                )}
+              </View>
+              <View style={styles.halfInput}>
+                <TextInput
+                  style={[styles.input, errors.phone && styles.inputError]}
+                  placeholder="Phone"
+                  placeholderTextColor={Colors.inactive}
+                  value={formData.phone}
+                  onChangeText={value => handleInputChange('phone', value)}
+                  keyboardType="phone-pad"
+                />
+                {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+            </View>
+
+            <TextInput
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="Email"
+              placeholderTextColor={Colors.inactive}
+              value={formData.email}
+              onChangeText={value => handleInputChange('email', value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color={Colors.lightText} />
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  {editMode ? 'Update' : 'Continue'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -373,7 +406,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    flex: 1,
     padding: metrics.padding.lg,
   },
   billingTypeContainer: {
@@ -442,7 +474,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: metrics.padding.md,
-    paddingVertical: metrics.padding.sm,
+    height: 56,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },

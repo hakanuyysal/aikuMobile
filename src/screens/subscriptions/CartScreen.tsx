@@ -8,6 +8,7 @@ import {
   Animated,
   SafeAreaView,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import {Colors} from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -23,6 +24,14 @@ type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
+interface Plan {
+  key: string;
+  title: string;
+  subtitle: string;
+  price: number;
+  features: string[];
+}
+
 type PlanDetails = {
   name: string;
   price: number;
@@ -31,11 +40,7 @@ type PlanDetails = {
   hasPaymentHistory: boolean;
 };
 
-interface PlanProps {
-  title: string;
-  subtitle: string;
-  price: number;
-  features: string[];
+interface PlanProps extends Plan {
   isYearly?: boolean;
   index: number;
   scrollX: Animated.Value;
@@ -43,9 +48,10 @@ interface PlanProps {
 }
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const CARD_WIDTH = metrics.getWidthPercentage(75);
-const CARD_SPACING = metrics.spacing.sm;
-const CARD_OFFSET = (SCREEN_WIDTH - CARD_WIDTH) / 2.5;
+const CARD_WIDTH = metrics.getWidthPercentage(80);
+const SPACING = metrics.spacing.md;
+const ITEM_TOTAL_WIDTH = CARD_WIDTH + SPACING;
+const SIDECARD_OFFSET = (SCREEN_WIDTH - ITEM_TOTAL_WIDTH) / 2;
 
 const PlanCard: React.FC<PlanProps> = ({
   title,
@@ -62,7 +68,6 @@ const PlanCard: React.FC<PlanProps> = ({
   const yearlyPrice = Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
 
-  // Component mount olduğunda history kontrolü yap
   useEffect(() => {
     const checkPaymentHistory = async () => {
       try {
@@ -76,9 +81,9 @@ const PlanCard: React.FC<PlanProps> = ({
   }, []);
 
   const inputRange = [
-    (index - 1) * CARD_WIDTH,
-    index * CARD_WIDTH,
-    (index + 1) * CARD_WIDTH,
+    (index - 1) * ITEM_TOTAL_WIDTH,
+    index * ITEM_TOTAL_WIDTH,
+    (index + 1) * ITEM_TOTAL_WIDTH,
   ];
 
   const scale = scrollX.interpolate({
@@ -110,24 +115,19 @@ const PlanCard: React.FC<PlanProps> = ({
     try {
       setLoading(true);
       
-      // Startup Plan ve ücretsiz deneme kontrolü
       if (isStartupPlan && !hasHistory) {
-        // Ödeme geçmişi yoksa direkt success ekranına git
         navigation.navigate('PaymentSuccess', {
           message: 'Your free trial has been successfully activated!',
         });
         return;
       }
 
-      // Eğer ücretli bir plan ise billing info kontrolü yap
       const billingResponse = await BillingService.getDefaultBillingInfo();
       const billingInfo = billingResponse?.data as BillingInfo | undefined;
       const hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
       
-      // Fiyatı belirle
       const finalPrice = isYearly ? yearlyPrice : price;
       
-      // Plan detaylarını hazırla
       const planDetails: PlanDetails = {
         name: title,
         price: finalPrice,
@@ -136,7 +136,6 @@ const PlanCard: React.FC<PlanProps> = ({
         hasPaymentHistory: hasHistory,
       };
 
-      // Her durumda önce BillingInfo ekranına git
       navigation.navigate('BillingInfo', {
         planDetails,
         hasExistingBillingInfo: hasBillingInfo,
@@ -152,7 +151,6 @@ const PlanCard: React.FC<PlanProps> = ({
         billingCycle: isYearly ? 'yearly' : 'monthly',
         hasPaymentHistory: hasHistory,
       };
-      // Hata durumunda da BillingInfo ekranına git
       navigation.navigate('BillingInfo', {
         planDetails: errorPlanDetails,
         hasExistingBillingInfo: false,
@@ -168,7 +166,6 @@ const PlanCard: React.FC<PlanProps> = ({
         styles.planCard,
         {
           width: CARD_WIDTH,
-          marginHorizontal: CARD_SPACING / 2,
           transform: [
             {scale},
             {rotateY},
@@ -232,14 +229,18 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
       end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" />
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity
-              style={styles.backButton}
+              style={styles.headerButton}
               onPress={() => navigation.goBack()}>
-              <Icon name="chevron-back" size={24} color={Colors.lightText} />
+              <Icon name="chevron-back" size={28} color={Colors.lightText} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Subscriptions</Text>
+            <View style={styles.headerButton} />
+          </View>
+          <View style={styles.toggleContainer}>
             <View style={styles.toggle}>
               <TouchableOpacity
                 style={[styles.toggleButton, !isYearly && styles.toggleActive]}
@@ -266,37 +267,42 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
             </View>
           </View>
 
-          <Animated.ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            snapToInterval={CARD_WIDTH}
-            decelerationRate="fast"
-            onScroll={Animated.event(
-              [{nativeEvent: {contentOffset: {x: scrollX}}}],
-              {useNativeDriver: true},
-            )}
-            scrollEventThrottle={16}>
-            {plans.map((plan, index) => (
-              <PlanCard
-                key={index}
-                {...plan}
-                isYearly={isYearly}
-                index={index}
-                scrollX={scrollX}
-                navigation={navigation}
-              />
-            ))}
-          </Animated.ScrollView>
+          <View style={styles.scrollViewContainer}>
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: SIDECARD_OFFSET,
+              }}
+              snapToInterval={ITEM_TOTAL_WIDTH}
+              decelerationRate="fast"
+              onScroll={Animated.event(
+                [{nativeEvent: {contentOffset: {x: scrollX}}}],
+                {useNativeDriver: true},
+              )}
+              scrollEventThrottle={16}>
+              {plans.map((plan, index) => (
+                <View key={plan.key} style={styles.cardWrapper}>
+                  <PlanCard
+                    {...plan}
+                    isYearly={isYearly}
+                    index={index}
+                    scrollX={scrollX}
+                    navigation={navigation}
+                  />
+                </View>
+              ))}
+            </Animated.ScrollView>
+          </View>
         </View>
       </SafeAreaView>
     </LinearGradient>
   );
 };
 
-const plans = [
+const plans: Plan[] = [
   {
+    key: 'startup',
     title: 'Startup Plan',
     subtitle: 'For AI Startups & Developers',
     price: 49,
@@ -308,6 +314,7 @@ const plans = [
     ],
   },
   {
+    key: 'business',
     title: 'Business Plan',
     subtitle: 'For Companies & Enterprises',
     price: 75,
@@ -319,6 +326,7 @@ const plans = [
     ],
   },
   {
+    key: 'investor',
     title: 'Investor Plan',
     subtitle: 'For VCs & Angel Investors',
     price: 99,
@@ -342,29 +350,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: metrics.padding.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
+    justifyContent: 'space-between',
+    paddingHorizontal: metrics.padding.sm,
+    height: 56,
   },
-  backButton: {
-    position: 'absolute',
-    left: metrics.margin.lg,
-    top: metrics.margin.md * 1.1,
-    zIndex: 1,
+  headerButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: metrics.fontSize.xxl,
-    fontWeight: 'bold',
-    marginBottom: metrics.margin.lg,
+    fontSize: metrics.fontSize.xl,
+    fontWeight: '600',
     color: Colors.lightText,
+  },
+  toggleContainer: {
+    alignItems: 'center',
+    marginBottom: metrics.margin.lg,
   },
   toggle: {
     flexDirection: 'row',
     backgroundColor: Colors.cardBackground,
     borderRadius: metrics.borderRadius.circle,
     padding: metrics.padding.xs,
-    marginBottom: metrics.margin.lg,
-    marginTop: metrics.margin.sm,
   },
   toggleButton: {
     paddingVertical: metrics.padding.sm,
@@ -381,11 +392,18 @@ const styles = StyleSheet.create({
   toggleTextActive: {
     color: Colors.lightText,
   },
-  scrollContent: {
-    paddingHorizontal: CARD_OFFSET - CARD_SPACING / 2,
+  scrollViewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: metrics.scale(80),
+  },
+  cardWrapper: {
+    width: ITEM_TOTAL_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
   },
   planCard: {
-    marginTop: metrics.margin.xxl,
     borderRadius: metrics.borderRadius.xl,
     padding: metrics.padding.xl,
     shadowColor: '#000',
@@ -396,7 +414,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(20),
     elevation: 15,
-    height: metrics.getHeightPercentage(48),
+    height: metrics.getHeightPercentage(52),
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     borderWidth: 1,
