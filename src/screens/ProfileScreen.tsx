@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,26 +9,27 @@ import {
   SafeAreaView,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Colors} from '../constants/colors';
+import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
-import {useAuth} from '../contexts/AuthContext';
-import {useNavigation, useIsFocused} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../../App';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../App';
 import LinearGradient from 'react-native-linear-gradient';
-import {useProfileStore} from '../store/profileStore';
+import { useProfileStore } from '../store/profileStore';
 import AuthService from '../services/AuthService';
-import PaymentService from '../services/PaymentService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ProfileScreen = () => {
-  const {user} = useAuth();
-  const {profile, updateProfile} = useProfileStore();
+  const { user } = useAuth();
+  const { profile, updateProfile } = useProfileStore();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const isFocused = useIsFocused();
   const scrollY = new Animated.Value(0);
-  const [planName, setPlanName] = useState('');
+  const [planName, setPlanName] = useState('Loading...');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLatestProfile = async () => {
@@ -42,6 +43,7 @@ const ProfileScreen = () => {
           }
         } catch (error) {
           console.error('Profil verisi çekilirken hata:', error);
+          setErrorMessage('Profil bilgileri alınamadı.');
         }
       }
     };
@@ -52,14 +54,42 @@ const ProfileScreen = () => {
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const response = await PaymentService.getSubscriptionDetails();
-        if (response && response.data && response.data.planDetails && response.data.planDetails.name) {
-          setPlanName(response.data.planDetails.name);
-        } else {
-          setPlanName("No Subscription");
+        const token = await AsyncStorage.getItem('token');
+        console.log('SUBSCRIPTION TOKEN:', token ? 'Token exists' : 'No token found');
+        if (!token) {
+          throw new Error('No auth token found');
         }
-      } catch (error) {
-        setPlanName("No Subscription");
+
+        const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('SUBSCRIPTION RESPONSE:', JSON.stringify(data, null, 2));
+        if (
+          data?.success &&
+          data.data?.isSubscriptionActive &&
+          data.data?.planDetails?.name &&
+          typeof data.data.planDetails.name === 'string'
+        ) {
+          console.log('Setting planName to:', data.data.planDetails.name);
+          setPlanName(data.data.planDetails.name);
+        } else {
+          console.warn('No active subscription or invalid response:', data);
+          setPlanName('No Subscription');
+          setErrorMessage('Aktif abonelik bulunmuyor.');
+        }
+      } catch (error: any) {
+        console.error('Error fetching subscription:', error.message, error.stack);
+        setPlanName('No Subscription');
+        setErrorMessage('Abonelik bilgileri alınamadı: ' + (error.message || 'Bilinmeyen hata'));
       }
     };
     fetchPlan();
@@ -122,7 +152,6 @@ const ProfileScreen = () => {
   ];
 
   const getProfilePhoto = () => {
-    // Öncelik sırası: photoURL > profilePhoto
     const url = profile.photoURL || profile.profilePhoto;
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -136,16 +165,16 @@ const ProfileScreen = () => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
-        <Animated.View style={[styles.header, {height: headerHeight}]}>
+        <Animated.View style={[styles.header, { height: headerHeight }]}>
           <View style={styles.headerContent}>
             <View style={styles.avatarContainer}>
               {profilePhoto ? (
                 <Image
-                  source={{uri: profilePhoto}}
+                  source={{ uri: profilePhoto }}
                   style={styles.avatar}
                   onError={e => console.log('Profile image load error:', e.nativeEvent)}
                 />
@@ -186,7 +215,9 @@ const ProfileScreen = () => {
                       color="#FFD700"
                       style={styles.roleIcon}
                     />
-                    <Text style={styles.roleText}>{planName}</Text>
+                    <Text style={styles.roleText}>
+                      {errorMessage || planName}
+                    </Text>
                   </View>
                 </View>
                 <TouchableOpacity
@@ -207,8 +238,8 @@ const ProfileScreen = () => {
           style={styles.container}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
-            [{nativeEvent: {contentOffset: {y: scrollY}}}],
-            {useNativeDriver: false},
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false },
           )}
           scrollEventThrottle={16}>
           <View style={styles.menuContainer}>
@@ -221,8 +252,8 @@ const ProfileScreen = () => {
                 <LinearGradient
                   colors={item.gradient}
                   style={styles.menuItemIcon}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 1}}>
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}>
                   <MaterialCommunityIcons
                     name={item.icon}
                     size={24}
