@@ -1,7 +1,6 @@
 import {create} from 'zustand';
 import {persist, createJSONStorage} from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 
 interface Social {
   linkedin?: string;
@@ -19,6 +18,7 @@ interface Profile {
   location?: string;
   profileInfo?: string;
   photoURL?: string;
+  profilePhoto?: string;
   social: Social;
   isSubscriber?: boolean;
   planDetails?: {

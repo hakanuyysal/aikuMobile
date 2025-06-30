@@ -93,18 +93,11 @@ class AuthService {
       const paramsString = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
       const params = new URLSearchParams(paramsString);
       const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const expiresIn = params.get('expires_in');
-      const providerToken = params.get('provider_token');
 
       if (accessToken) {
         await AsyncStorage.setItem('token', accessToken);
-        // İstersen refreshToken, expiresIn, providerToken da kaydedebilirsin
-        // await AsyncStorage.setItem('refresh_token', refreshToken ?? '');
-        // await AsyncStorage.setItem('provider_token', providerToken ?? '');
-
         // Kullanıcı bilgisini almak için Supabase'den user'ı çekebilirsin
-        const { data, error } = await supabase.auth.getUser(accessToken);
+        const { data } = await supabase.auth.getUser(accessToken);
         if (data?.user) {
           await AsyncStorage.setItem('user_id', data.user.id);
           await AsyncStorage.setItem('user', JSON.stringify(data.user));
@@ -144,8 +137,11 @@ class AuthService {
     }
   }
 
-  async logout(navigation) {
+  async logout(navigation: any) {
     try {
+      if (!navigation || typeof navigation.reset !== 'function') {
+        throw new Error('Navigation parameter is invalid!');
+      }
       const token = await AsyncStorage.getItem('token');
       if (token) {
         try {
@@ -162,6 +158,7 @@ class AuthService {
       });
     } catch (error) {
       console.error('Logout error:', error);
+      throw error;
     }
   }
 

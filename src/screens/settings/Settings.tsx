@@ -18,8 +18,6 @@ import AuthService from '../../services/AuthService';
 import {useAuth} from '../../contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../../App';
-import { useProfileStore } from '../../store/profileStore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SettingsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -45,18 +43,10 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await AuthService.logout();
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('user_id');
-            useProfileStore.getState().updateProfile({ social: {} });
+            await AuthService.logout(navigation);
             if (updateUser) {
               updateUser({} as any);
             }
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Auth' }],
-            });
           } catch (error) {
             console.error('Logout error:', error);
             Alert.alert(

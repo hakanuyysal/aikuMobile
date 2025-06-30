@@ -11,15 +11,16 @@ import {
   Alert,
   Linking,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../App';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import {useProfileStore} from '../store/profileStore';
+import AuthService from '../services/AuthService';
 
 interface MenuProps {
   onClose: () => void;
@@ -33,7 +34,7 @@ const SCALE = 0.9;
 
 const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const {profile} = useProfileStore();
+  const {profile, updateProfile} = useProfileStore();
   const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
   const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
@@ -64,6 +65,16 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
       }),
     ]).start();
   }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
+
+  useEffect(() => {
+    const fetchAndUpdateProfile = async () => {
+      const user = await AuthService.getCurrentUser();
+      if (user) {
+        updateProfile(user);
+      }
+    };
+    fetchAndUpdateProfile();
+  }, [updateProfile]);
 
   const handleClose = () => {
     Animated.parallel([
@@ -196,11 +207,13 @@ const Menu: React.FC<MenuProps> = ({onClose, mainViewRef, scaleRef}) => {
                 </View>
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
-                  <Text style={styles.userName}>
-                    {profile?.firstName && profile?.lastName
-                      ? `${profile.firstName} ${profile.lastName}`
-                      : 'Kullanıcı Adı'}
-                  </Text>
+                  {!profile?.firstName ? (
+                    <ActivityIndicator />
+                  ) : (
+                    <Text style={styles.userName}>
+                      {profile.firstName} {profile.lastName}
+                    </Text>
+                  )}
                   {profile?.email && (
                     <Text style={styles.userEmail}>{profile.email}</Text>
                   )}
