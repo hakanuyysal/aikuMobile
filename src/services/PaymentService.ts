@@ -3,6 +3,20 @@ import {MMKVInstance} from '../storage/mmkv';
 import {PaymentHistoryResponse} from '../types';
 import {Platform} from 'react-native';
 import axios from 'axios';
+import api from './axiosInstance';
+
+interface PaymentHistory {
+  _id: string;
+  amount: number;
+  date: string;
+  status: 'success' | 'failed';
+  description: string;
+}
+
+interface PaymentHistoryResponse {
+  success: boolean;
+  data: PaymentHistory[];
+}
 
 class PaymentService {
   private baseURL: string;
@@ -206,12 +220,8 @@ class PaymentService {
 
   // Ödeme geçmişini getir
   async getPaymentHistory(): Promise<PaymentHistoryResponse> {
-    try {
-      const response = await BaseService.getRequest(`${this.baseURL}/history`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get('/subscriptions/payment-history');
+    return response.data;
   }
 
   // Ücretsiz deneme kaydı

@@ -16,16 +16,25 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import {RootStackParamList} from '../../types';
-import PaymentService from '../../services/PaymentService';
 import BillingService from '../../services/BillingService';
 import {BillingInfo} from '../../types';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from 'react-native-config';
 
 type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
-interface Plan {
+interface PlanData {
   key: string;
+  title: string;
+  subtitle: string;
+  price: number;
+  features: string[];
+}
+
+interface Plan {
   title: string;
   subtitle: string;
   price: number;
@@ -64,21 +73,56 @@ const PlanCard: React.FC<PlanProps> = ({
   navigation,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [hasHistory, setHasHistory] = useState(false);
+  const [showFreeTrial, setShowFreeTrial] = useState(false);
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
+
   const yearlyPrice = Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
 
   useEffect(() => {
-    const checkPaymentHistory = async () => {
+    const checkUserEligibility = async () => {
+      if (!isStartupPlan) {
+        setIsStatusLoading(false);
+        return;
+      }
+  
+      setIsStatusLoading(true);
+  
       try {
-        const response = await PaymentService.getPaymentHistory();
-        setHasHistory(response.data && response.data.length > 0);
+        const token = await AsyncStorage.getItem('token');
+        
+        if (!token) {
+          setShowFreeTrial(true);
+          setIsStatusLoading(false);
+          return;
+        }
+  
+        const api = axios.create({
+          baseURL: Config.API_URL || 'https://api.aikuaiplatform.com/api',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        const response = await api.get('/subscriptions/payment-history');
+        const history = response.data?.data;
+        
+        const hasUsedStartupPlan = history && Array.isArray(history) && history.some((p: { plan: string }) => p.plan === 'startup');
+
+        if (hasUsedStartupPlan) {
+          setShowFreeTrial(false);
+        } else {
+          setShowFreeTrial(true);
+        }
+  
       } catch (error) {
-        console.error('Error checking payment history:', error);
+        console.log('Error checking user eligibility:', error);
+        setShowFreeTrial(false);
+      } finally {
+        setIsStatusLoading(false);
       }
     };
-    checkPaymentHistory();
-  }, []);
+  
+    checkUserEligibility();
+  }, [isStartupPlan]);
 
   const inputRange = [
     (index - 1) * ITEM_TOTAL_WIDTH,
@@ -114,8 +158,8 @@ const PlanCard: React.FC<PlanProps> = ({
   const handleGetStarted = async () => {
     try {
       setLoading(true);
-      
-      if (isStartupPlan && !hasHistory) {
+
+      if (showFreeTrial) {
         navigation.navigate('PaymentSuccess', {
           message: 'Your free trial has been successfully activated!',
         });
@@ -133,7 +177,7 @@ const PlanCard: React.FC<PlanProps> = ({
         price: finalPrice,
         description: subtitle,
         billingCycle: isYearly ? 'yearly' : 'monthly',
-        hasPaymentHistory: hasHistory,
+        hasPaymentHistory: !showFreeTrial,
       };
 
       navigation.navigate('BillingInfo', {
@@ -149,7 +193,7 @@ const PlanCard: React.FC<PlanProps> = ({
         price: isYearly ? yearlyPrice : price,
         description: subtitle,
         billingCycle: isYearly ? 'yearly' : 'monthly',
-        hasPaymentHistory: hasHistory,
+        hasPaymentHistory: !showFreeTrial,
       };
       navigation.navigate('BillingInfo', {
         planDetails: errorPlanDetails,
@@ -180,7 +224,7 @@ const PlanCard: React.FC<PlanProps> = ({
         <Text style={styles.subtitle}>{subtitle}</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.price}>
-          {isStartupPlan && !hasHistory ? (
+          {isStartupPlan && showFreeTrial ? (
             <>
               <Text style={styles.originalPrice}>$49</Text>{' '}
               <Text style={styles.newPrice}>$0</Text>
@@ -191,7 +235,7 @@ const PlanCard: React.FC<PlanProps> = ({
           <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
           {isYearly && <Text style={styles.discount}> (10% off)</Text>}
         </Text>
-        {isStartupPlan && !hasHistory && (
+        {isStartupPlan && showFreeTrial && (
           <Text style={styles.trial}>⭐️ 6 month free trial!</Text>
         )}
         {isYearly && title !== 'Startup Plan' && (
@@ -204,10 +248,10 @@ const PlanCard: React.FC<PlanProps> = ({
         ))}
       </View>
       <TouchableOpacity
-        style={[styles.button, styles.absoluteButton, loading && styles.buttonDisabled]}
+        style={[styles.button, styles.absoluteButton, (loading || isStatusLoading) && styles.buttonDisabled]}
         onPress={handleGetStarted}
-        disabled={loading}>
-        {loading ? (
+        disabled={loading || isStatusLoading}>
+        {loading || isStatusLoading ? (
           <ActivityIndicator color={Colors.lightText} />
         ) : (
           <Text style={styles.buttonText}>Get Started</Text>
@@ -281,17 +325,20 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
                 {useNativeDriver: true},
               )}
               scrollEventThrottle={16}>
-              {plans.map((plan, index) => (
-                <View key={plan.key} style={styles.cardWrapper}>
-                  <PlanCard
-                    {...plan}
-                    isYearly={isYearly}
-                    index={index}
-                    scrollX={scrollX}
-                    navigation={navigation}
-                  />
-                </View>
-              ))}
+              {plans.map((plan, index) => {
+                const {key, ...planProps} = plan;
+                return (
+                  <View key={key} style={styles.cardWrapper}>
+                    <PlanCard
+                      {...planProps}
+                      isYearly={isYearly}
+                      index={index}
+                      scrollX={scrollX}
+                      navigation={navigation}
+                    />
+                  </View>
+                );
+              })}
             </Animated.ScrollView>
           </View>
         </View>
@@ -300,7 +347,7 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
   );
 };
 
-const plans: Plan[] = [
+const plans: PlanData[] = [
   {
     key: 'startup',
     title: 'Startup Plan',
