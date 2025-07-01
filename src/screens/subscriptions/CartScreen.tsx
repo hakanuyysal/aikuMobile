@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   StatusBar,
+  Alert,
 } from 'react-native';
 import {Colors} from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -21,6 +22,8 @@ import {BillingInfo} from '../../types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
+import PaymentService from '../../services/PaymentService';
+import {z} from 'zod';
 
 type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -155,23 +158,102 @@ const PlanCard: React.FC<PlanProps> = ({
     outputRange: [-15, 0, 15],
   });
 
-  const handleGetStarted = async () => {
+  const handleStartFreeTrial = async () => {
+    console.log('--- handleStartFreeTrial ÇAĞRILDI ---');
     try {
-      setLoading(true);
+      console.log('Fatura bilgisi alınıyor...');
+      let billingInfo;
+      let billingError = null;
+      try {
+        const billingResponse = await BillingService.getDefaultBillingInfo();
+        console.log('billingResponse:', billingResponse);
+        if (billingResponse && billingResponse.success && billingResponse.data) {
+          billingInfo = billingResponse.data;
+        } else {
+          billingError = billingResponse?.message || 'Fatura bilgisi alınamadı';
+        }
+      } catch (err: any) {
+        console.log('Fatura bilgisi alınırken catch:', err);
+        billingError = err?.message || 'Fatura bilgisi alınamadı';
+      }
 
-      if (showFreeTrial) {
-        navigation.navigate('PaymentSuccess', {
-          message: 'Your free trial has been successfully activated!',
-        });
+      if (!billingInfo) {
+        console.log('Fatura bilgisi YOK veya alınamadı, kullanıcı yönlendiriliyor.', billingError);
+        Alert.alert(
+          'Billing Information Required',
+          'You need to add billing information before starting the free trial.',
+          [
+            {
+              text: 'Add Billing Information',
+              onPress: () => {
+                console.log('User navigated to billing information screen.');
+                navigation.navigate('BillingInfo', {
+                  planDetails: {
+                    name: title,
+                    price: isYearly ? yearlyPrice : price,
+                    description: subtitle,
+                    billingCycle: isYearly ? 'yearly' : 'monthly',
+                    hasPaymentHistory: false,
+                  },
+                  hasExistingBillingInfo: false,
+                  existingBillingInfo: null,
+                });
+              },
+            },
+          ]
+        );
         return;
       }
 
+      const freePaymentData = {
+        amount: isYearly ? yearlyPrice : price,
+        description: `$0 First Subscription - ${title} (Original: $${isYearly ? yearlyPrice : price} / ${isYearly ? 'year' : 'month'})`,
+        planName: title,
+        billingCycle: isYearly ? 'yearly' : 'monthly',
+        originalPrice: isYearly ? yearlyPrice : price,
+        isFirstPayment: true,
+        paymentDate: new Date().toISOString(),
+        billingInfo: billingInfo,
+      };
+      console.log('freePaymentData:', freePaymentData);
+
+      const response = await PaymentService.recordFreePayment(freePaymentData);
+      console.log('recordFreePayment response:', response);
+
+      if (response && response.success) {
+        console.log('Successfully registered, navigating to PaymentSuccess screen.');
+        navigation.navigate('PaymentSuccess', {
+          message: 'Your free trial has started!',
+        });
+      } else {
+        console.log('API success=false or no response:', response);
+        Alert.alert('Error', response?.message || 'An error occurred.');
+      }
+    } catch (error: any) {
+      console.log('catch bloğu, hata:', error, error?.response?.data);
+      Alert.alert('Error', error.message || 'An error occurred.');
+    }
+  };
+
+  const handleGetStarted = async () => {
+    console.log('--- handleGetStarted ÇAĞRILDI ---');
+    setLoading(true);
+    try {
+      if (showFreeTrial) {
+        console.log('showFreeTrial TRUE, handleStartFreeTrial çağrılıyor.');
+        await handleStartFreeTrial();
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fatura bilgisi alınıyor...');
       const billingResponse = await BillingService.getDefaultBillingInfo();
+      console.log('billingResponse:', billingResponse);
       const billingInfo = billingResponse?.data as BillingInfo | undefined;
       const hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
-      
+      console.log('billingInfo:', billingInfo, 'hasBillingInfo:', hasBillingInfo);
+
       const finalPrice = isYearly ? yearlyPrice : price;
-      
       const planDetails: PlanDetails = {
         name: title,
         price: finalPrice,
@@ -179,15 +261,22 @@ const PlanCard: React.FC<PlanProps> = ({
         billingCycle: isYearly ? 'yearly' : 'monthly',
         hasPaymentHistory: !showFreeTrial,
       };
+      console.log('planDetails:', planDetails);
 
-      navigation.navigate('BillingInfo', {
-        planDetails,
+      navigation.navigate('BillingInfoScreen', {
+        planDetails: {
+          name: title,
+          price: isYearly ? yearlyPrice : price,
+          description: subtitle,
+          billingCycle: isYearly ? 'yearly' : 'monthly',
+          hasPaymentHistory: !showFreeTrial,
+        },
         hasExistingBillingInfo: hasBillingInfo,
         existingBillingInfo: billingInfo,
       });
-
-    } catch (error) {
-      console.error('Error during plan selection:', error);
+    } catch (error: any) {
+      console.log('catch bloğu, hata:', error);
+      Alert.alert('Error', error.message || 'An error occurred.');
       const errorPlanDetails: PlanDetails = {
         name: title,
         price: isYearly ? yearlyPrice : price,
@@ -195,12 +284,14 @@ const PlanCard: React.FC<PlanProps> = ({
         billingCycle: isYearly ? 'yearly' : 'monthly',
         hasPaymentHistory: !showFreeTrial,
       };
-      navigation.navigate('BillingInfo', {
+      navigation.navigate('BillingInfoScreen', {
         planDetails: errorPlanDetails,
         hasExistingBillingInfo: false,
+        existingBillingInfo: null,
       });
     } finally {
       setLoading(false);
+      console.log('--- handleGetStarted BİTTİ ---');
     }
   };
 

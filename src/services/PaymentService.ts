@@ -4,6 +4,10 @@ import {PaymentHistoryResponse} from '../types';
 import {Platform} from 'react-native';
 import axios from 'axios';
 import api from './axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Alert} from 'react-native';
+import BillingService from './BillingService';
+
 
 interface PaymentHistory {
   _id: string;
@@ -227,12 +231,17 @@ class PaymentService {
   // Ücretsiz deneme kaydı
   async recordFreePayment(freePaymentData: any) {
     try {
+      const token = await AsyncStorage.getItem('token');
+      console.log('PaymentService.recordFreePayment TOKEN:', token);
+      console.log('PaymentService.recordFreePayment freePaymentData:', freePaymentData);
       const response = await BaseService.postRequest(
         `${this.baseURL}/record-free-payment`,
         freePaymentData,
       );
+      console.log('PaymentService.recordFreePayment response:', response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
+      console.log('PaymentService.recordFreePayment HATA:', error, error?.response?.data);
       throw error;
     }
   }
