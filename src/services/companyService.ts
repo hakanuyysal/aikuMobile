@@ -203,7 +203,12 @@ export const companyService = {
       console.error('Dosya analizi sırasında hata oluştu:', error);
       throw error;
     }
-  }
+  },
+
+  getTeamMembers: async (companyId: string) => {
+    const response = await api.get(`/team/company/${companyId}`);
+    return response.data; // teamMembers: []
+  },
 };
 
 export default companyService; 
