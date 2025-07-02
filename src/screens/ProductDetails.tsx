@@ -23,7 +23,7 @@ import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import DocumentPicker, { DocumentPickerResponse } from 'react-native-document-picker';
+import { pick } from '@react-native-documents/picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 
@@ -110,6 +110,22 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
     } catch (err) {
       if (!DocumentPicker.isCancel(err)) {
         setAiError('File selection failed.');
+      }
+    }
+  };
+
+  const handlePickPDF = async () => {
+    try {
+      const res = await pick({
+        type: ['application/pdf'],
+      });
+      if (res && res[0]) {
+        console.log('Seçilen PDF:', res[0]);
+        // res[0].uri, res[0].name, res[0].type
+      }
+    } catch (err) {
+      if (err && err.message !== 'User cancelled document picker') {
+        Alert.alert('Hata', 'PDF seçilemedi.');
       }
     }
   };

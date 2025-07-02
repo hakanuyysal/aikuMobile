@@ -30,6 +30,7 @@ import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
 import countryCodes from '../services/countryCodes.json';
 import { launchImageLibrary } from 'react-native-image-picker';
 import ImageCropPicker from 'react-native-image-crop-picker';
+import { pick } from '@react-native-documents/picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CompanyDetails'>;
 
@@ -764,12 +765,15 @@ const CompanyDetails = ({ navigation }: Props) => {
   const handlePickFile = async () => {
     setAiError('');
     try {
-      const res = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf, DocumentPicker.types.doc, DocumentPicker.types.docx],
+      const res = await pick({
+        type: ['application/pdf'],
       });
-      setAiFile(res);
+      if (res && res[0]) {
+        setAiFile(res[0]);
+        // console.log('Seçilen PDF:', res[0]);
+      }
     } catch (err) {
-      if (!DocumentPicker.isCancel(err)) {
+      if (err && err.message !== 'User cancelled document picker') {
         setAiError('File selection failed.');
       }
     }
