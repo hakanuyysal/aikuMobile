@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -70,6 +71,27 @@ const ChatDetailScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const { chatSessionId, receiverId, receiverName, companyId } = route.params as RouteParams;
+
+  useEffect(() => {
+    if (!companyId) {
+      Alert.alert(
+        'No Company Found',
+        'You need to add a company before you can use messaging.',
+        [
+          {
+            text: 'Add Company',
+            onPress: () => navigation.navigate('CompanyDetailScreen'),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  }, [companyId, navigation]);
+
+  if (!companyId) {
+    // Kullanıcıyı uyar veya geri gönder
+    return null; // veya bir boş ekran döndür
+  }
 
   const markAllMessagesAsRead = useCallback(async () => {
     try {

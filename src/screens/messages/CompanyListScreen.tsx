@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Button,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CompanyListScreenProps } from '../../types';
@@ -55,6 +56,10 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       const data = await response.json();
       if (data.success && data.companies.length > 0) {
         const companyId = data.companies[0].id;
+        if (!companyId) {
+          // Kullanıcıya bilgi ver, navigation yapma
+          return null;
+        }
         return companyId;
       }
       return null;
@@ -68,20 +73,29 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     try {
       const userId = await AsyncStorage.getItem('user_id');
       if (userId) {
-        // Önce şirket bilgisini alalım
+        // Get company info
         const companyId = await fetchCurrentCompany(userId);
         if (companyId) {
           setCurrentUserId(companyId);
         } else {
-          Alert.alert('Hata', 'Şirket bilgisi bulunamadı');
-          navigation.getParent()?.navigate('Auth');
+          Alert.alert(
+            'No Company Found',
+            'You need to add a company before you can use messaging.',
+            [
+              {
+                text: 'Add Company',
+                onPress: () => navigation.navigate('CompanyDetails'),
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
         }
       } else {
-        Alert.alert('Hata', 'Kullanıcı bilgisi bulunamadı');
+        Alert.alert('Error', 'User information not found');
         navigation.getParent()?.navigate('Auth');
       }
     } catch (error: any) {
-      Alert.alert('Hata', 'Kullanıcı bilgisi alınamadı');
+      Alert.alert('Error', 'Failed to get user information');
       navigation.getParent()?.navigate('Auth');
     }
   }, [navigation, fetchCurrentCompany]);
@@ -93,7 +107,12 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       
       const response = await chatApi.getCompanies();
       
-      const filteredCompanies = response.filter((company: Company) => {
+      if (!response || !response.data) {
+        // Hata mesajı göster
+        return;
+      }
+      
+      const filteredCompanies = response.data.filter((company: Company) => {
         const companyId = company._id || company.id;
         return (
           companyId !== currentUserId &&
@@ -122,26 +141,22 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   }, [currentUserId, loadCompanies]);
 
   // handleCompanyPress fonksiyonunu güncelleyelim
-  const handleCompanyPress = async (company: Company) => {
-    try {
-      if (!currentUserId) {
-        Alert.alert('Hata', 'Kullanıcı şirket bilgisi bulunamadı');
-        return;
-      }
-      const chatSession = await chatApi.createChatSession({
-        initiatorCompanyId: currentUserId,
-        targetCompanyId: company._id || company.id,
-        title: `${company.companyName} ile sohbet`
-      });
-      navigation.navigate('ChatDetail', {
-        chatSessionId: (chatSession && (chatSession as any)._id) ? (chatSession as any)._id : '',
-        receiverId: company._id || company.id || '',
-        receiverName: company.companyName,
-        companyId: currentUserId,
-      });
-    } catch (error: any) {
-      Alert.alert('Hata', 'Sohbet oturumu oluşturulamadı: ' + error.message);
+  const handleCompanyPress = (item: Company) => {
+    if (!item || !item.id) {
+      Alert.alert(
+        'No Company Found',
+        'You need to add a company before you can use messaging.',
+        [
+          {
+            text: 'Add Company',
+            onPress: () => navigation.navigate('CompanyDetailScreen'),
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
     }
+    navigation.navigate('ChatDetailScreen', { companyId: item.id });
   };
 
   const renderHeader = () => (
@@ -233,6 +248,10 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
               style={{ position: 'absolute', top: -20 }}
             />
           }
+        />
+        <Button
+          title="Add Company"
+          onPress={() => navigation.navigate('CompanyDetailScreen')}
         />
       </SafeAreaView>
     </LinearGradient>

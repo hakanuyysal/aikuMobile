@@ -58,7 +58,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        missingDimensionStrategy 'react-native-video', 'released'
+
     }
     signingConfigs {
         debug {
@@ -90,7 +90,7 @@ dependencies {
         implementation jscFlavor
     }
 
-    implementation project(':react-native-video')
+   
 }
 
 project.ext.vectoricons = [

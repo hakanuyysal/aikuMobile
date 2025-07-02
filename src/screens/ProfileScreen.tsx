@@ -84,7 +84,7 @@ const ProfileScreen = () => {
         } else {
           console.warn('No active subscription or invalid response:', data);
           setPlanName('No Subscription');
-          setErrorMessage('Aktif abonelik bulunmuyor.');
+          setErrorMessage('No Subscription');
         }
       } catch (error: any) {
         console.error('Error fetching subscription:', error.message, error.stack);

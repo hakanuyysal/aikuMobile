@@ -125,7 +125,7 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
             } else {
               console.warn('No active subscription or invalid response:', data);
               setPlanName('No Subscription');
-              setErrorMessage('No Subscription.');
+              setErrorMessage('No Subscription');
             }
           }
         } catch (subscriptionError: any) {
