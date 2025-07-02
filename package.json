@@ -58,7 +58,6 @@
     "react-native-url": "^0.0.2",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-video": "^6.13.0",
     "react-native-walkthrough-tooltip": "^1.6.0",
     "react-native-webview": "^13.15.0",
     "socket.io-client": "^4.8.1",

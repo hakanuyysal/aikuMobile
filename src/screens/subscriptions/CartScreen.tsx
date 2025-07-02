@@ -92,7 +92,6 @@ const PlanCard: React.FC<PlanProps> = ({
   
       try {
         const token = await AsyncStorage.getItem('token');
-        console.log('Token being sent:', token);
         
         if (!token) {
           setShowFreeTrial(true);
@@ -174,18 +173,7 @@ const PlanCard: React.FC<PlanProps> = ({
             paymentDate: new Date().toISOString(),
           };
           console.log('Free trial payload:', payload);
-          const token = await AsyncStorage.getItem('token');
-          console.log('Token being sent:', token);
-          const response = await axios.post(
-            'https://api.aikuaiplatform.com/api/payments/record-free-payment',
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          await PaymentService.recordFreePayment(payload);
 
           console.log('Free trial successfully recorded!');
           navigation.navigate('PaymentSuccess', {
