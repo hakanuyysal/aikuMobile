@@ -199,6 +199,18 @@ const Register = ({navigation}: Props) => {
                   <Text style={styles.loginText}>Login!</Text>
                 </TouchableOpacity>
               </View>
+              <View style={styles.privacyContainer}>
+                <Text style={styles.privacyText}>
+                  By continuing, you accept our{' '}
+                  <Text
+                    style={styles.privacyLink}
+                    onPress={() => navigation.navigate('PrivacyPolicy')}
+                  >
+                    Privacy Policy
+                  </Text>
+                  .
+                </Text>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -316,6 +328,21 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  privacyContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyText: {
+    color: Colors.inactive,
+    fontSize: metrics.fontSize.sm,
+    textAlign: 'center',
+  },
+  privacyLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
 });
 

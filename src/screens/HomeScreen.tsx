@@ -378,10 +378,10 @@ const HomeScreen = (props: HomeScreenProps) => {
                       <Animated.Image
                         source={require('../assets/images/Tooltipaihands.png')}
                         style={{
-                          width: SCREEN_WIDTH * 0.35,
-                          height: SCREEN_WIDTH * 0.35,
+                          width: SCREEN_WIDTH * 0.52,
+                          height: SCREEN_WIDTH * 0.52,
                           position: 'absolute',
-                          left: SCREEN_WIDTH * 0.5 - (SCREEN_WIDTH * 0.35) / 2,
+                          left: SCREEN_WIDTH * 0.5 - (SCREEN_WIDTH * 0.52) / 2,
                           top: CARD_TOP + CARD_HEIGHT - 120, // Kartın hemen altı
                           zIndex: 100,
                           transform: [{ scale: handScale }],
