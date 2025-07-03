@@ -214,6 +214,13 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
     }, 300);
   };
 
+  const handlePrivacyPolicyPress = () => {
+    handleClose();
+    setTimeout(() => {
+      navigation.navigate('PrivacyPolicy');
+    }, 300);
+  };
+
   const menuItems = [
     { title: 'Personal Details', icon: 'account-outline' },
     { title: 'Favorites', icon: 'heart-outline' },
@@ -381,6 +388,11 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
                 </View>
                 <Text style={styles.brandText}>Aiku</Text>
                 <Text style={styles.versionText}>Version 1.0.0</Text>
+                <TouchableOpacity onPress={handlePrivacyPolicyPress} style={{marginTop: 8}}>
+                  <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
+                    Privacy Policy
+                  </Text>
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </Animated.View>
