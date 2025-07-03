@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,18 +11,17 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import {Colors} from '../../constants/colors';
+import { Colors } from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
-import {RootStackParamList} from '../../types';
+import { RootStackParamList } from '../../types';
 import BillingService from '../../services/BillingService';
-import {BillingInfo} from '../../types';
+import { BillingInfo } from '../../types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
-import PaymentService from '../../services/PaymentService';
 
 type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -58,7 +57,7 @@ interface PlanProps extends Plan {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 }
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = metrics.getWidthPercentage(80);
 const SPACING = metrics.spacing.md;
 const ITEM_TOTAL_WIDTH = CARD_WIDTH + SPACING;
@@ -87,34 +86,37 @@ const PlanCard: React.FC<PlanProps> = ({
         setIsStatusLoading(false);
         return;
       }
-  
+
       setIsStatusLoading(true);
-  
+
       try {
         const token = await AsyncStorage.getItem('token');
-        
+        console.log('Token being sent:', token);
+
         if (!token) {
           setShowFreeTrial(true);
           setIsStatusLoading(false);
           return;
         }
-  
+
         const api = axios.create({
           baseURL: Config.API_URL || 'https://api.aikuaiplatform.com/api',
           headers: { Authorization: `Bearer ${token}` },
         });
-  
+
         const response = await api.get('/subscriptions/payment-history');
         const history = response.data?.data;
-        
-        const hasUsedStartupPlan = history && Array.isArray(history) && history.some((p: { plan: string }) => p.plan === 'startup');
+
+        const hasUsedStartupPlan =
+          history &&
+          Array.isArray(history) &&
+          history.some((p: { plan: string }) => p.plan === 'startup');
 
         if (hasUsedStartupPlan) {
           setShowFreeTrial(false);
         } else {
           setShowFreeTrial(true);
         }
-  
       } catch (error) {
         console.log('Error checking user eligibility:', error);
         setShowFreeTrial(false);
@@ -122,7 +124,7 @@ const PlanCard: React.FC<PlanProps> = ({
         setIsStatusLoading(false);
       }
     };
-  
+
     checkUserEligibility();
   }, [isStartupPlan]);
 
@@ -173,7 +175,18 @@ const PlanCard: React.FC<PlanProps> = ({
             paymentDate: new Date().toISOString(),
           };
           console.log('Free trial payload:', payload);
-          await PaymentService.recordFreePayment(payload);
+          const token = await AsyncStorage.getItem('token');
+          console.log('Token being sent:', token);
+          const response = await axios.post(
+            'https://api.aikuaiplatform.com/api/payments/record-free-payment',
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            },
+          );
 
           console.log('Free trial successfully recorded!');
           navigation.navigate('PaymentSuccess', {
@@ -181,17 +194,31 @@ const PlanCard: React.FC<PlanProps> = ({
           });
         } catch (error) {
           console.error('Error while activating free trial:', error);
-          Alert.alert('Alert', 'An error occurred while activating your free trial. Please try again.');
+          Alert.alert(
+            'Alert',
+            'An error occurred while activating your free trial. Please try again.',
+          );
         }
         return;
       }
 
-      const billingResponse = await BillingService.getDefaultBillingInfo();
-      const billingInfo = billingResponse?.data as BillingInfo | undefined;
-      const hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
-      
+      // Handle non-free trial case (e.g., user has already used the free trial)
+      let billingInfo: BillingInfo | undefined;
+      let hasBillingInfo = false;
+
+      try {
+        const billingResponse = await BillingService.getDefaultBillingInfo();
+        billingInfo = billingResponse?.data as BillingInfo | undefined;
+        hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
+      } catch (error) {
+        console.error('Error fetching billing info:', error);
+        // Continue to BillingInfo screen even if fetching billing info fails
+        hasBillingInfo = false;
+        billingInfo = undefined;
+      }
+
       const finalPrice = isYearly ? yearlyPrice : price;
-      
+
       const planDetails: PlanDetails = {
         name: title,
         price: finalPrice,
@@ -205,10 +232,9 @@ const PlanCard: React.FC<PlanProps> = ({
         hasExistingBillingInfo: hasBillingInfo,
         existingBillingInfo: billingInfo,
       });
-
     } catch (error) {
       console.error('Error during plan selection:', error);
-      Alert.alert('Alert', 'An error occurred. Please try again.');
+      Alert.alert('Alert', 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -221,16 +247,16 @@ const PlanCard: React.FC<PlanProps> = ({
         {
           width: CARD_WIDTH,
           transform: [
-            {scale},
-            {rotateY},
-            {translateY},
-            {translateX},
-            {perspective: 1500},
+            { scale },
+            { rotateY },
+            { translateY },
+            { translateX },
+            { perspective: 1500 },
           ],
           opacity,
         },
       ]}>
-      <View style={{flex: 1, paddingBottom: 64}}>
+      <View style={{ flex: 1, paddingBottom: 64 }}>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.price}>
@@ -246,7 +272,7 @@ const PlanCard: React.FC<PlanProps> = ({
           {isYearly && <Text style={styles.discount}> (10% off)</Text>}
         </Text>
         {isStartupPlan && showFreeTrial && (
-          <Text style={styles.trial}>⭐️ 6 month free trial!</Text>
+          <Text  style={styles.trial}>⭐️ 6 month free trial!</Text>
         )}
         {isYearly && title !== 'Startup Plan' && (
           <Text style={styles.trial}>+3 months free with annual plan!</Text>
@@ -271,7 +297,7 @@ const PlanCard: React.FC<PlanProps> = ({
   );
 };
 
-const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
+const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   const [isYearly, setIsYearly] = useState(false);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -279,8 +305,8 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
@@ -331,12 +357,12 @@ const CartScreen: React.FC<CartScreenProps> = ({navigation}) => {
               snapToInterval={ITEM_TOTAL_WIDTH}
               decelerationRate="fast"
               onScroll={Animated.event(
-                [{nativeEvent: {contentOffset: {x: scrollX}}}],
-                {useNativeDriver: true},
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true },
               )}
               scrollEventThrottle={16}>
               {plans.map((plan, index) => {
-                const {key, ...planProps} = plan;
+                const { key, ...planProps } = plan;
                 return (
                   <View key={key} style={styles.cardWrapper}>
                     <PlanCard
@@ -511,18 +537,14 @@ const styles = StyleSheet.create({
     marginBottom: metrics.margin.sm,
     fontWeight: 'bold',
   },
-  description: {
-    color: Colors.inactive,
-    fontSize: metrics.fontSize.sm,
-    marginBottom: metrics.margin.sm,
-    lineHeight: metrics.scale(16),
-  },
   feature: {
     fontSize: metrics.fontSize.sm,
     marginBottom: metrics.margin.xs,
     marginTop: metrics.margin.xs,
     color: Colors.lightText,
   },
+ 
+
   button: {
     backgroundColor: Colors.primary,
     borderRadius: metrics.borderRadius.circle,
