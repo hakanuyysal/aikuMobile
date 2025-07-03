@@ -209,7 +209,7 @@ const chatApi = {
       
       // Filter companies based on criteria
       const allowedTypes = ["Startup", "Business", "Investor"];
-      const filteredCompanies = companies.filter(company => {
+      const filteredCompanies = (companies as Company[]).filter(company => {
         return (
           company.acceptMessages !== false &&
           allowedTypes.includes(company.companyType)

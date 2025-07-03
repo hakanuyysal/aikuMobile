@@ -104,15 +104,12 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const loadCompanies = useCallback(async () => {
     try {
       setRefreshing(true);
-      
-      const response = await chatApi.getCompanies();
-      
-      if (!response || !response.data) {
+      const companies = await chatApi.getCompanies();
+      if (!companies) {
         // Hata mesajı göster
         return;
       }
-      
-      const filteredCompanies = response.data.filter((company: Company) => {
+      const filteredCompanies = companies.filter((company: Company) => {
         const companyId = company._id || company.id;
         return (
           companyId !== currentUserId &&
@@ -120,7 +117,6 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
           ["Startup", "Business", "Investor"].includes(company.companyType)
         );
       });
-      
       setCompanies(filteredCompanies);
     } catch (error: any) {
       Alert.alert('Hata', 'Şirket listesi yüklenemedi');
