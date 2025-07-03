@@ -13,6 +13,8 @@ import {
   Animated,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../constants/colors';
@@ -93,7 +95,12 @@ interface Company {
   companyInstagram?: string;
   companyTwitter?: string;
   acceptMessages?: boolean;
-  teamMembers?: string;
+  teamMembers?: {
+    firstName: string;
+    lastName: string;
+    title: string;
+    profilePhoto?: string;
+  }[];
 }
 
 const CompanyDetails = ({ navigation }: Props) => {
@@ -121,7 +128,12 @@ const CompanyDetails = ({ navigation }: Props) => {
     companyInstagram: '',
     companyTwitter: '',
     acceptMessages: false,
-    teamMembers: [] as string[],
+    teamMembers: [] as {
+      firstName: string;
+      lastName: string;
+      title: string;
+      profilePhoto?: string;
+    }[],
   });
   const [companies, setCompanies] = useState<Company[]>([]);
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
@@ -139,6 +151,14 @@ const CompanyDetails = ({ navigation }: Props) => {
   const [aiFile, setAiFile] = useState<DocumentPickerResponse | null>(null);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiMethod, setAiMethod] = useState<'website' | 'file'>('website');
+
+  const [teamModalVisible, setTeamModalVisible] = useState(false);
+  const [teamMemberForm, setTeamMemberForm] = useState({
+    firstName: '',
+    lastName: '',
+    title: '',
+    profilePhoto: '',
+  });
 
   // Logo URL'lerini doğru şekilde işlemek için fonksiyon
   const getCompanyLogo = (logoUrl: string | null | undefined) => {
@@ -186,7 +206,6 @@ const CompanyDetails = ({ navigation }: Props) => {
     { label: 'Company Instagram', key: 'companyInstagram', type: 'text', placeholder: 'Enter your company Instagram' },
     { label: 'Company X (Twitter)', key: 'companyTwitter', type: 'text', placeholder: 'Enter your company Twitter' },
     { label: 'Accept messages from other companies', key: 'acceptMessages', type: 'boolean' },
-    { label: 'Team Members', key: 'teamMembers', type: 'text', placeholder: 'Add Team Member' },
   ];
 
   useEffect(() => {
@@ -285,6 +304,11 @@ const CompanyDetails = ({ navigation }: Props) => {
 
     setLoading(true);
     try {
+      const teamMembersPayload = formData.teamMembers.map(member => {
+        const { profilePhoto, ...rest } = member;
+        return profilePhoto ? member : rest;
+      });
+
       const payload = {
         companyName: formData.companyName,
         companyType: formData.companyType,
@@ -304,16 +328,33 @@ const CompanyDetails = ({ navigation }: Props) => {
         detailedDescription: formData.detailedInfo,
         companyInstagram: formData.companyInstagram || '',
         acceptMessages: formData.acceptMessages,
-        teamMembers: formData.teamMembers.length > 0 ? formData.teamMembers : [],
+        teamMembers: teamMembersPayload,
         companyLogo: formData.companyLogo,
       };
 
-      if (editingCompanyId) {
-        await api.put(`/company/${editingCompanyId}`, payload);
-        Alert.alert('Success', 'Company updated successfully.');
+      const companyRes = await api.post('/company', payload);
+      const companyId = companyRes.data.id || companyRes.data.company?.id;
+
+      let teamMemberErrors = [];
+      for (const member of teamMembersPayload) {
+        try {
+          const memberRes = await api.post('/team-members', { ...member, company: companyId, companyName: payload.companyName });
+          if (member.profilePhoto) {
+            const formData = new FormData();
+            formData.append('profilePhoto', { uri: member.profilePhoto, name: 'photo.jpg', type: 'image/jpeg' });
+            await api.post(`/team-members/${memberRes.data.teamMember.id}/upload-photo`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+        } catch (err) {
+          teamMemberErrors.push(err?.response?.data?.message || err.message);
+        }
+      }
+
+      if (teamMemberErrors.length > 0) {
+        Alert.alert('Warning', `Şirket eklendi fakat bazı takım üyeleri eklenemedi:\n${teamMemberErrors.join('\n')}`);
       } else {
-        await api.post('/company', payload);
-        Alert.alert('Success', 'Company created successfully.');
+        Alert.alert('Success', 'Şirket ve takım üyeleri başarıyla eklendi!');
       }
 
       await fetchCompanies();
@@ -343,15 +384,14 @@ const CompanyDetails = ({ navigation }: Props) => {
         acceptMessages: false,
         teamMembers: [],
       });
-    } catch (error: any) {
-      console.error('Error submitting company:', error.response ? error.response.data : error.message);
-      // Backend'den gelen alan hatalarını kullanıcıya göster
-      if (error.response && error.response.data && error.response.data.errors && Array.isArray(error.response.data.errors)) {
-        const messages = error.response.data.errors.map((e: any) => e.msg).join('\n');
-        Alert.alert('Validation Error', messages);
-      } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to save company.');
+    } catch (error) {
+      let errorMessage = 'An error occurred.';
+      if (error?.response?.data?.error?.includes('duplicate key error')) {
+        errorMessage = 'Bu isimde bir şirket zaten mevcut. Lütfen farklı bir isim seçin.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
       }
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -384,7 +424,7 @@ const CompanyDetails = ({ navigation }: Props) => {
       companyInstagram: company.companyInstagram || '',
       companyTwitter: company.companyTwitter || '',
       acceptMessages: company.acceptMessages || false,
-      teamMembers: company.teamMembers ? company.teamMembers.split(', ') : [],
+      teamMembers: company.teamMembers || [],
     });
     setModalVisible(true);
   };
@@ -517,6 +557,43 @@ const CompanyDetails = ({ navigation }: Props) => {
             );
           })}
         </View>
+        {currentStep === formSteps.length - 1 && (
+          <View style={{
+            borderWidth: 1,
+            borderColor: Colors.primary,
+            borderRadius: 8,
+            padding: 12,
+            marginTop: 10,
+            backgroundColor: 'rgba(59,130,247,0.08)'
+          }}>
+            <Text style={{ color: Colors.primary, fontWeight: 'bold', marginBottom: 8 }}>Team Members</Text>
+            {formData.teamMembers.length > 0 && (
+              <View style={{ marginBottom: 8 }}>
+                {formData.teamMembers.map((member, idx) => (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    {member.profilePhoto && <Image source={{ uri: member.profilePhoto }} style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8 }} />}
+                    <Text style={{ color: Colors.lightText }}>{member.firstName} {member.lastName} - {member.title}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: Colors.primary,
+                borderRadius: 8,
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                alignSelf: 'flex-start'
+              }}
+              onPress={() => setTeamModalVisible(true)}
+            >
+              <Icon name="add" size={20} color="#fff" />
+              <Text style={{ color: '#fff', marginLeft: 8, fontWeight: 'bold' }}>Add Team Member</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={styles.bottomPadding} />
       </ScrollView>
     );
@@ -885,296 +962,413 @@ const CompanyDetails = ({ navigation }: Props) => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 2, y: 1 }}
                 style={styles.modalContainer}>
-                <SafeAreaView style={styles.modalSafeArea}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>{editingCompanyId ? 'Edit Company' : 'Add Company'}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <TouchableOpacity
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderWidth: 2,
-                          borderColor: Colors.primary,
-                          borderRadius: 14,
-                          paddingVertical: 8,
-                          paddingHorizontal: 16,
-                          marginRight: 8,
-                          backgroundColor: 'transparent',
-                          minWidth: 110,
-                        }}
-                        onPress={() => setAiModalVisible(true)}>
-                        <Ionicons name="bulb-outline" size={22} color={Colors.primary} style={{ marginRight: 8 }} />
-                        <Text style={{ color: Colors.primary, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
-                          Auto-fill AI
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => { setModalVisible(false); setEditingCompanyId(null); }} style={styles.closeButton}>
-                        <Icon name="close" size={24} color={Colors.lightText} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  <Modal
-                    animationType="fade"
-                    transparent={true}
-                    visible={aiModalVisible}
-                    onRequestClose={() => setAiModalVisible(false)}>
-                    <View style={styles.modalBackdrop}>
-                      <View style={[styles.modalWrapper, { justifyContent: 'center', alignItems: 'center' }]}>
-                        <View style={{
-                          backgroundColor: '#23283A',
-                          borderRadius: 32,
-                          padding: 28,
-                          width: 350,
-                          alignItems: 'center',
-                          position: 'relative',
-                          borderWidth: 1.5,
-                          borderColor: Colors.primary,
-                          shadowColor: Colors.primary,
-                          shadowOffset: { width: 0, height: 0 },
-                          shadowOpacity: 0.5,
-                          shadowRadius: 16,
-                          elevation: 12,
-                        }}>
-                          <TouchableOpacity
-                            style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}
-                            onPress={() => setAiModalVisible(false)}>
-                            <Ionicons name="close" size={26} color={Colors.lightText} />
-                          </TouchableOpacity>
-                          {aiTab === 'loading' ? (
-                            <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 180 }}>
-                              <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 18 }} />
-                              <Text style={{ color: Colors.lightText, fontSize: 17, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
-                                {getAnalysisMessage(aiProgress, aiMethod)}
-                              </Text>
-                              <View style={{ width: '80%', height: 8, backgroundColor: '#333', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
-                                <View style={{ width: `${aiProgress}%`, height: 8, backgroundColor: Colors.primary, borderRadius: 4 }} />
-                              </View>
-                            </View>
-                          ) : aiTab === 'select' ? (
-                            <>
-                              <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, marginBottom: 28, textAlign: 'center' }}>
-                                Auto-fill with AI
-                              </Text>
-                              <View style={{ width: '100%', flexDirection: 'row', gap: 16 }}>
-                                <TouchableOpacity
-                                  style={{
-                                    flex: 1,
-                                    borderWidth: 2,
-                                    borderColor: Colors.primary,
-                                    borderRadius: 16,
-                                    paddingVertical: 18,
-                                    alignItems: 'center',
-                                    backgroundColor: 'transparent',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    marginRight: 8,
-                                  }}
-                                  onPress={() => setAiTab('website')}>
-                                  <MaterialCommunityIcons name="web" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
-                                  <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From Web</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={{
-                                    flex: 1,
-                                    borderWidth: 2,
-                                    borderColor: Colors.primary,
-                                    borderRadius: 16,
-                                    paddingVertical: 18,
-                                    alignItems: 'center',
-                                    backgroundColor: 'transparent',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    marginLeft: 8,
-                                  }}
-                                  onPress={() => setAiTab('file')}>
-                                  <MaterialCommunityIcons name="file-document-outline" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
-                                  <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From File</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </>
-                          ) : (
-                            <>
-                              <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
-                                <TouchableOpacity onPress={() => setAiTab('select')} style={{ width: 40, alignItems: 'flex-start' }}>
-                                  <Ionicons name="chevron-back" size={28} color={Colors.lightText} />
-                                </TouchableOpacity>
-                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>
-                                  Auto-fill with AI
-                                </Text>
-                                <View style={{ width: 40 }} />
-                              </View>
-                              {aiTab === 'website' && (
-                                <View style={{ width: '100%', alignItems: 'center' }}>
-                                  <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, width: '100%' }}>
-                                    <TouchableOpacity
-                                      style={{
-                                        backgroundColor: aiProtocol === 'https://' ? Colors.primary : 'rgba(255,255,255,0.10)',
-                                        borderRadius: 8,
-                                        paddingHorizontal: 18,
-                                        paddingVertical: 7,
-                                        marginRight: 8,
-                                      }}
-                                      onPress={() => setAiProtocol('https://')}>
-                                      <Text style={{ color: aiProtocol === 'https://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>
-                                        https://
-                                      </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                      style={{
-                                        backgroundColor: aiProtocol === 'http://' ? Colors.primary : 'rgba(255,255,255,0.10)',
-                                        borderRadius: 8,
-                                        paddingHorizontal: 18,
-                                        paddingVertical: 7,
-                                      }}
-                                      onPress={() => setAiProtocol('http://')}>
-                                      <Text style={{ color: aiProtocol === 'http://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>
-                                        http://
-                                      </Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                  <TextInput
-                                    style={[styles.input, { marginBottom: 10, width: '100%', textAlign: 'center' }]}
-                                    placeholder="example.com"
-                                    placeholderTextColor={Colors.lightText}
-                                    value={aiWebsite}
-                                    onChangeText={text => {
-                                      let clean = text.replace(/^https?:\/\//i, '');
-                                      setAiWebsite(clean);
-                                    }}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                  />
-                                </View>
-                              )}
-                              {aiTab === 'file' && (
-                                <View style={{ width: '100%', alignItems: 'center' }}>
-                                  <TouchableOpacity
-                                    style={{
-                                      backgroundColor: Colors.primary,
-                                      borderRadius: 10,
-                                      padding: 14,
-                                      marginBottom: 10,
-                                      alignItems: 'center',
-                                      width: '100%',
-                                    }}
-                                    onPress={handlePickFile}
-                                    disabled={aiLoading}>
-                                    <Text style={{ color: Colors.lightText, fontWeight: '600' }}>
-                                      {aiFile ? 'Change File' : 'Select File'}
-                                    </Text>
-                                  </TouchableOpacity>
-                                  {aiFile && (
-                                    <Text style={{ color: Colors.lightText, marginBottom: 10, textAlign: 'center', fontSize: 15 }}>
-                                      {aiFile.name}
-                                    </Text>
-                                  )}
-                                </View>
-                              )}
-                              {aiError ? (
-                                <Text style={{ color: 'red', marginBottom: 10, textAlign: 'center' }}>{aiError}</Text>
-                              ) : null}
-                              <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, width: '100%' }}>
-                                <TouchableOpacity
-                                  style={{
-                                    marginRight: 16,
-                                    paddingVertical: 10,
-                                    paddingHorizontal: 22,
-                                    borderRadius: 8,
-                                    backgroundColor: 'rgba(255,255,255,0.10)',
-                                  }}
-                                  onPress={() => setAiModalVisible(false)}
-                                  disabled={aiLoading}>
-                                  <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={{
-                                    backgroundColor: Colors.primary,
-                                    borderRadius: 8,
-                                    paddingHorizontal: 28,
-                                    paddingVertical: 10,
-                                  }}
-                                  onPress={handleAIFill}
-                                  disabled={aiLoading}>
-                                  <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Analyze</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                  <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={sectorPickerVisible}
-                    onRequestClose={() => setSectorPickerVisible(false)}>
-                    <View style={styles.modalBackdrop}>
-                      <View style={styles.sectorPickerModal}>
-                        <View style={styles.modalHeader}>
-                          <Text style={styles.modalTitle}>Select Company Sectors</Text>
-                          <TouchableOpacity onPress={() => setSectorPickerVisible(false)}>
-                            <Icon name="close" size={24} color={Colors.lightText} />
-                          </TouchableOpacity>
-                        </View>
-                        <FlatList
-                          data={sectors}
-                          keyExtractor={item => item}
-                          renderItem={({ item }) => (
-                            <TouchableOpacity
-                              style={styles.checkbox}
-                              onPress={() => {
-                                const updatedSectors = formData.companySector.includes(item)
-                                  ? formData.companySector.filter(sector => sector !== item)
-                                  : [...formData.companySector, item];
-                                handleInputChange('companySector', updatedSectors);
-                              }}>
-                              <MaterialCommunityIcons
-                                name={formData.companySector.includes(item) ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                                size={24}
-                                color={Colors.primary}
-                              />
-                              <Text style={styles.checkboxText}>{item}</Text>
-                            </TouchableOpacity>
-                          )}
-                        />
+                <KeyboardAvoidingView
+                  style={{ flex: 1 }}
+                  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                  <SafeAreaView style={styles.modalSafeArea}>
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>{editingCompanyId ? 'Edit Company' : 'Add Company'}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <TouchableOpacity
-                          style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 8 }}
-                          onPress={() => setSectorPickerVisible(false)}>
-                          <MaterialCommunityIcons name="check" size={40} color="#fff" />
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderWidth: 2,
+                            borderColor: Colors.primary,
+                            borderRadius: 14,
+                            paddingVertical: 8,
+                            paddingHorizontal: 16,
+                            marginRight: 8,
+                            backgroundColor: 'transparent',
+                            minWidth: 110,
+                          }}
+                          onPress={() => setAiModalVisible(true)}>
+                          <Ionicons name="bulb-outline" size={22} color={Colors.primary} style={{ marginRight: 8 }} />
+                          <Text style={{ color: Colors.primary, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
+                            Auto-fill AI
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => { setModalVisible(false); setEditingCompanyId(null); }} style={styles.closeButton}>
+                          <Icon name="close" size={24} color={Colors.lightText} />
                         </TouchableOpacity>
                       </View>
                     </View>
-                  </Modal>
-                  <Animated.View style={[styles.modalContent]}>
-                    <View style={styles.progressContainer}>
-                      {Array(Math.ceil(formSteps.length / 5)).fill(0).map((_, idx) => (
-                        <View
-                          key={idx}
-                          style={[styles.progressDot, Math.floor(currentStep / 5) === idx && styles.activeProgressDot]}
-                        />
-                      ))}
-                    </View>
-                    {renderStep()}
-                  </Animated.View>
-                  <View style={styles.navigationButtons}>
-                    {currentStep > 0 && (
-                      <TouchableOpacity style={styles.navButton} onPress={handleBack} disabled={loading}>
-                        <Text style={styles.navButtonText}>Back</Text>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                      style={[styles.navButton, { opacity: isStepValid(currentStep) && !loading ? 1 : 0.5 }]}
-                      onPress={handleNext}
-                      disabled={!isStepValid(currentStep) || loading}
+                    <Modal
+                      animationType="fade"
+                      transparent={true}
+                      visible={aiModalVisible}
+                      onRequestClose={() => setAiModalVisible(false)}>
+                      <View style={styles.modalBackdrop}>
+                        <View style={[styles.modalWrapper, { justifyContent: 'center', alignItems: 'center' }]}>
+                          <View style={{
+                            backgroundColor: '#23283A',
+                            borderRadius: 32,
+                            padding: 28,
+                            width: 350,
+                            alignItems: 'center',
+                            position: 'relative',
+                            borderWidth: 1.5,
+                            borderColor: Colors.primary,
+                            shadowColor: Colors.primary,
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.5,
+                            shadowRadius: 16,
+                            elevation: 12,
+                          }}>
+                            <TouchableOpacity
+                              style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}
+                              onPress={() => setAiModalVisible(false)}>
+                              <Ionicons name="close" size={26} color={Colors.lightText} />
+                            </TouchableOpacity>
+                            {aiTab === 'loading' ? (
+                              <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 180 }}>
+                                <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 18 }} />
+                                <Text style={{ color: Colors.lightText, fontSize: 17, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
+                                  {getAnalysisMessage(aiProgress, aiMethod)}
+                                </Text>
+                                <View style={{ width: '80%', height: 8, backgroundColor: '#333', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
+                                  <View style={{ width: `${aiProgress}%`, height: 8, backgroundColor: Colors.primary, borderRadius: 4 }} />
+                                </View>
+                              </View>
+                            ) : aiTab === 'select' ? (
+                              <>
+                                <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, marginBottom: 28, textAlign: 'center' }}>
+                                  Auto-fill with AI
+                                </Text>
+                                <View style={{ width: '100%', flexDirection: 'row', gap: 16 }}>
+                                  <TouchableOpacity
+                                    style={{
+                                      flex: 1,
+                                      borderWidth: 2,
+                                      borderColor: Colors.primary,
+                                      borderRadius: 16,
+                                      paddingVertical: 18,
+                                      alignItems: 'center',
+                                      backgroundColor: 'transparent',
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      marginRight: 8,
+                                    }}
+                                    onPress={() => setAiTab('website')}>
+                                    <MaterialCommunityIcons name="web" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                    <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From Web</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={{
+                                      flex: 1,
+                                      borderWidth: 2,
+                                      borderColor: Colors.primary,
+                                      borderRadius: 16,
+                                      paddingVertical: 18,
+                                      alignItems: 'center',
+                                      backgroundColor: 'transparent',
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      marginLeft: 8,
+                                    }}
+                                    onPress={() => setAiTab('file')}>
+                                    <MaterialCommunityIcons name="file-document-outline" size={32} color={Colors.primary} style={{ marginBottom: 6 }} />
+                                    <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 18 }}>From File</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </>
+                            ) : (
+                              <>
+                                <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'center' }}>
+                                  <TouchableOpacity onPress={() => setAiTab('select')} style={{ width: 40, alignItems: 'flex-start' }}>
+                                    <Ionicons name="chevron-back" size={28} color={Colors.lightText} />
+                                  </TouchableOpacity>
+                                  <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' }}>
+                                    Auto-fill with AI
+                                  </Text>
+                                  <View style={{ width: 40 }} />
+                                </View>
+                                {aiTab === 'website' && (
+                                  <View style={{ width: '100%', alignItems: 'center' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10, width: '100%' }}>
+                                      <TouchableOpacity
+                                        style={{
+                                          backgroundColor: aiProtocol === 'https://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                          borderRadius: 8,
+                                          paddingHorizontal: 18,
+                                          paddingVertical: 7,
+                                          marginRight: 8,
+                                        }}
+                                        onPress={() => setAiProtocol('https://')}>
+                                        <Text style={{ color: aiProtocol === 'https://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>
+                                          https://
+                                        </Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={{
+                                          backgroundColor: aiProtocol === 'http://' ? Colors.primary : 'rgba(255,255,255,0.10)',
+                                          borderRadius: 8,
+                                          paddingHorizontal: 18,
+                                          paddingVertical: 7,
+                                        }}
+                                        onPress={() => setAiProtocol('http://')}>
+                                        <Text style={{ color: aiProtocol === 'http://' ? Colors.lightText : Colors.lightText, fontWeight: '500' }}>
+                                          http://
+                                        </Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                    <TextInput
+                                      style={[styles.input, { marginBottom: 10, width: '100%', textAlign: 'center' }]}
+                                      placeholder="example.com"
+                                      placeholderTextColor={Colors.lightText}
+                                      value={aiWebsite}
+                                      onChangeText={text => {
+                                        let clean = text.replace(/^https?:\/\//i, '');
+                                        setAiWebsite(clean);
+                                      }}
+                                      autoCapitalize="none"
+                                      autoCorrect={false}
+                                    />
+                                  </View>
+                                )}
+                                {aiTab === 'file' && (
+                                  <View style={{ width: '100%', alignItems: 'center' }}>
+                                    <TouchableOpacity
+                                      style={{
+                                        backgroundColor: Colors.primary,
+                                        borderRadius: 10,
+                                        padding: 14,
+                                        marginBottom: 10,
+                                        alignItems: 'center',
+                                        width: '100%',
+                                      }}
+                                      onPress={handlePickFile}
+                                      disabled={aiLoading}>
+                                      <Text style={{ color: Colors.lightText, fontWeight: '600' }}>
+                                        {aiFile ? 'Change File' : 'Select File'}
+                                      </Text>
+                                    </TouchableOpacity>
+                                    {aiFile && (
+                                      <Text style={{ color: Colors.lightText, marginBottom: 10, textAlign: 'center', fontSize: 15 }}>
+                                        {aiFile.name}
+                                      </Text>
+                                    )}
+                                  </View>
+                                )}
+                                {aiError ? (
+                                  <Text style={{ color: 'red', marginBottom: 10, textAlign: 'center' }}>{aiError}</Text>
+                                ) : null}
+                                <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, width: '100%' }}>
+                                  <TouchableOpacity
+                                    style={{
+                                      marginRight: 16,
+                                      paddingVertical: 10,
+                                      paddingHorizontal: 22,
+                                      borderRadius: 8,
+                                      backgroundColor: 'rgba(255,255,255,0.10)',
+                                    }}
+                                    onPress={() => setAiModalVisible(false)}
+                                    disabled={aiLoading}>
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={{
+                                      backgroundColor: Colors.primary,
+                                      borderRadius: 8,
+                                      paddingHorizontal: 28,
+                                      paddingVertical: 10,
+                                    }}
+                                    onPress={handleAIFill}
+                                    disabled={aiLoading}>
+                                    <Text style={{ color: Colors.lightText, fontWeight: '600', fontSize: 16 }}>Analyze</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    </Modal>
+                    <Modal
+                      animationType="slide"
+                      transparent={true}
+                      visible={sectorPickerVisible}
+                      onRequestClose={() => setSectorPickerVisible(false)}>
+                      <View style={styles.modalBackdrop}>
+                        <View style={styles.sectorPickerModal}>
+                          <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select Company Sectors</Text>
+                            <TouchableOpacity onPress={() => setSectorPickerVisible(false)}>
+                              <Icon name="close" size={24} color={Colors.lightText} />
+                            </TouchableOpacity>
+                          </View>
+                          <FlatList
+                            data={sectors}
+                            keyExtractor={item => item}
+                            renderItem={({ item }) => (
+                              <TouchableOpacity
+                                style={styles.checkbox}
+                                onPress={() => {
+                                  const updatedSectors = formData.companySector.includes(item)
+                                    ? formData.companySector.filter(sector => sector !== item)
+                                    : [...formData.companySector, item];
+                                  handleInputChange('companySector', updatedSectors);
+                                }}>
+                                <MaterialCommunityIcons
+                                  name={formData.companySector.includes(item) ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                                  size={24}
+                                  color={Colors.primary}
+                                />
+                                <Text style={styles.checkboxText}>{item}</Text>
+                              </TouchableOpacity>
+                            )}
+                          />
+                          <TouchableOpacity
+                            style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 8 }}
+                            onPress={() => setSectorPickerVisible(false)}>
+                            <MaterialCommunityIcons name="check" size={40} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </Modal>
+                    <Modal
+                      visible={teamModalVisible}
+                      transparent
+                      animationType="fade"
+                      onRequestClose={() => setTeamModalVisible(false)}
                     >
-                      <Text style={styles.navButtonText}>
-                        {loading ? 'Submitting...' : currentStep === formSteps.length - 1 ? (editingCompanyId ? 'Update' : 'Submit') : 'Next'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </SafeAreaView>
+                      <KeyboardAvoidingView
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{
+                          flex: 1,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          backgroundColor: 'rgba(0,0,0,0.6)'
+                        }}
+                      >
+                        <LinearGradient
+                          colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+                          locations={[0, 0.3, 0.6, 0.9]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 2, y: 1 }}
+                          style={{
+                            borderRadius: 16,
+                            padding: 24,
+                            width: 320,
+                          }}
+                        >
+                          <Text style={{ color: Colors.lightText, fontWeight: 'bold', fontSize: 18, marginBottom: 12, textAlign: 'center' }}>Add Team Member</Text>
+                          <TextInput
+                            placeholder="First Name *"
+                            placeholderTextColor={Colors.lightText}
+                            style={styles.input}
+                            value={teamMemberForm.firstName}
+                            onChangeText={text => setTeamMemberForm({ ...teamMemberForm, firstName: text })}
+                          />
+                          <TextInput
+                            placeholder="Last Name *"
+                            placeholderTextColor={Colors.lightText}
+                            style={styles.input}
+                            value={teamMemberForm.lastName}
+                            onChangeText={text => setTeamMemberForm({ ...teamMemberForm, lastName: text })}
+                          />
+                          <TextInput
+                            placeholder="Title *"
+                            placeholderTextColor={Colors.lightText}
+                            style={styles.input}
+                            value={teamMemberForm.title}
+                            onChangeText={text => setTeamMemberForm({ ...teamMemberForm, title: text })}
+                          />
+                          <TouchableOpacity
+                            style={styles.fileButton}
+                            onPress={async () => {
+                              try {
+                                const result = await launchImageLibrary({
+                                  mediaType: 'photo',
+                                  quality: 0.7,
+                                  includeBase64: true,
+                                  selectionLimit: 1
+                                });
+                                
+                                if (result.assets && result.assets.length > 0) {
+                                  const asset = result.assets[0];
+                                  if (asset.uri) {
+                                    const croppedImage = await ImageCropPicker.openCropper({
+                                      path: asset.uri,
+                                      mediaType: 'photo',
+                                      width: 300,
+                                      height: 300,
+                                      cropperCircleOverlay: false,
+                                      cropperActiveWidgetColor: Colors.primary,
+                                      cropperStatusBarColor: Colors.primary,
+                                      cropperToolbarColor: Colors.primary,
+                                      cropperToolbarTitle: 'Crop Photo',
+                                      cropperCancelText: 'Cancel',
+                                      cropperChooseText: 'Choose',
+                                    });
+                                    
+                                    setTeamMemberForm({ ...teamMemberForm, profilePhoto: croppedImage.path });
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Error selecting photo:', error);
+                                Alert.alert('Error', 'Failed to select photo.');
+                              }
+                            }}>
+                            <Text style={styles.fileButtonText}>{teamMemberForm.profilePhoto ? 'Change Photo' : 'Add Profile Photo'}</Text>
+                          </TouchableOpacity>
+                          {teamMemberForm.profilePhoto ? (
+                            <Image source={{ uri: teamMemberForm.profilePhoto }} style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 8, alignSelf: 'center' }} />
+                          ) : null}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, width: '100%' }}>
+                            <TouchableOpacity onPress={() => setTeamModalVisible(false)}>
+                              <Text style={{ color: Colors.lightText }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => {
+                                if (!teamMemberForm.firstName || !teamMemberForm.lastName || !teamMemberForm.title) {
+                                  Alert.alert('Validation', 'Please fill all required fields.');
+                                  return;
+                                }
+                                setFormData({
+                                  ...formData,
+                                  teamMembers: [...formData.teamMembers, { ...teamMemberForm }],
+                                });
+                                setTeamMemberForm({ firstName: '', lastName: '', title: '', profilePhoto: '' });
+                                setTeamModalVisible(false);
+                              }}>
+                              <Text style={{ color: Colors.primary, fontWeight: 'bold' }}>Add</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </LinearGradient>
+                      </KeyboardAvoidingView>
+                    </Modal>
+                    <Animated.View style={[styles.modalContent]}>
+                      <View style={styles.progressContainer}>
+                        {Array(Math.ceil(formSteps.length / 5)).fill(0).map((_, idx) => (
+                          <View
+                            key={idx}
+                            style={[styles.progressDot, Math.floor(currentStep / 5) === idx && styles.activeProgressDot]}
+                          />
+                        ))}
+                      </View>
+                      {renderStep()}
+                    </Animated.View>
+                    <View style={styles.navigationButtons}>
+                      {currentStep > 0 && (
+                        <TouchableOpacity style={styles.navButton} onPress={handleBack} disabled={loading}>
+                          <Text style={styles.navButtonText}>Back</Text>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        style={[styles.navButton, { opacity: isStepValid(currentStep) && !loading ? 1 : 0.5 }]}
+                        onPress={handleNext}
+                        disabled={!isStepValid(currentStep) || loading}
+                      >
+                        <Text style={styles.navButtonText}>
+                          {loading ? 'Submitting...' : currentStep === formSteps.length - 1 ? (editingCompanyId ? 'Update' : 'Submit') : 'Next'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </SafeAreaView>
+                </KeyboardAvoidingView>
               </LinearGradient>
             </View>
           </View>
@@ -1248,10 +1442,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.1)',
     backgroundColor: '#1A1E29',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
   navButton: { backgroundColor: Colors.primary, borderRadius: metrics.borderRadius.md, padding: metrics.padding.md, flex: 1, alignItems: 'center', marginHorizontal: metrics.margin.sm },
   navButtonText: { color: Colors.lightText, fontSize: metrics.fontSize.md, fontWeight: '500' },
@@ -1276,6 +1466,12 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.md,
   },
   sectorPickerModal: {
+    borderRadius: metrics.borderRadius.lg,
+    padding: metrics.padding.md,
+    margin: metrics.margin.lg,
+    maxHeight: '80%',
+  },
+  teamMemberModal: {
     borderRadius: metrics.borderRadius.lg,
     padding: metrics.padding.md,
     margin: metrics.margin.lg,
