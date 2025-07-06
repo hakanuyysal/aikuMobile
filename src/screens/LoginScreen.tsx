@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Alert, Text } from 'react-native';
 import LinkedInLogin from '../components/LinkedInLogin';
+import { Linking } from 'react-native';
 
 const LoginScreen = ({ navigation }: any) => {
   const handleLinkedInSuccess = (data: any) => {
@@ -32,6 +33,20 @@ const LoginScreen = ({ navigation }: any) => {
           </Text>
           .
         </Text>
+        <Text style={styles.infoText}>
+          By logging in, you automatically accept our{' '}
+          <Text
+            style={styles.linkText}
+            onPress={() => {
+              // Web tarayıcıda KVKK linkini aç
+              const url = 'https://www.aikuaiplatform.com/kvkk';
+              Linking.openURL(url);
+            }}
+          >
+            KVKK
+          </Text>
+          .
+        </Text>
       </View>
     </View>
   );
@@ -44,10 +59,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoContainer: {
-    position: 'absolute',
-    bottom: 32,
-    left: 0,
-    right: 0,
+    marginTop: 32,
     alignItems: 'center',
     paddingHorizontal: 16,
   },

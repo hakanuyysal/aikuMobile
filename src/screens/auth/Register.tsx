@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
+  Linking,
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
 import {Colors} from '../../constants/colors';
@@ -207,6 +208,19 @@ const Register = ({navigation}: Props) => {
                     onPress={() => navigation.navigate('PrivacyPolicy')}
                   >
                     Privacy Policy
+                  </Text>
+                  .
+                </Text>
+                <Text style={styles.privacyText}>
+                  By signing up, you automatically accept our{' '}
+                  <Text
+                    style={styles.privacyLink}
+                    onPress={() => {
+                      const url = 'https://www.aikuaiplatform.com/kvkk';
+                      Linking.openURL(url);
+                    }}
+                  >
+                    KVKK
                   </Text>
                   .
                 </Text>
