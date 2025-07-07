@@ -845,13 +845,14 @@ const styles = StyleSheet.create({
     height: 40,
     marginRight: 12,
     borderRadius: 8,
+    backgroundColor: '#fff',
   },
   placeholderLogo: {
     width: 40,
     height: 40,
     marginRight: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -937,6 +938,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 20,
     borderRadius: 12,
+    backgroundColor: '#fff',
   },
   loadingText: {
     color: '#fff',

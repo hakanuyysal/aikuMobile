@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     width: metrics.scale(52),
     height: metrics.scale(52),
     borderRadius: metrics.scale(26),
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#fff',
     padding: metrics.padding.xs,
     justifyContent: 'center',
     alignItems: 'center',

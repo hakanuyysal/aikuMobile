@@ -243,4 +243,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
   },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
 });

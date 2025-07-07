@@ -594,6 +594,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
 });
 
 export default ChatDetailScreen;
