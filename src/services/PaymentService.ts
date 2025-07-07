@@ -29,7 +29,7 @@ class PaymentService {
 
   constructor() {
     this.baseURL = '/api/payments';
-    // Hesap GUID'i - Param POS tarafından sağlanan sabit değer
+    // Account GUID - constant value provided by Param POS
     this.ACCOUNT_GUID = '1B52D752-1980-4835-A0EC-30E3CB1077A5';
     this.navigation = null;
   }
@@ -38,10 +38,10 @@ class PaymentService {
     this.navigation = navigation;
   }
 
-  // Ödeme işlemini başlat
+  // Start payment process
   async processPayment(paymentData: any): Promise<any> {
     try {
-      // Platform bazlı callback URL'leri
+      // Platform-based callback URLs
       const successUrl = Platform.select({
         ios: 'aikumobile://payment/callback',
         android: 'aikumobile://payment/callback',
@@ -52,7 +52,7 @@ class PaymentService {
         android: 'aikumobile://payment/callback',
       });
 
-      // Web versiyonuna uygun olarak gerekli alanları ekle
+      // Add required fields for web version
       const paymentDataWithUrls = {
         ...paymentData,
         successUrl,
@@ -77,7 +77,7 @@ class PaymentService {
         paymentDataWithUrls,
       );
 
-      // 3D Secure için veri saklama
+      // Store data for 3D Secure
       if (response.success && response.data.isRedirect) {
         const storeData = (key: string, value: string) => {
           try {
@@ -120,7 +120,7 @@ class PaymentService {
     }
   }
 
-  // 3D Secure formunu göster
+  // Show 3D Secure form
   async showSecureForm(paymentData: any): Promise<any> {
     try {
       if (!this.navigation) {
@@ -141,7 +141,7 @@ class PaymentService {
 
       MMKVInstance.setBoolean('payment_initiated', true);
 
-      // React Navigation ile 3D Secure sayfasına yönlendir
+      // Navigate to 3D Secure page with React Navigation
       this.navigation.navigate('ThreeDSecure', {
         htmlContent: paymentData.html,
         returnUrl: paymentData.redirectUrl
@@ -153,7 +153,7 @@ class PaymentService {
     }
   }
 
-  // Ödeme işlemini tamamla
+  // Complete payment process
   async completePayment(callbackData: any): Promise<any> {
     try {
       const isPaymentCompleted = MMKVInstance.getBoolean('payment_completed');
@@ -222,13 +222,13 @@ class PaymentService {
     }
   }
 
-  // Ödeme geçmişini getir
+  // Get payment history
   async getPaymentHistory(): Promise<PaymentHistoryResponse> {
     const response = await api.get('/subscriptions/payment-history');
     return response.data;
   }
 
-  // Ücretsiz deneme kaydı
+  // Free trial registration
   async recordFreePayment(freePaymentData: any) {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -246,7 +246,7 @@ class PaymentService {
     }
   }
 
-  // Abonelik detaylarını getir
+  // Get subscription details
   async getSubscriptionDetails() {
     try {
       const response = await BaseService.getRequest(`${this.baseURL}/subscription`);
@@ -256,7 +256,7 @@ class PaymentService {
     }
   }
 
-  // Kupon kodu doğrulama
+  // Coupon code validation
   async validateCoupon(couponCode: string, planType: string) {
     try {
       const response = await BaseService.postRequest(
@@ -269,7 +269,7 @@ class PaymentService {
     }
   }
 
-  // Kupon kodu uygula
+  // Coupon code apply
   async applyCoupon(couponCode: string, planType: string) {
     try {
       const response = await BaseService.postRequest(
@@ -283,10 +283,10 @@ class PaymentService {
   }
 }
 
-// Doğrudan API'ye istek atan fonksiyon
+// Function that makes direct API request
 export async function getPaymentHistoryDirect(): Promise<PaymentHistoryResponse> {
   try {
-    // AsyncStorage yerine MMKV veya başka bir storage kullanıyorsan buradan token al
+    // If you use MMKV or another storage instead of AsyncStorage, get the token here
     const token = MMKVInstance.getString('token');
     const response = await axios.get('https://api.aikuaiplatform.com/api/payments/history', {
       headers: {

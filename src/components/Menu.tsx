@@ -46,7 +46,6 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
     Animated.parallel([
       Animated.timing(menuSlideAnim, {
         toValue: 0,
@@ -69,9 +68,7 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
         useNativeDriver: true,
       }),
     ]).start();
-    return () => {
-      isMounted = false;
-    };
+    return () => {};
   }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
 
   useEffect(() => {
@@ -88,7 +85,7 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
         } catch (profileError) {
           console.error('Error fetching profile:', profileError);
           if (isMounted) {
-            setErrorMessage('Profil bilgileri alınamadı.');
+            setErrorMessage('Profile information could not be retrieved.');
           }
         }
 
@@ -211,13 +208,6 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
       } else {
         console.log(`${title} pressed`);
       }
-    }, 300);
-  };
-
-  const handlePrivacyPolicyPress = () => {
-    handleClose();
-    setTimeout(() => {
-      navigation.navigate('PrivacyPolicy');
     }, 300);
   };
 
@@ -388,11 +378,25 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
                 </View>
                 <Text style={styles.brandText}>Aiku</Text>
                 <Text style={styles.versionText}>Version 1.0.0</Text>
-                <TouchableOpacity onPress={handlePrivacyPolicyPress} style={{marginTop: 8}}>
-                  <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
-                    Privacy Policy
-                  </Text>
-                </TouchableOpacity>
+                <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 8}}>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://www.aikuaiplatform.com/terms')}>
+                    <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
+                      Terms of Service
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={{color: Colors.primary, fontSize: 13, marginHorizontal: 4}}>|</Text>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://www.aikuaiplatform.com/personal-data')}>
+                    <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
+                      Personal Data Protection Notice
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={{color: Colors.primary, fontSize: 13, marginHorizontal: 4}}>|</Text>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://www.aikuaiplatform.com/cookie-policy')}>
+                    <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
+                      Cookie Policy
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </ScrollView>
           </Animated.View>

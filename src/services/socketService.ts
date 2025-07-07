@@ -27,65 +27,65 @@ class SocketService {
 
       return new Promise((resolve, reject) => {
         if (!this.socket) {
-          reject(new Error('Socket oluşturulamadı'));
+          reject(new Error('Socket could not be created'));
           return;
         }
 
         this.socket.on('connect', () => {
-          console.log('Socket bağlantısı başarılı');
+          console.log('Socket connection successful');
           resolve(this.socket);
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('Socket bağlantı hatası:', error.message);
+          console.error('Socket connection error:', error.message);
           reject(error);
         });
 
         this.socket.on('disconnect', (reason) => {
-          console.log('Socket bağlantısı kesildi:', reason);
+          console.log('Socket connection closed:', reason);
         });
 
         // Bağlantı timeout kontrolü
         setTimeout(() => {
           if (!this.socket?.connected) {
-            reject(new Error('Socket bağlantı zaman aşımı'));
+            reject(new Error('Socket connection timeout'));
           }
         }, 20000);
       });
     } catch (error) {
-      console.error('Socket bağlantısı kurulurken hata:', error);
+      console.error('Error while establishing socket connection:', error);
       return null;
     }
   };
 
   joinChat = (chatSessionId: string) => {
     if (this.socket?.connected) {
-      console.log('Chat odasına katılınıyor:', chatSessionId);
+      console.log('Joining chat room:', chatSessionId);
       this.socket.emit('join-chat-session', chatSessionId);
     } else {
-      console.error('Socket bağlı değil - joinChat');
+      console.error('Socket not connected - joinChat');
     }
   };
 
   joinCompanyChat = (companyId: string) => {
     if (this.socket?.connected) {
-      console.log('Şirket chat odasına katılınıyor:', companyId);
+      console.log('Joining company chat room:', companyId);
       this.socket.emit('join-company-chat', companyId);
     } else {
-      console.error('Socket bağlı değil - joinCompanyChat');
+      console.error('Socket not connected - joinCompanyChat');
     }
   };
 
   leaveChat = (chatSessionId: string) => {
     if (this.socket?.connected) {
-      console.log('Chat odasından çıkılıyor:', chatSessionId);
+      console.log('Leaving chat room:', chatSessionId);
       this.socket.emit('leave-chat-session', chatSessionId);
     }
   };
 
   disconnect = () => {
     if (this.socket) {
-      console.log('Socket bağlantısı kapatılıyor');
+      console.log('Closing socket connection');
       this.socket.disconnect();
       this.socket = null;
     }

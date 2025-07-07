@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Tip tanımı eklendi
+// Type definition added
 interface BusinessType {
   id: string;
   name: string;
@@ -17,7 +17,7 @@ interface BusinessType {
   link: string;
 }
 
-const businessesData: BusinessType[] = []; // Ürünler kaldırıldı, dizi boş bırakıldı
+const businessesData: BusinessType[] = []; // Products removed, array left empty
 
 const Business = () => {
   const navigation = useNavigation();
@@ -101,7 +101,7 @@ const Business = () => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<PaperText style={styles.emptyText}>Kayıtlı işletme bulunamadı.</PaperText>}
+          
         />
       </SafeAreaView>
     </LinearGradient>

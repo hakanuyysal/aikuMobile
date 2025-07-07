@@ -209,22 +209,23 @@ const Login = ({navigation}: Props) => {
                 By continuing, you accept our{' '}
                 <Text
                   style={styles.privacyLink}
-                  onPress={() => navigation.navigate('PrivacyPolicy')}
+                  onPress={() => Linking.openURL('https://www.aikuaiplatform.com/terms')}
                 >
-                  Privacy Policy
+                  Terms of Service
                 </Text>
-                .
-              </Text>
-              <Text style={styles.privacyText}>
-                By logging in, you automatically accept our{' '}
+                {' '}|
                 <Text
                   style={styles.privacyLink}
-                  onPress={() => {
-                    const url = 'https://www.aikuaiplatform.com/kvkk';
-                    Linking.openURL(url);
-                  }}
+                  onPress={() => Linking.openURL('https://www.aikuaiplatform.com/personal-data')}
                 >
-                  KVKK
+                  Personal Data Protection Notice
+                </Text>
+                {' '}|
+                <Text
+                  style={styles.privacyLink}
+                  onPress={() => Linking.openURL('https://www.aikuaiplatform.com/cookie-policy')}
+                >
+                  Cookie Policy
                 </Text>
                 .
               </Text>

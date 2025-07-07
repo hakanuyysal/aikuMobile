@@ -5,13 +5,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class LinkedInAuthService {
   /**
-   * LinkedIn kimlik doğrulama URL'sini oluşturur
+   * Creates LinkedIn authentication URL
    */
   getLinkedInAuthURL() {
     const clientId = process.env.REACT_APP_LINKEDIN_CLIENT_ID;
     const redirectUri = process.env.REACT_APP_LINKEDIN_REDIRECT_URI || 'aikuaiplatform://auth/social-callback'; // Deep link URL'i
     
-    // Client ID'nin tanımlı olduğundan emin olalım
+    // Make sure Client ID is defined
     if (!clientId) {
       console.error('LinkedIn Client ID is not defined in environment variables.');
       throw new Error('LinkedIn Client ID configuration error.');
@@ -20,14 +20,14 @@ class LinkedInAuthService {
     const scope = 'r_liteprofile r_emailaddress';
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     
-    // State değerini AsyncStorage'a kaydet
+    // Save state value to AsyncStorage
     AsyncStorage.setItem('linkedin_state', state);
     
     return `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
   }
 
   /**
-   * LinkedIn code değerini kullanarak token alır
+   * Gets token using LinkedIn code value
    * @param {string} code - LinkedIn callback'ten alınan code değeri
    */
   async getTokenFromCode(code: string) {

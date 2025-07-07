@@ -9,7 +9,7 @@ interface Startup {
   logo?: string;
   website?: string;
   isHighlighted?: boolean;
-  // Diğer startup bilgileri buraya eklenebilir
+  // Other startup information can be added here
 }
 
 interface FavoritesState {

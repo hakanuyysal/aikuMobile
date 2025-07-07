@@ -23,7 +23,7 @@ interface Profile {
   isSubscriber?: boolean;
   planDetails?: {
     name: string;
-    // ... diğer plan bilgileri ...
+    // ... other plan details ...
   };
   subscriptionInfo?: any;
   subscriptionPlan?: string;

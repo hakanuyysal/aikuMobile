@@ -53,10 +53,10 @@ export const useFavoriteStore = create<FavoriteState>()(
         console.log('useFavoriteStore: onRehydrateStorage called', state?.favorites);
         state?.setState({ hasHydrated: true });
       },
-      // Hata durumunda veya bozuk veride varsayılan değeri döndürmek için
+      // Return default value in case of error or corrupted data
       deserialize: (stateStr) => {
         const state = JSON.parse(stateStr);
-        // favorites'in bir dizi olduğundan emin ol
+        // Make sure favorites is an array
         if (state && !Array.isArray(state.state.favorites)) {
           console.warn('useFavoriteStore: Deserialized favorites is not an array, resetting to empty array.');
           state.state.favorites = [];

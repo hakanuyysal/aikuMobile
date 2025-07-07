@@ -46,7 +46,7 @@ class SearchService {
         this.searchHistory = JSON.parse(stored);
       }
     } catch (error) {
-      console.log('Arama geçmişi yüklenirken hata:', error);
+      console.log('Error loading search history:', error);
     }
   }
 
@@ -57,23 +57,23 @@ class SearchService {
         this.favorites = JSON.parse(stored);
       }
     } catch (error) {
-      console.log('Favoriler yüklenirken hata:', error);
+      console.log('Error loading favorites:', error);
     }
   }
 
   public async search(query: string, filters: SearchFilters): Promise<SearchResult[]> {
     try {
-      // API'den veri çek
+      // Fetch data from API
       const results = await this.apiService.search(query, filters);
 
-      // Arama geçmişine ekle
+      // Add to search history
       if (query.length > 0) {
         await this.addToSearchHistory(query);
       }
 
       return results;
     } catch (error) {
-      console.error('Arama hatası:', error);
+      console.error('Search error:', error);
       return [];
     }
   }
