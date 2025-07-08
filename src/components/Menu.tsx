@@ -385,9 +385,9 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
                     </Text>
                   </TouchableOpacity>
                   <Text style={{color: Colors.primary, fontSize: 13, marginHorizontal: 4}}>|</Text>
-                  <TouchableOpacity onPress={() => Linking.openURL('https://www.aikuaiplatform.com/personal-data')}>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
                     <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
-                      Personal Data Protection Notice
+                      Privacy Policy
                     </Text>
                   </TouchableOpacity>
                   <Text style={{color: Colors.primary, fontSize: 13, marginHorizontal: 4}}>|</Text>

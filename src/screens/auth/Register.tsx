@@ -212,9 +212,9 @@ const Register = ({navigation}: Props) => {
                   {' '}|
                   <Text
                     style={styles.privacyLink}
-                    onPress={() => Linking.openURL('https://www.aikuaiplatform.com/personal-data')}
+                    onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}
                   >
-                    Personal Data Protection Notice
+                    Privacy Policy
                   </Text>
                   {' '}|
                   <Text

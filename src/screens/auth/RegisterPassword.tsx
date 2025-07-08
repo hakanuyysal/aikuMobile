@@ -190,7 +190,7 @@ const RegisterPassword = ({navigation, route}: Props) => {
               <Text
                 style={styles.linkText}
                 onPress={() => navigation.navigate('PersonalDataProtection')}>
-                Personal Data Protection Notice
+                Privacy Policy
               </Text>
               .
             </Text>
