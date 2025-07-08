@@ -4,8 +4,10 @@ import { Text as PaperText } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, RouteProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
+import { useFavoritesStore } from '../store/favoritesStore';
 
 type RootStackParamList = {
   HomeScreen: undefined;
@@ -33,6 +35,16 @@ interface Product {
   address: string;
   phone: string;
   email: string;
+  logo?: string;
+  website?: string;
+  productLogo?: string;
+  productName: string;
+  productDescription: string;
+  productWebsite: string;
+  isHighlighted: boolean;
+  companyId?: {
+    companyLogo?: string;
+  };
 }
 
 const ProductDetailsScreen: React.FC = () => {
@@ -41,6 +53,31 @@ const ProductDetailsScreen: React.FC = () => {
   const { product } = route.params;
   const scrollViewRef = React.useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = React.useState(0);
+
+  // Favori store'u
+  const { favorites, addToFavorites, removeFromFavorites } = useFavoritesStore();
+
+  // Favori kontrolü (id veya _id)
+  const isFavorite = favorites.some(
+    (fav) => fav.id === product.id
+  );
+
+  const handleToggleFavorite = () => {
+    if (isFavorite) {
+      removeFromFavorites(product.id);
+    } else {
+      // Favoriye eklerken gerekli alanları doldur
+      console.log('Favoriye eklenen ürün:', product);
+      addToFavorites({
+        id: product.id,
+        name: product.productName,
+        description: product.productDescription,
+        logo: product.productLogo || (product.companyId?.companyLogo ? product.companyId.companyLogo : ''),
+        website: product.productWebsite || '',
+        isHighlighted: product.isHighlighted || false,
+      });
+    }
+  };
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -115,8 +152,10 @@ const ProductDetailsScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.card}>
-                <TouchableOpacity style={styles.favoriteButton}>
-                  <PaperText style={styles.favoriteText}>Add to Favorites</PaperText>
+                <TouchableOpacity style={styles.favoriteButton} onPress={handleToggleFavorite}>
+                  <PaperText style={styles.favoriteText}>
+                    {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                  </PaperText>
                 </TouchableOpacity>
               </View>
 

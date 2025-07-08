@@ -8,6 +8,9 @@ import { Colors } from '../constants/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Ekran genişliğine göre ölçekleme fonksiyonu
+const scale = (size: number) => (SCREEN_WIDTH / 375) * size;
+
 const TrainingDetailScreen = () => {
   const navigation = useNavigation();
 
@@ -29,7 +32,7 @@ const TrainingDetailScreen = () => {
         <View style={styles.headerContainer}>
           <View style={styles.backButtonContainer}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Icon name="chevron-back" size={24} color={Colors.primary} />
+              <Icon name="chevron-back" size={scale(24)} color={Colors.primary} />
             </TouchableOpacity>
           </View>
           <PaperText style={styles.headerTitle}>Training Details</PaperText>
@@ -119,14 +122,14 @@ export default TrainingDetailScreen;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContainer: {
-    padding: 20,
-    paddingTop: 40,
-    paddingBottom: 60,
+    padding: scale(20),
+    paddingTop: scale(40),
+    paddingBottom: scale(60),
   },
   headerContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
     position: 'relative',
   },
   backButtonContainer: {
@@ -134,61 +137,61 @@ const styles = StyleSheet.create({
     left: 0,
   },
   backButton: {
-    padding: 5,
+    padding: scale(5),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: scale(24),
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
   },
   cardContainer: {
-    width: SCREEN_WIDTH - 40,
+    width: SCREEN_WIDTH - scale(40),
     height: 'auto',
-    marginBottom: 15,
+    marginBottom: scale(15),
     alignSelf: 'center',
-    borderRadius: 12,
+    borderRadius: scale(12),
     overflow: 'hidden',
     backgroundColor: Colors.cardBackground,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: scale(4) },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowRadius: scale(6),
     elevation: 8,
-    padding: 10,
+    padding: scale(10),
   },
   firstCard: {
-    minHeight: 340,
+    minHeight: scale(340),
     position: 'relative',
   },
   titleImageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: scale(10),
   },
   imageContainer: {
     position: 'relative',
-    width: 50,
-    height: 50,
+    width: scale(50),
+    height: scale(50),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: scale(10),
   },
   spotlight: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 50,
-    top: -5,
-    left: -5,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(50),
+    top: scale(-5),
+    left: scale(-5),
     zIndex: 0,
     opacity: 0.8,
   },
   image: {
-    width: 44,
-    height: 50,
+    width: scale(44),
+    height: scale(50),
     zIndex: 1,
   },
   contentContainer: {
@@ -202,43 +205,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: scale(24),
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
-    marginLeft:10,
+    marginLeft: scale(10),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: scale(18),
     fontWeight: '600',
     color: '#fff',
-    marginTop: 10,
-    marginBottom: 6,
+    marginTop: scale(10),
+    marginBottom: scale(6),
   },
   subSectionTitle: {
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
     color: '#aad4ff',
-    marginTop: 10,
-    marginBottom: 4,
+    marginTop: scale(10),
+    marginBottom: scale(4),
   },
   text: {
-    fontSize: 14,
+    fontSize: scale(14),
     color: '#eee',
-    lineHeight: 22,
+    lineHeight: scale(22),
   },
   contactButton: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: scale(10),
+    right: scale(10),
     backgroundColor: '#0057ff',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(20),
   },
   contactButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: scale(11),
     fontWeight: '600',
   },
 });

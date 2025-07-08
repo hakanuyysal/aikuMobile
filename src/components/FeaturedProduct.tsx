@@ -198,7 +198,7 @@ const FeaturedProduct: React.FC = () => {
                         >
                           <Text
                             style={styles.newsTitle}
-                            numberOfLines={3}
+                            numberOfLines={2}
                             ellipsizeMode="tail"
                           >
                             {item.title || 'Başlık Yok'}
