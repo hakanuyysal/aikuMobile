@@ -84,30 +84,44 @@ class AuthService {
       return;
     }
 
-    const urlObj = new URL(url.replace('#', '?')); // hash'i query'ye çevir
+    const urlObj = new URL(url);
     if (
       urlObj.pathname === '/auth/linkedin-callback' ||
       urlObj.pathname === '/linkedin-callback'
     ) {
-      // access_token hash kısmında geliyor, onu al
-      const paramsString = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
-      const params = new URLSearchParams(paramsString);
-      const accessToken = params.get('access_token');
+      // code parametresi query string ile gelir
+      const params = new URLSearchParams(urlObj.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const storedState = await AsyncStorage.getItem('linkedin_state');
 
-      if (accessToken) {
-        await AsyncStorage.setItem('token', accessToken);
-        // Kullanıcı bilgisini almak için Supabase'den user'ı çekebilirsin
-        const { data } = await supabase.auth.getUser(accessToken);
-        if (data?.user) {
-          await AsyncStorage.setItem('user_id', data.user.id);
-          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      if (!code) {
+        console.warn('No code found in callback URL');
+        return;
+      }
+      if (state !== storedState) {
+        console.warn('State mismatch!');
+        return;
+      }
+
+      try {
+        // Supabase ile code'u access_token'a çevir
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+
+        if (data.session?.access_token) {
+          await AsyncStorage.setItem('token', data.session.access_token);
+          if (data.user?.id) {
+            await AsyncStorage.setItem('user_id', data.user.id);
+            await AsyncStorage.setItem('user', JSON.stringify(data.user));
+          }
           // Kullanıcıyı backend ile senkronize et
-          await this.syncSupabaseUser('linkedin_oidc', accessToken, data.user);
+          await this.syncSupabaseUser('linkedin_oidc', data.session.access_token, data.user);
           this.authEvents.emit('login', data.user);
-          console.log('Google/LinkedIn login response user:', data.user);
+          console.log('LinkedIn login response user:', data.user);
         }
-      } else {
-        console.warn('No access_token found in callback URL');
+      } catch (error) {
+        console.error('LinkedIn code exchange error:', error);
       }
     } else {
       console.warn('Unhandled path:', urlObj.pathname);
