@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "940825068315",
+    "project_id": "aiku-ai-platform-77896",
+    "storage_bucket": "aiku-ai-platform-77896.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940825068315:android:f78ad21cf34903834e09be",
+        "android_client_info": {
+          "package_name": "com.aikumobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCttTxYhdPKaSxLEtNJ46JXh6yqqu-PZRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
