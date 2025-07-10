@@ -53,10 +53,10 @@ const FeaturedProduct: React.FC = () => {
       if (response.success) {
         setArticles(response.articles);
       } else {
-        throw new Error(response.message || 'Haberler yüklenirken bir hata oluştu.');
+        throw new Error(response.message || 'An error occurred while loading news.');
       }
     } catch (err: any) {
-      setError(err.message || 'Haberler yüklenirken bir hata oluştu.');
+      setError(err.message || 'An error occurred while loading news.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ const FeaturedProduct: React.FC = () => {
         setModalVisible(true);
       }
     } catch (err: any) {
-      setError(err.message || 'Haber detayı yüklenirken bir hata oluştu.');
+      setError(err.message || 'An error occurred while loading news details.');
     }
   };
 
@@ -254,22 +254,22 @@ const FeaturedProduct: React.FC = () => {
                   </View>
                   <View style={styles.modalTextContainer}>
                     <Text style={styles.modalTitle}>
-                      {selectedArticle.title || 'Başlık Yok'}
+                      {selectedArticle.title || ''}
                     </Text>
                     <Text style={styles.modalSource}>
-                      {selectedArticle.source?.name} - {new Date(selectedArticle.publishedAt).toLocaleDateString('tr-TR')}
+                      {selectedArticle.source?.name} - {new Date(selectedArticle.publishedAt).toLocaleDateString('en-US')}
                     </Text>
                     <Text style={styles.modalAbstract}>
                       {cleanContent(selectedArticle.fullContent) ||
                         cleanContent(selectedArticle.content) ||
                         cleanContent(selectedArticle.description) ||
-                        'İçerik bulunamadı.'}
+                        'No content found.'}
                     </Text>
                   </View>
                 </View>
               </ScrollView>
             ) : (
-              <Text style={styles.modalText}>Haber seçilmedi.</Text>
+              <Text style={styles.modalText}>No news selected.</Text>
             )}
           </LinearGradient>
         </View>

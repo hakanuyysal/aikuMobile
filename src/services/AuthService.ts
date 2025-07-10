@@ -54,7 +54,7 @@ class AuthService {
     });
 
     GoogleSignin.configure({
-      iosClientId: Config.IOS_GOOGLE_CLIENT_ID || '974504980015-2e15l52tr86h8o42v8puf36lrtaamjqc.apps.googleusercontent.com',
+      iosClientId: Config.IOS_GOOGLE_CLIENT_ID || 'http://940825068315-erm1cg6j87lqnldrbohmgvfd2ig0cr2f.apps.googleusercontent.com',
       webClientId: '974504980015-2n6mis0omh2mot251nok4fq41ptgbqn0.apps.googleusercontent.com',
       offlineAccess: true,
       forceCodeForRefreshToken: true,
