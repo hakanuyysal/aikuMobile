@@ -12,7 +12,20 @@
           "package_name": "com.aikumobile"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "940825068315-ll6ll9l0agp7dajmb1kgbdbkss6fhs90.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aikumobile",
+            "certificate_hash": "ae1e93ea4ec5041e6185937667297fbe8bf39f09"
+          }
+        },
+        {
+          "client_id": "940825068315-57puo4kfknstsklrq3bncj8v7kk09m89.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCttTxYhdPKaSxLEtNJ46JXh6yqqu-PZRo"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940825068315-57puo4kfknstsklrq3bncj8v7kk09m89.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "940825068315-erm1cg6j87lqnldrbohmgvfd2ig0cr2f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aikumobile"
+              }
+            }
+          ]
         }
       }
     }
