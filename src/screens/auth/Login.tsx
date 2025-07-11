@@ -31,7 +31,7 @@ const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const {login, loading, googleLogin, linkedInLogin} = useAuth();
+  const {login, loading, googleLogin} = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -62,20 +62,6 @@ const Login = ({navigation}: Props) => {
     } catch (error) {
       console.error('Google Login Exception:', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
-    }
-  };
-
-  const handleLinkedInLogin = async () => {
-    try {
-      const response = await linkedInLogin();
-      if (response?.user) {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'Main'}],
-        });
-      }
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
     }
   };
 
@@ -182,7 +168,7 @@ const Login = ({navigation}: Props) => {
                 />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.socialButton}
                 onPress={handleLinkedInLogin}
                 disabled={loading}>
@@ -195,7 +181,7 @@ const Login = ({navigation}: Props) => {
                 <Text style={styles.socialButtonText}>
                   Sign in with LinkedIn
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             <View style={styles.footer}>

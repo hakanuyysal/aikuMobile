@@ -1,27 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, Alert, Text } from 'react-native';
-import LinkedInLogin from '../components/LinkedInLogin';
+import { View, StyleSheet, Text } from 'react-native';
 import { Linking } from 'react-native';
 
 const LoginScreen = ({ navigation }: any) => {
-  const handleLinkedInSuccess = (data: any) => {
-    // Başarılı giriş sonrası yapılacak işlemler
-    console.log('LinkedIn girişi başarılı:', data);
-    // Token'ı kaydet ve ana sayfaya yönlendir
-    Alert.alert('Başarılı', 'LinkedIn ile giriş başarılı!');
-  };
-
-  const handleLinkedInError = (error: any) => {
-    console.error('LinkedIn girişi hatası:', error);
-    Alert.alert('Hata', 'LinkedIn girişi sırasında bir hata oluştu: ' + error);
-  };
-
   return (
     <View style={styles.container}>
-      <LinkedInLogin
+      {/* <LinkedInLogin
         onSuccess={handleLinkedInSuccess}
         onError={handleLinkedInError}
-      />
+      /> */}
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>
           By continuing, you accept our{' '}
