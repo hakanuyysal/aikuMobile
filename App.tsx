@@ -4,6 +4,7 @@ import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {StatusBar} from 'react-native';
 import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
+import AnalyticsService from './src/services/AnalyticsService';
 import TabNavigator from './src/navigation/TabNavigator';
 import {Colors} from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
@@ -150,6 +151,23 @@ function AppContent(): React.JSX.Element {
   useEffect(() => {
     const onLogin = async (user: any) => {
       await refreshUser?.(); // context'teki kullanıcıyı güncelle
+      
+      // Log analytics events for user login
+      try {
+        await AnalyticsService.logLogin('email');
+        if (user?.id) {
+          await AnalyticsService.setUserId(user.id.toString());
+        }
+        if (user?.email) {
+          await AnalyticsService.setUserProperties({
+            user_type: user.user_type || 'user',
+            email_domain: user.email.split('@')[1] || 'unknown'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to log analytics on login:', error);
+      }
+      
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     };
     authService.authEvents.on('login', onLogin);
@@ -375,6 +393,21 @@ function AppContent(): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
+  useEffect(() => {
+    // Initialize Firebase Analytics when app starts
+    const initializeAnalytics = async () => {
+      try {
+        await AnalyticsService.initialize();
+        // Log app open event
+        await AnalyticsService.logEvent('app_open');
+      } catch (error) {
+        console.error('Failed to initialize analytics:', error);
+      }
+    };
+
+    initializeAnalytics();
+  }, []);
+
   return (
     <AuthProvider>
       <PaperProvider theme={materialTheme}>
