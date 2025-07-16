@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "940825068315-5548sta6336d9tqo5cg28qmhtt27lfl1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aikumobile",
+            "certificate_hash": "2ba112599ecbbfe8b6097f3f6caae04f13aecbc7"
+          }
+        },
+        {
+          "client_id": "940825068315-fn3eha4m7cqrvt35qs8ld1shfbes0556.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aikumobile",
+            "certificate_hash": "40a85ed716399611618115f31f766b282200c40a"
+          }
+        },
+        {
           "client_id": "940825068315-ll6ll9l0agp7dajmb1kgbdbkss6fhs90.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
