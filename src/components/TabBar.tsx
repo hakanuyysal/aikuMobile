@@ -1,19 +1,21 @@
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Alert, Platform } from 'react-native';
+import React, {useEffect} from 'react';
+import {View, TouchableOpacity, StyleSheet, Text, Alert, Platform} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors } from '../constants/colors';
-import { useRoute } from '@react-navigation/native';
-import { TabBarProps } from '../types';
+import {Colors} from '../constants/colors';
+import {useRoute} from '@react-navigation/native';
+import {TabBarProps} from '../types';
 import LinearGradient from 'react-native-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import metrics from '../constants/aikuMetric';
-import { useProfileStore } from '../store/profileStore';
+import {useProfileStore} from '../store/profileStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
+const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { profile } = useProfileStore();
+  const {profile} = useProfileStore();
+
+  console.log('isSubscriber:', profile.isSubscriber);
 
   useEffect(() => {
     fetchAndSetSubscription();
@@ -40,14 +42,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
   };
 
   return (
-    <View
-      style={[
-        styles.outerContainer,
-        {
-          paddingBottom: insets.bottom,
-          bottom: Platform.OS === 'android' ? metrics.tabBar.androidOffset : 0,
-        },
-      ]}>
+    <View style={[styles.outerContainer, {paddingBottom: insets.bottom}]}>
       <LinearGradient
         colors={[
           'rgba(26, 30, 41, 0.03)',
@@ -59,17 +54,17 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
         style={[
           styles.gradient,
           {
-            marginBottom: metrics.tabBar.marginBottom - 10,
+            marginBottom: metrics.tabBar.marginBottom,
             paddingTop: metrics.spacing.md * -2,
           },
         ]}>
         <View
           style={[
             styles.container,
-            { paddingBottom: metrics.tabBar.paddingBottom },
+            {paddingBottom: metrics.tabBar.paddingBottom},
           ]}>
           {state.routes.map((route: any, index: number) => {
-            const { options } = descriptors[route.key];
+            const {options} = descriptors[route.key];
             const isFocused = state.index === index;
 
             const handleMessageTabPress = () => {
@@ -77,12 +72,12 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
                 Alert.alert(
                   'Subscription Required',
                   'You need to be a subscriber to use the messaging feature.',
-                  [{ text: 'OK' }]
+                  [{text: 'OK'}]
                 );
                 return;
               }
               if (!isFocused) {
-                navigation.navigate(route.name, { merge: true });
+                navigation.navigate(route.name, {merge: true});
               }
             };
 
@@ -90,7 +85,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
               if (route.name === 'Message') {
                 handleMessageTabPress();
               } else if (!isFocused) {
-                navigation.navigate(route.name, { merge: true });
+                navigation.navigate(route.name, {merge: true});
               }
             };
 
@@ -98,7 +93,7 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
               <View key={index} style={styles.tabContainer}>
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
+                  accessibilityState={isFocused ? {selected: true} : {}}
                   accessibilityLabel={options.tabBarAccessibilityLabel}
                   testID={options.tabBarTestID}
                   onPress={onPress}
@@ -107,8 +102,8 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
                     <View style={styles.activeIconContainer}>
                       <LinearGradient
                         colors={[Colors.primary, Colors.secondary]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                        start={{x: 0, y: 0}}
+                        end={{x: 1, y: 1}}
                         style={styles.activeGradient}>
                         <Icon
                           name={iconMap[route.name] || 'circle'}
@@ -144,12 +139,9 @@ const styles = StyleSheet.create({
   outerContainer: {
     width: metrics.WIDTH,
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 0 : 22,
+    bottom: Platform.OS === 'ios' ? 0 :22,
     left: 0,
     right: 0,
-     height: metrics.tabBar.height + metrics.tabBar.marginBottom,
-    
- 
   },
   gradient: {
     width: '100%',
@@ -157,12 +149,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     width: '100%',
-    height: metrics.tabBar.height,
     paddingHorizontal: metrics.tabBar.paddingHorizontal,
     alignItems: 'center',
     justifyContent: 'space-between',
-
-
   },
   tabContainer: {
     flex: 1,
@@ -200,13 +189,13 @@ const styles = StyleSheet.create({
   },
   activeLabel: {
     color: Colors.primary,
-    fontSize: metrics.fontSize.sm,
+    fontSize: metrics.fontSize.xs,
     fontWeight: '600',
     marginTop: metrics.spacing.xs,
   },
   label: {
     color: Colors.inactive,
-    fontSize: metrics.fontSize.sm,
+    fontSize: metrics.fontSize.xs,
     marginTop: metrics.spacing.xs,
   },
 });
@@ -221,6 +210,8 @@ async function fetchAndSetSubscription() {
     }
   });
   const data = await response.json();
+  console.log('SUBSCRIPTION RESPONSE:', data);
+  // Doğru alanı kullan!
   const isSubscriber = data.data?.isSubscriptionActive === true;
   useProfileStore.getState().updateProfile({
     ...useProfileStore.getState().profile,
