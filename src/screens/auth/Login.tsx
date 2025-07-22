@@ -247,10 +247,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: metrics.padding.lg,
+    marginTop: -2, // Ekranı 2px yukarı kaydırır
   },
   header: {
     marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.xxl,
+    marginBottom: metrics.margin.lg,
   },
   title: {
     fontSize: metrics.fontSize.xxxl,
@@ -388,7 +389,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   privacyContainer: {
-    marginTop: 16,
+    marginTop: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },

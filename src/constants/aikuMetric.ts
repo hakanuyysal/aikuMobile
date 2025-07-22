@@ -98,6 +98,7 @@ const metrics = {
       : -(rem * 40),
     paddingHorizontal: rem * 12,
     activeIconSize: isIOS ? rem * 48 : rem * 44,
+    androidOffset: rem * 12, // Android için ekstra offset
   },
 
   scale,

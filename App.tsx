@@ -1,15 +1,15 @@
-import React, {useState, useRef, useEffect} from 'react';
-import {View, StyleSheet, Animated} from 'react-native';
-import {NavigationContainer, DarkTheme} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar} from 'react-native';
-import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native'; // Add Dimensions import
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'react-native';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import TabNavigator from './src/navigation/TabNavigator';
-import {Colors} from './src/constants/colors';
+import { Colors } from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import SplashScreen from './src/screens/splash/SplashScreen';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import Menu from './src/components/Menu';
 import SubscriptionDetails from './src/screens/settings/SubscriptionDetails';
 import Favorites from './src/screens/Favorites';
@@ -20,7 +20,7 @@ import ContactUs from './src/screens/settings/ContactUs';
 import TermsOfService from './src/screens/legal/TermsOfService';
 import PrivacyPolicy from './src/screens/legal/PrivacyPolicy';
 import PersonalDataProtection from './src/screens/legal/PersonalDataProtection';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import InvestmentScreen from 'screens/InvestmentDetailsScreen';
 import OnboardingScreen from 'screens/onboarding';
 import TalentPoolScreen from 'components/TalentPool';
@@ -37,12 +37,9 @@ import Investor from 'screens/ourcommunity/Investor';
 import Business from 'screens/ourcommunity/Business';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddProduct from './src/screens/AddProduct';
-import {ChatProvider} from './src/contexts/ChatContext';
+import { ChatProvider } from './src/contexts/ChatContext';
 import ChatScreen from './src/screens/ChatScreen';
-import {
-  useAppInitialization,
-  markOnboardingComplete,
-} from './src/hooks/useAppInitialization';
+import { useAppInitialization, markOnboardingComplete } from './src/hooks/useAppInitialization';
 import { Company } from './src/services/companyService';
 import { BillingInfo } from './src/types';
 import authService from './src/services/AuthService';
@@ -59,7 +56,7 @@ export type RootStackParamList = {
   SubscriptionDetails: undefined;
   Favorites: undefined;
   CompanyDetails: undefined;
-  ProductDetails: {id: string};
+  ProductDetails: { id: string };
   Settings: undefined;
   ContactUs: undefined;
   TermsOfService: undefined;
@@ -80,7 +77,7 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Chat: undefined;
   HowItWorks: undefined;
-  Cart:undefined;
+  Cart: undefined;
   CompanyProfile: { company: Company };
   BillingInfo: {
     planDetails: {
@@ -93,7 +90,7 @@ export type RootStackParamList = {
     hasExistingBillingInfo?: boolean;
     existingBillingInfo?: BillingInfo;
   };
-  Payment: {planDetails: any; billingInfo: any};
+  Payment: { planDetails: any; billingInfo: any };
   AddBillingInfo: {
     planDetails: {
       name: string;
@@ -139,24 +136,28 @@ const navigationTheme = {
   },
 };
 
+// Calculate 15% of screen height
+const screenHeight = Dimensions.get('window').height;
+const marginTop = screenHeight * 0.044;
+
 function AppContent(): React.JSX.Element {
   const { user, refreshUser } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const {showSplash, initialRoute} = useAppInitialization();
-  const navigation = useNavigation<import('@react-navigation/native-stack').NativeStackNavigationProp<RootStackParamList>>();
+  const { showSplash, initialRoute } = useAppInitialization();
+  const navigation = useNavigation<NativeStackScreenProps<RootStackParamList>['navigation']>();
 
   useEffect(() => {
     const onLogin = async (user: any) => {
-      await refreshUser?.(); // context'teki kullanıcıyı güncelle
+      await refreshUser?.();
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     };
     authService.authEvents.on('login', onLogin);
     return () => {
       authService.authEvents.off('login', onLogin);
     };
-  }, []);
+  }, [refreshUser, navigation]);
 
   useEffect(() => {
     if (!user) {
@@ -181,11 +182,12 @@ function AppContent(): React.JSX.Element {
         style={[
           styles.mainContent,
           {
-            transform: [{translateX: slideAnim}, {scale: scaleAnim}],
+            transform: [{ translateX: slideAnim }, { scale: scaleAnim }],
+            marginTop: marginTop, // Apply 15% margin top
           },
         ]}>
         <RootStack.Navigator initialRouteName={initialRoute}>
-          <RootStack.Screen name="Onboarding" options={{headerShown: false}}>
+          <RootStack.Screen name="Onboarding" options={{ headerShown: false }}>
             {props => (
               <OnboardingScreen
                 {...props}
@@ -196,22 +198,22 @@ function AppContent(): React.JSX.Element {
           <RootStack.Screen
             name="Auth"
             component={AuthNavigator}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="Main"
             component={MainScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="UpdateProfile"
             component={UpdateProfileScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="SubscriptionDetails"
             component={SubscriptionDetails}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="ThreeDSecure"
@@ -219,138 +221,138 @@ function AppContent(): React.JSX.Element {
             options={{
               headerShown: false,
               presentation: 'modal',
-              gestureEnabled: false
+              gestureEnabled: false,
             }}
           />
           <RootStack.Screen
             name="Favorites"
             component={Favorites}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="CompanyDetails"
             component={CompanyDetails}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="ProductDetails"
             component={ProductDetails}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="Cart"
             component={CartScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="Settings"
             component={Settings}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="ContactUs"
             component={ContactUs}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="TermsOfService"
             component={TermsOfService}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="PrivacyPolicy"
             component={PrivacyPolicy}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="PersonalDataProtection"
             component={PersonalDataProtection}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="InvestmentDetails"
             component={InvestmentScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="TalentPool"
             component={TalentPoolScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="TrainingDetail"
             component={TrainingDetailScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="PaymentSuccess"
             component={PaymentSuccess}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="PaymentError"
             component={PaymentError}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="HowItWorks"
             component={HowItWorksScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="MarketPlace"
             component={MarketPlaceScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="MarketPlaceProductDetails"
             component={ProductDetailsScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="StartupsDetails"
             component={Startups}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="InvestorDetails"
             component={Investor}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="BusinessDetails"
             component={Business}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="InvestorMenuDetails"
             component={InvestorDetails}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="AddProduct"
             component={AddProduct}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="Chat"
             component={ChatScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="CompanyProfile"
             component={CompanyDetails}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="BillingInfo"
             component={BillingInfoScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="Payment"
             component={PaymentScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <RootStack.Screen
             name="AddBillingInfo"
