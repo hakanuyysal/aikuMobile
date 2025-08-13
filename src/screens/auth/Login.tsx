@@ -65,19 +65,19 @@ const Login = ({navigation}: Props) => {
     }
   };
 
-  const handleLinkedInLogin = async () => {
-    try {
-      const response = await linkedInLogin();
-      if (response?.user) {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'Main'}],
-        });
-      }
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
-    }
-  };
+  // const handleLinkedInLogin = async () => {
+  //   try {
+  //     const response = await linkedInLogin();
+  //     if (response?.user) {
+  //       navigation.reset({
+  //         index: 0,
+  //         routes: [{name: 'Main'}],
+  //       });
+  //     }
+  //   } catch (error) {
+  //     Alert.alert('Error', error instanceof Error ? error.message : 'LinkedIn login failed');
+  //   }
+  // };
 
   return (
     <LinearGradient
@@ -182,7 +182,7 @@ const Login = ({navigation}: Props) => {
                 />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.socialButton}
                 onPress={handleLinkedInLogin}
                 disabled={loading}>
@@ -195,7 +195,7 @@ const Login = ({navigation}: Props) => {
                 <Text style={styles.socialButtonText}>
                   Sign in with LinkedIn
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             <View style={styles.footer}>
