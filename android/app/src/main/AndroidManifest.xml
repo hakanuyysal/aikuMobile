@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
 
@@ -38,5 +40,7 @@
             <data android:scheme="http" android:host="localhost" android:port="8081" android:pathPrefix="/auth/linkedin-callback" />
         </intent-filter>
       </activity>
+      
+      <!-- OneSignal requires a default notification channel (auto-created). No explicit receiver is needed in v5. -->
     </application>
 </manifest>
