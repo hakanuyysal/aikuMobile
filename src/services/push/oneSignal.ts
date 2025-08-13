@@ -1,4 +1,12 @@
-import OneSignal from 'react-native-onesignal';
+// OneSignal bazı ortamlarda native link sorunu yaşarsa uygulamanın çökmesini
+// engellemek için dinamik import kullanıyoruz.
+let OneSignal: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  OneSignal = require('react-native-onesignal').default;
+} catch (_e) {
+  OneSignal = null;
+}
 import { Platform } from 'react-native';
 import { ENV } from '../../config/env';
 
@@ -17,10 +25,20 @@ export function initializePush(): void {
     return;
   }
 
+  if (!OneSignal) {
+    console.warn('OneSignal native module not available. Skipping init.');
+    return;
+  }
+
   if (__DEV__) {
     // 6: Verbose log level
-    // @ts-ignore
-    OneSignal.Debug.setLogLevel(6);
+    // OneSignal v5 log level API
+    try {
+      OneSignal.Debug.setLogLevel(OneSignal.LogLevel.Verbose);
+    } catch (_e) {
+      // Eski sürümlerde sayı ile de çalışır; yoksa pas geç.
+      try { OneSignal.Debug.setLogLevel(6); } catch {} 
+    }
   }
 
   OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
