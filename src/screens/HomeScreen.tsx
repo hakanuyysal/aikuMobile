@@ -55,7 +55,16 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [postHomeModalTitle, setPostHomeModalTitle] = useState<string | null>(
     null,
   );
-  const [postHomeModalId, setPostHomeModalId] = useState<string | null>(null);
+  const [_postHomeModalId, setPostHomeModalId] = useState<string | null>(null);
+
+  // Modal state'ini debug için logla
+  React.useEffect(() => {
+    console.log('🔍 Modal state değişti:', {
+      visible: postHomeModalVisible,
+      title: postHomeModalTitle,
+      message: postHomeModalMessage,
+    });
+  }, [postHomeModalVisible, postHomeModalTitle, postHomeModalMessage]);
   const {onMenuOpen} = props;
   // ANİMASYON: Ortada gösterilecek kartlar için animated values
   const [showCenterCards, setShowCenterCards] = useState(false);
@@ -222,28 +231,53 @@ const HomeScreen = (props: HomeScreenProps) => {
 
   React.useEffect(() => {
     const fetchAndMaybeShowPostHomeModal = async () => {
-      const modal = await getActiveMobileModalMessage();
-      if (!modal || !modal.isActive || !modal._id) return;
+      try {
+        console.log('🔍 Modal mesajı aranıyor...');
 
-      const storageKey = `post_home_modal_last_shown_${modal._id}`;
-      const lastShownStr = await AsyncStorage.getItem(storageKey);
-      const now = Date.now();
-      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+        // 24 saatlik kontrol
+        const lastShown = await AsyncStorage.getItem('lastModalShown');
+        if (lastShown) {
+          const lastShownTime = parseInt(lastShown);
+          const now = new Date().getTime();
+          const twentyFourHours = 24 * 60 * 60 * 1000; // 24 saat milisaniye cinsinden
 
-      if (!lastShownStr) {
+          if (now - lastShownTime < twentyFourHours) {
+            console.log(
+              '⏰ Modal 24 saat içinde gösterilmiş, tekrar gösterilmiyor',
+            );
+            return;
+          }
+        }
+
+        const modal = await getActiveMobileModalMessage();
+        console.log("📱 API'den dönen modal:", modal);
+        console.log('📱 Modal tipi:', typeof modal);
+        console.log('📱 Modal keys:', modal ? Object.keys(modal) : 'null');
+
+        if (!modal) {
+          console.log('❌ Modal bulunamadı');
+          return;
+        }
+
+        if (!modal.isActive) {
+          console.log('❌ Modal aktif değil, isActive:', modal.isActive);
+          return;
+        }
+
+        if (!modal._id) {
+          console.log('❌ Modal ID yok, _id:', modal._id);
+          return;
+        }
+
+        console.log('✅ Modal gösteriliyor:', modal.title);
+        console.log('✅ Modal message:', modal.message);
         setPostHomeModalId(modal._id);
         setPostHomeModalTitle(modal.title || '');
         setPostHomeModalMessage(modal.message);
         setPostHomeModalVisible(true);
-        return;
-      }
-
-      const lastShown = Number(lastShownStr);
-      if (Number.isFinite(lastShown) && now - lastShown >= twentyFourHoursMs) {
-        setPostHomeModalId(modal._id);
-        setPostHomeModalTitle(modal.title || '');
-        setPostHomeModalMessage(modal.message);
-        setPostHomeModalVisible(true);
+        console.log('✅ Modal state güncellendi');
+      } catch (error) {
+        console.error('🚨 Modal yükleme hatası:', error);
       }
     };
 
@@ -252,12 +286,25 @@ const HomeScreen = (props: HomeScreenProps) => {
 
   const dismissPostHomeModal = async () => {
     try {
-      if (postHomeModalId) {
-        await AsyncStorage.setItem(
-          `post_home_modal_last_shown_${postHomeModalId}`,
-          String(Date.now()),
-        );
-      }
+      // Modal gösterildiğinde zaman damgasını kaydet
+      const now = new Date().getTime();
+      await AsyncStorage.setItem('lastModalShown', now.toString());
+    } finally {
+      setPostHomeModalVisible(false);
+      setPostHomeModalMessage(null);
+      setPostHomeModalTitle(null);
+      setPostHomeModalId(null);
+
+      // Read Report butonuna basınca startup-ideas sayfasına git
+      Linking.openURL('https://aikuaiplatform.com/startup-ideas');
+    }
+  };
+
+  const closeModalOnly = async () => {
+    try {
+      // Modal gösterildiğinde zaman damgasını kaydet
+      const now = new Date().getTime();
+      await AsyncStorage.setItem('lastModalShown', now.toString());
     } finally {
       setPostHomeModalVisible(false);
       setPostHomeModalMessage(null);
@@ -330,7 +377,8 @@ const HomeScreen = (props: HomeScreenProps) => {
       end={{x: 2, y: 1}}
       style={styles.gradientBackground}>
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
-      <SafeAreaView style={[styles.safeArea, {paddingBottom: 90}]}>
+      <SafeAreaView
+        style={[styles.safeArea, {paddingBottom: 90, paddingTop: -10}]}>
         <View style={styles.container}>
           <Surface style={styles.header} elevation={0}>
             <View style={styles.logoAndTitleContainer}>
@@ -356,6 +404,7 @@ const HomeScreen = (props: HomeScreenProps) => {
               flexDirection: 'row',
               justifyContent: 'center',
               marginBottom: 10,
+              marginTop: -15,
               gap: 10,
             }}>
             <TouchableOpacity
@@ -436,6 +485,17 @@ const HomeScreen = (props: HomeScreenProps) => {
             onRequestClose={dismissPostHomeModal}>
             <View style={styles.modalBackdrop}>
               <View style={styles.modalContainer}>
+                {/* Çarpı butonu - sağ üst köşe */}
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={closeModalOnly}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={24}
+                    color={Colors.lightText}
+                  />
+                </TouchableOpacity>
+
                 <Text style={styles.modalTitle}>
                   {postHomeModalTitle || 'Bilgi'}
                 </Text>
@@ -445,7 +505,7 @@ const HomeScreen = (props: HomeScreenProps) => {
                 <TouchableOpacity
                   style={styles.modalOkButton}
                   onPress={dismissPostHomeModal}>
-                  <Text style={styles.modalOkText}>Okay</Text>
+                  <Text style={styles.modalOkText}>Read to Report</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -601,8 +661,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: -10,
+    marginBottom: 18,
     backgroundColor: 'transparent',
   },
   logoAndTitleContainer: {
@@ -789,7 +849,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.lightText,
     marginBottom: 20,
-    marginTop: -10,
+    marginTop: 0,
     textAlign: 'center',
   },
   communityItems: {
@@ -854,6 +914,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 16,
     textAlign: 'center',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    zIndex: 1,
+    padding: 8,
   },
   modalOkButton: {
     alignSelf: 'center',
