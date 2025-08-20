@@ -77,7 +77,7 @@ const PlanCard: React.FC<PlanProps> = ({
   const [showFreeTrial, setShowFreeTrial] = useState(false);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
 
-  const yearlyPrice = Math.floor(price * 12 * 0.9);
+  const yearlyPrice = title === 'Business Plan' ? 809.99 : title === 'Investor Plan' ? 1000 : Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
 
   useEffect(() => {
