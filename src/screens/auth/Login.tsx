@@ -56,9 +56,12 @@ const Login = ({navigation}: Props) => {
     setIsCheckingAuthMethod(true);
     try {
       const response = await AuthService.checkAuthMethod(emailToCheck);
-      if (response?.success && response?.data?.authMethod) {
+      const authMethod = response?.data?.authMethod;
+      
+      // Sadece google veya linkedin ise modal göster
+      if (authMethod && ['google', 'linkedin'].includes(authMethod)) {
         setAuthMethodData({
-          authMethod: response.data.authMethod,
+          authMethod: authMethod,
           email: emailToCheck,
         });
         setShowAuthMethodModal(true);
