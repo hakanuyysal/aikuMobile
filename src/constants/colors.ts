@@ -23,4 +23,5 @@ export const Colors = {
   success: '#4CAF50',
   text: '#FFFFFF',
   secondaryText: '#667085',
+  warning: '#FF9800',
 } as const;

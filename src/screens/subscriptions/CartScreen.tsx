@@ -17,11 +17,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 import { RootStackParamList } from '../../types';
-import BillingService from '../../services/BillingService';
-import { BillingInfo } from '../../types';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
+import RevenueCatService from '../../services/RevenueCatService';
+import { productMapping, planFeatures } from '../../config/revenueCat';
 
 type CartScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -33,6 +33,8 @@ interface PlanData {
   subtitle: string;
   price: number;
   features: string[];
+  revenueCatId?: string;
+  trialDays?: number;
 }
 
 interface Plan {
@@ -76,20 +78,34 @@ const PlanCard: React.FC<PlanProps> = ({
   const [loading, setLoading] = useState(false);
   const [showFreeTrial, setShowFreeTrial] = useState(false);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
+  const [revenueCatPackages, setRevenueCatPackages] = useState<any[]>([]);
 
   const yearlyPrice = title === 'Business Plan' ? 809.99 : title === 'Investor Plan' ? 1000 : Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
 
   useEffect(() => {
-    const checkUserEligibility = async () => {
-      if (!isStartupPlan) {
-        setIsStatusLoading(false);
-        return;
-      }
-
-      setIsStatusLoading(true);
-
+    const initializePlan = async () => {
       try {
+        // RevenueCat paketlerini getir
+        console.log('🔄 RevenueCat paketleri yükleniyor...');
+        const packages = await RevenueCatService.getRevenueCatPackages();
+        setRevenueCatPackages(packages);
+        console.log('📦 RevenueCat packages loaded:', packages.length);
+        
+        if (packages.length === 0) {
+          console.error('❌ RevenueCat offerings boş! Dashboard\'da offerings kontrol edin.');
+        } else {
+          console.log('✅ RevenueCat offerings başarıyla yüklendi');
+        }
+
+        // Startup plan için ücretsiz deneme kontrolü
+        if (!isStartupPlan) {
+          setIsStatusLoading(false);
+          return;
+        }
+
+        setIsStatusLoading(true);
+
         const token = await AsyncStorage.getItem('token');
         console.log('Token being sent:', token);
 
@@ -118,14 +134,14 @@ const PlanCard: React.FC<PlanProps> = ({
           setShowFreeTrial(true);
         }
       } catch (error) {
-        console.log('Error checking user eligibility:', error);
+        console.log('Error initializing plan:', error);
         setShowFreeTrial(false);
       } finally {
         setIsStatusLoading(false);
       }
     };
 
-    checkUserEligibility();
+    initializePlan();
   }, [isStartupPlan]);
 
   const inputRange = [
@@ -163,6 +179,30 @@ const PlanCard: React.FC<PlanProps> = ({
     try {
       setLoading(true);
 
+      // Plan key'ini oluştur
+      let planName = '';
+      if (title === 'Startup Plan') planName = 'startup';
+      else if (title === 'Business Plan') planName = 'business';
+      else if (title === 'Investor Plan') planName = 'investor';
+      
+      const planKey = RevenueCatService.createPlanKey(
+        planName,
+        isYearly ? 'yearly' : 'monthly'
+      );
+      
+      console.log('Created plan key:', planKey);
+      console.log('Available product mappings:', Object.keys(productMapping));
+
+      // RevenueCat paketini bul (her zaman)
+      let packageToPurchase = null;
+      packageToPurchase = RevenueCatService.findPackageByPlanKey(
+        revenueCatPackages,
+        planKey
+      );
+
+      console.log('Looking for package:', planKey, 'Found:', packageToPurchase ? 'Yes' : 'No');
+      console.log('Available packages:', revenueCatPackages.map(p => p.identifier));
+
       if (showFreeTrial) {
         try {
           const payload = {
@@ -174,7 +214,7 @@ const PlanCard: React.FC<PlanProps> = ({
             isFirstPayment: true,
             paymentDate: new Date().toISOString(),
           };
-          console.log('Free trial payload:', payload);
+          console.log('🆓 Ücretsiz deneme payload:', payload);
           const token = await AsyncStorage.getItem('token');
           console.log('Token being sent:', token);
           const response = await axios.post(
@@ -188,53 +228,47 @@ const PlanCard: React.FC<PlanProps> = ({
             },
           );
 
-          console.log('Free trial successfully recorded!');
+          console.log('✅ Ücretsiz deneme başarıyla kaydedildi!');
           navigation.navigate('PaymentSuccess', {
-            message: 'Your free trial has been successfully activated!',
+            message: `${title} ücretsiz deneme başarıyla aktifleştirildi!`,
           });
         } catch (error) {
-          console.error('Error while activating free trial:', error);
-          Alert.alert(
-            'Alert',
-            'An error occurred while activating your free trial. Please try again.',
-          );
+          console.error('❌ Ücretsiz deneme hatası:', error);
+          Alert.alert('Hata', 'Ücretsiz deneme aktifleştirilemedi. Lütfen tekrar deneyin.');
         }
         return;
       }
 
-      // Handle non-free trial case (e.g., user has already used the free trial)
-      let billingInfo: BillingInfo | undefined;
-      let hasBillingInfo = false;
-
-      try {
-        const billingResponse = await BillingService.getDefaultBillingInfo();
-        billingInfo = billingResponse?.data as BillingInfo | undefined;
-        hasBillingInfo = billingInfo && !Array.isArray(billingInfo);
-      } catch (error) {
-        console.error('Error fetching billing info:', error);
-        // Continue to BillingInfo screen even if fetching billing info fails
-        hasBillingInfo = false;
-        billingInfo = undefined;
+      // RevenueCat ile satın alma
+      if (packageToPurchase) {
+        try {
+          console.log('🛒 RevenueCat satın alma başlatılıyor:', packageToPurchase.identifier);
+          const result = await RevenueCatService.purchasePackage(packageToPurchase);
+          
+          if (result.success) {
+            console.log('✅ RevenueCat satın alma başarılı:', result.customerInfo);
+            navigation.navigate('PaymentSuccess', {
+              message: `${title} başarıyla aktifleştirildi!`,
+            });
+          } else {
+            throw result.error;
+          }
+        } catch (error: any) {
+          console.error('❌ RevenueCat satın alma hatası:', error);
+          
+          if (error.userCancelled) {
+            Alert.alert('İptal', 'Satın alma iptal edildi');
+          } else {
+            Alert.alert('Hata', 'Satın alma sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+          }
+        }
+      } else {
+        console.error('❌ RevenueCat paketi bulunamadı:', planKey);
+        Alert.alert('Hata', 'Seçilen plan bulunamadı. Lütfen tekrar deneyin.');
       }
-
-      const finalPrice = isYearly ? yearlyPrice : price;
-
-      const planDetails: PlanDetails = {
-        name: title,
-        price: finalPrice,
-        description: subtitle,
-        billingCycle: isYearly ? 'yearly' : 'monthly',
-        hasPaymentHistory: !showFreeTrial,
-      };
-
-      navigation.navigate('BillingInfo', {
-        planDetails,
-        hasExistingBillingInfo: hasBillingInfo,
-        existingBillingInfo: billingInfo,
-      });
     } catch (error) {
-      console.error('Error during plan selection:', error);
-      Alert.alert('Alert', 'An unexpected error occurred. Please try again.');
+      console.error('❌ Plan seçimi sırasında hata:', error);
+      Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -389,36 +423,27 @@ const plans: PlanData[] = [
     title: 'Startup Plan',
     subtitle: 'For AI Startups & Developers',
     price: 49,
-    features: [
-      'List AI solutions',
-      'Get investor access',
-      'Use premium AI tools',
-      'Chat with businesses and investors',
-    ],
+    features: planFeatures.startup,
+    revenueCatId: 'startup_monthly',
+    trialDays: 180,
   },
   {
     key: 'business',
     title: 'Business Plan',
     subtitle: 'For Companies & Enterprises',
     price: 75,
-    features: [
-      'AI discovery',
-      'API integrations',
-      'Exclusive tools',
-      'Chat with all companies',
-    ],
+    features: planFeatures.business,
+    revenueCatId: 'business_monthly',
+    trialDays: 0,
   },
   {
     key: 'investor',
     title: 'Investor Plan',
     subtitle: 'For VCs & Angel Investors',
     price: 99,
-    features: [
-      'AI startup deal flow',
-      'Analytics',
-      'AI-powered investment insights',
-      'Chat with all companies',
-    ],
+    features: planFeatures.investor,
+    revenueCatId: 'investor_monthly',
+    trialDays: 0,
   },
 ];
 

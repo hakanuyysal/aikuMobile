@@ -186,6 +186,8 @@ PODS:
     - OneSignalXCFramework/OneSignalOSCore
     - OneSignalXCFramework/OneSignalOutcomes
   - PromisesObjC (2.4.0)
+  - PurchasesHybridCommon (16.2.2):
+    - RevenueCat (= 5.34.0)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2437,6 +2439,7 @@ PODS:
     - React-perflogger (= 0.80.1)
     - React-utils (= 0.80.1)
     - SocketRocket
+  - RevenueCat (5.34.0)
   - RNCAsyncStorage (2.2.0):
     - React-Core
   - RNCPicker (2.11.1):
@@ -2550,6 +2553,9 @@ PODS:
     - TOCropViewController (~> 2.7.4)
     - Yoga
   - RNInAppBrowser (3.7.0):
+    - React-Core
+  - RNPurchases (9.2.2):
+    - PurchasesHybridCommon (= 16.2.2)
     - React-Core
   - RNReanimated (3.18.0):
     - boost
@@ -2861,6 +2867,7 @@ DEPENDENCIES:
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
   - RNInAppBrowser (from `../node_modules/react-native-inappbrowser-reborn`)
+  - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
@@ -2891,6 +2898,8 @@ SPEC REPOS:
     - nanopb
     - OneSignalXCFramework
     - PromisesObjC
+    - PurchasesHybridCommon
+    - RevenueCat
     - SocketRocket
     - TOCropViewController
 
@@ -3082,6 +3091,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-crop-picker"
   RNInAppBrowser:
     :path: "../node_modules/react-native-inappbrowser-reborn"
+  RNPurchases:
+    :path: "../node_modules/react-native-purchases"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
@@ -3123,6 +3134,7 @@ SPEC CHECKSUMS:
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   OneSignalXCFramework: 7112f3e89563e41ebc23fe807788f11985ac541c
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  PurchasesHybridCommon: 62f852419aae7041792217593998f7ac3f8b567d
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
@@ -3199,6 +3211,7 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: ba631a31783569c13056dd57ff39e19764abdd6f
   ReactCodegen: 3c43e79aa0aa13c1a6456a956b23419878213e8d
   ReactCommon: 0148a0eeec41961cfcf43621379bb6140a78caa6
+  RevenueCat: eb2aa042789d9c99ad5172bd96e28b96286d6ada
   RNCAsyncStorage: 23e56519cc41d3bade3c8d4479f7760cb1c11996
   RNCPicker: 55f4c211f69edb5c7a0faf85933e36c3621ebf64
   RNFBAnalytics: bff2eb8c8d68f23f9ca02549697fef65455fa246
@@ -3208,6 +3221,7 @@ SPEC CHECKSUMS:
   RNGoogleSignin: f57de86a017d67e98fa9c5c0c1c62f0387433cbd
   RNImageCropPicker: 27689244db46fb6dbd5e6a1bcd9365627902e234
   RNInAppBrowser: e36d6935517101ccba0e875bac8ad7b0cb655364
+  RNPurchases: c2246c06491b0a739d5ea2e963433203bec1ef0f
   RNReanimated: 0dca35534272f741f1722e0bf22c628c0e9d01a0
   RNScreens: d39118dda9a9e412dd20041c18fd8477f653be80
   RNSVG: 3446469442ca54ddf210d2a1b7c2b6eaecaca2c3

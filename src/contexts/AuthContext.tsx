@@ -1,6 +1,7 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
 import AuthService from '../services/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RevenueCatService from '../services/RevenueCatService';
 
 interface User {
   id: string;
@@ -42,14 +43,43 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         setUser(userData);
         const storedToken = await AsyncStorage.getItem('token');
         setToken(storedToken);
+        
+        // RevenueCat User ID'sini set et
+        if (userData.id) {
+          try {
+            const result = await RevenueCatService.setUserID(userData.id);
+            if (result) {
+              console.log('✅ RevenueCat User ID set:', userData.id);
+            } else {
+              console.log('⚠️ RevenueCat User ID set edilemedi, devam ediliyor');
+            }
+          } catch (error) {
+            console.log('⚠️ RevenueCat User ID set error, devam ediliyor:', error);
+          }
+        }
         return;
       }
 
       const storedUser = await AsyncStorage.getItem('user');
       const storedToken = await AsyncStorage.getItem('token');
       if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
         setToken(storedToken);
+        
+        // RevenueCat User ID'sini set et
+        if (parsedUser.id) {
+          try {
+            const result = await RevenueCatService.setUserID(parsedUser.id);
+            if (result) {
+              console.log('✅ RevenueCat User ID set:', parsedUser.id);
+            } else {
+              console.log('⚠️ RevenueCat User ID set edilemedi, devam ediliyor');
+            }
+          } catch (error) {
+            console.log('⚠️ RevenueCat User ID set error, devam ediliyor:', error);
+          }
+        }
       } else {
         setUser(null);
         setToken(null);
@@ -69,6 +99,19 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       const response = await AuthService.login({email, password});
       if (response.user) {
         setUser(response.user);
+        // RevenueCat User ID'sini set et
+        if (response.user.id) {
+          try {
+            const result = await RevenueCatService.setUserID(response.user.id);
+            if (result) {
+              console.log('✅ RevenueCat User ID set:', response.user.id);
+            } else {
+              console.log('⚠️ RevenueCat User ID set edilemedi, devam ediliyor');
+            }
+          } catch (error) {
+            console.log('⚠️ RevenueCat User ID set error, devam ediliyor:', error);
+          }
+        }
       }
       if (response.token) {
         setToken(response.token);
@@ -95,6 +138,19 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       const response = await AuthService.googleLogin();
       if (response.success && response.user) {
         setUser(response.user);
+        // RevenueCat User ID'sini set et
+        if (response.user.id) {
+          try {
+            const result = await RevenueCatService.setUserID(response.user.id);
+            if (result) {
+              console.log('✅ RevenueCat User ID set:', response.user.id);
+            } else {
+              console.log('⚠️ RevenueCat User ID set edilemedi, devam ediliyor');
+            }
+          } catch (error) {
+            console.log('⚠️ RevenueCat User ID set error, devam ediliyor:', error);
+          }
+        }
       }
       return response;
     } catch (error) {

@@ -211,6 +211,39 @@ class AuthService {
     }
   }
 
+  async checkAuthMethod(email: string) {
+    try {
+      const response = await this.axios.post('/auth/check-auth-method', { email });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async verifyCode(email: string, code: string) {
+    try {
+      const response = await this.axios.post('/auth/verify-code', { 
+        email, 
+        verificationCode: code 
+      });
+      if (response.data.token) {
+        await this.setAuthData(response.data.token, response.data.user);
+      }
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async resendVerificationCode(email: string) {
+    try {
+      const response = await this.axios.post('/auth/resend-verification-code', { email });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async googleLogin(): Promise<GoogleSignInResponse> {
     try {
       console.error('[GoogleLogin] Çıkış yapılıyor...');

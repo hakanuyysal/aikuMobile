@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import {useAuth} from '../../contexts/AuthContext';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/AuthNavigator';
 import {RootStackParamList} from '../../types';
+import AuthMethodModal from '../../components/AuthMethodModal';
+import AuthService from '../../services/AuthService';
 
 type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
@@ -31,7 +33,14 @@ const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAuthMethodModal, setShowAuthMethodModal] = useState(false);
+  const [authMethodData, setAuthMethodData] = useState<{
+    authMethod: string;
+    email: string;
+  } | null>(null);
+  const [isCheckingAuthMethod, setIsCheckingAuthMethod] = useState(false);
   const {login, loading, googleLogin, linkedInLogin} = useAuth();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogin = async () => {
     try {
@@ -44,6 +53,42 @@ const Login = ({navigation}: Props) => {
       }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Login failed');
+    }
+  };
+
+  const checkAuthMethod = useCallback(async (emailToCheck: string) => {
+    if (!emailToCheck || !emailToCheck.includes('@')) return;
+    
+    setIsCheckingAuthMethod(true);
+    try {
+      const response = await AuthService.checkAuthMethod(emailToCheck);
+      if (response?.success && response?.data?.authMethod) {
+        setAuthMethodData({
+          authMethod: response.data.authMethod,
+          email: emailToCheck,
+        });
+        setShowAuthMethodModal(true);
+      }
+    } catch (error) {
+      console.log('Auth method check error:', error);
+      // Hata durumunda modal göstermiyoruz, normal login akışına devam ediyor
+    } finally {
+      setIsCheckingAuthMethod(false);
+    }
+  }, []);
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    // Email değiştiğinde auth method kontrolü yap
+    if (text && text.includes('@')) {
+      // Debounce için önceki timeout'u temizle
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      // Yeni timeout ayarla
+      debounceTimeoutRef.current = setTimeout(() => {
+        checkAuthMethod(text);
+      }, 1000);
     }
   };
 
@@ -112,11 +157,18 @@ const Login = ({navigation}: Props) => {
                   placeholder="Enter your email"
                   placeholderTextColor={Colors.inactive}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={handleEmailChange}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   selectionColor={Colors.primary}
                 />
+                {isCheckingAuthMethod && (
+                  <ActivityIndicator 
+                    size="small" 
+                    color={Colors.primary} 
+                    style={styles.checkingIndicator}
+                  />
+                )}
               </View>
             </View>
 
@@ -233,6 +285,19 @@ const Login = ({navigation}: Props) => {
           </View>
         </View>
       </SafeAreaView>
+      
+      <AuthMethodModal
+        visible={showAuthMethodModal}
+        onClose={() => setShowAuthMethodModal(false)}
+        authMethod={authMethodData?.authMethod || ''}
+        email={authMethodData?.email || ''}
+        onLoginSuccess={() => {
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'Main'}],
+          });
+        }}
+      />
     </LinearGradient>
   );
 };
@@ -402,6 +467,10 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     textDecorationLine: 'underline',
     fontWeight: 'bold',
+  },
+  checkingIndicator: {
+    position: 'absolute',
+    right: metrics.padding.md,
   },
 });
 

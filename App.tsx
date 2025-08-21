@@ -47,6 +47,7 @@ import { useNavigation } from '@react-navigation/native';
 import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
 import ThreeDSecure from './src/screens/subscriptions/ThreeDSecure';
 import CartScreen from 'screens/subscriptions/CartScreen';
+import RevenueCatService from './src/services/RevenueCatService';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -147,6 +148,32 @@ function AppContent(): React.JSX.Element {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { showSplash, initialRoute } = useAppInitialization();
   const navigation = useNavigation<NativeStackScreenProps<RootStackParamList>['navigation']>();
+
+  // RevenueCat'i başlat
+  useEffect(() => {
+    const initializeRevenueCat = async () => {
+      try {
+        console.log('🚀 RevenueCat başlatılıyor...');
+        const result = await RevenueCatService.initializeRevenueCat();
+        
+        if (result) {
+          console.log('✅ RevenueCat başarıyla başlatıldı');
+          
+          // RevenueCat durumunu kontrol et
+          setTimeout(async () => {
+            console.log('🔍 RevenueCat durumu kontrol ediliyor...');
+            await RevenueCatService.checkRevenueCatStatus();
+          }, 2000);
+        } else {
+          console.error('❌ RevenueCat başlatılamadı - API key kontrolü yapın');
+        }
+      } catch (error) {
+        console.error('❌ RevenueCat başlatma hatası:', error);
+      }
+    };
+
+    initializeRevenueCat();
+  }, []);
 
   useEffect(() => {
     const onLogin = async (user: any) => {
