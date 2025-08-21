@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     width: screenWidth * 0.85,
     maxWidth: 400,
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Colors.primary,
     shadowColor: '#000',
     shadowOffset: {
