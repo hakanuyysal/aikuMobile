@@ -220,24 +220,24 @@ class AuthService {
     }
   }
 
-  async verifyCode(email: string, code: string) {
+  async sendSocialEmailCode(email: string) {
     try {
-      const response = await this.axios.post('/auth/verify-code', { 
-        email, 
-        verificationCode: code 
-      });
-      if (response.data.token) {
-        await this.setAuthData(response.data.token, response.data.user);
-      }
+      const response = await this.axios.post('/auth/mobile/send-social-email-code', { email });
       return response.data;
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  async resendVerificationCode(email: string) {
+  async verifySocialEmailCode(email: string, code: string) {
     try {
-      const response = await this.axios.post('/auth/resend-verification-code', { email });
+      const response = await this.axios.post('/auth/mobile/verify-social-email-code', { 
+        email, 
+        code 
+      });
+      if (response.data.token) {
+        await this.setAuthData(response.data.token, response.data.user);
+      }
       return response.data;
     } catch (error) {
       throw this.handleError(error);

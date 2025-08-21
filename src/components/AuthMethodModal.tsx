@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import {
   View,
   Text,
@@ -50,16 +50,36 @@ const AuthMethodModal: React.FC<AuthMethodModalProps> = ({
     }
   };
 
+  const sendVerificationCode = useCallback(async () => {
+    try {
+      const response = await AuthService.sendSocialEmailCode(email);
+      if (response?.success) {
+        console.log('Verification code sent successfully');
+      } else {
+        Alert.alert('Error', response?.message || 'Failed to send verification code');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to send verification code',
+      );
+    }
+  }, [email]);
+
   const handleVerifyCode = async () => {
     if (!verificationCode.trim()) {
       Alert.alert('Error', 'Please enter the verification code');
       return;
     }
 
+    if (verificationCode.length !== 6) {
+      Alert.alert('Error', 'Please enter a 6-digit verification code');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Burada verification code ile login API'si çağrılacak
-      const response = await AuthService.verifyCode(email, verificationCode);
+      const response = await AuthService.verifySocialEmailCode(email, verificationCode);
       if (response?.success) {
         Alert.alert('Success', 'Login successful!');
         onLoginSuccess?.();
@@ -80,8 +100,12 @@ const AuthMethodModal: React.FC<AuthMethodModalProps> = ({
   const handleResendCode = async () => {
     setIsResending(true);
     try {
-      await AuthService.resendVerificationCode(email);
-      Alert.alert('Success', 'Verification code has been resent to your email');
+      const response = await AuthService.sendSocialEmailCode(email);
+      if (response?.success) {
+        Alert.alert('Success', 'Verification code has been resent to your email');
+      } else {
+        Alert.alert('Error', response?.message || 'Failed to resend code');
+      }
     } catch (error) {
       Alert.alert(
         'Error',
@@ -96,6 +120,13 @@ const AuthMethodModal: React.FC<AuthMethodModalProps> = ({
     setVerificationCode('');
     onClose();
   };
+
+  // Modal açıldığında otomatik kod gönder
+  useEffect(() => {
+    if (visible && email) {
+      sendVerificationCode();
+    }
+  }, [visible, email, sendVerificationCode]);
 
   return (
     <Modal
