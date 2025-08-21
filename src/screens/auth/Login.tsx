@@ -23,12 +23,6 @@ import AuthService from '../../services/AuthService';
 
 type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
-interface LoginResponse {
-  user: any;
-  success?: boolean;
-  error?: string;
-}
-
 const Login = ({navigation}: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,12 +33,12 @@ const Login = ({navigation}: Props) => {
     email: string;
   } | null>(null);
   const [isCheckingAuthMethod, setIsCheckingAuthMethod] = useState(false);
-  const {login, loading, linkedInLogin} = useAuth();
+  const {login, loading} = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogin = async () => {
     try {
-      const response = await login(email, password) as LoginResponse;
+      const response = await login(email, password);
       if (response?.user) {
         navigation.reset({
           index: 0,
@@ -201,6 +195,12 @@ const Login = ({navigation}: Props) => {
                 </TouchableOpacity>
               </View>
             </View>
+
+            <TouchableOpacity 
+              style={styles.forgotPasswordButton}
+              onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity 
               style={styles.loginButton}
@@ -396,6 +396,15 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.lg,
     fontWeight: '700',
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginBottom: metrics.margin.lg,
+  },
+  forgotPasswordText: {
+    color: Colors.primary,
+    fontSize: metrics.fontSize.sm,
+    fontWeight: '500',
   },
   divider: {
     flexDirection: 'row',

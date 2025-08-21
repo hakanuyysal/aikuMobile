@@ -4,6 +4,7 @@ import Login from '../screens/auth/Login';
 import Register from '../screens/auth/Register';
 import RegisterPassword from '../screens/auth/RegisterPassword';
 import EmailVerification from '../screens/auth/EmailVerification';
+import ForgotPassword from '../screens/auth/ForgotPassword';
 import TermsOfService from '../screens/legal/TermsOfService';
 import PrivacyPolicy from '../screens/legal/PrivacyPolicy';
 import PersonalDataProtection from '../screens/legal/PersonalDataProtection';
@@ -17,6 +18,7 @@ export type AuthStackParamList = {
     email: string;
   };
   EmailVerification: undefined;
+  ForgotPassword: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
   PersonalDataProtection: undefined;
@@ -34,6 +36,7 @@ const AuthNavigator = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="RegisterPassword" component={RegisterPassword} />
       <Stack.Screen name="EmailVerification" component={EmailVerification} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="TermsOfService" component={TermsOfService} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
       <Stack.Screen name="PersonalDataProtection" component={PersonalDataProtection} />

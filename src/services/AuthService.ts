@@ -412,14 +412,49 @@ class AuthService {
     }
   }
 
+  async forgotPassword(email: string): Promise<any> {
+    try {
+      const response = await this.axios.post('/auth/forgot-password', {
+        email: email,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<any> {
+    try {
+      const response = await this.axios.post('/auth/reset-password', {
+        email: email,
+        code: code,
+        newPassword: newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw this.handleError(error);
+    }
+  }
+
   private handleError(error: any): Error {
     if (error.response) {
-      const message = error.response.data?.message || 'Bir hata oluştu';
+      let message = error.response.data?.message || 'An error occurred';
+      
+      // Translate specific Turkish error messages to English
+      if (message === 'Bu hesap sosyal medya ile kayıt olmuş. Şifre sıfırlama yapılamaz.') {
+        message = 'This account is registered with social media. Password reset cannot be done.';
+      }
+      if (message === 'Bu email adresi ile kayıtlı kullanıcı bulunamadı') {
+        message = 'User registered with this email address not found';
+      }
+      
       return new Error(message);
     } else if (error.request) {
-      return new Error('Sunucuya ulaşılamıyor');
+      return new Error('Cannot reach server');
     } else {
-      return new Error(error.message || 'Bir hata oluştu');
+      return new Error(error.message || 'An error occurred');
     }
   }
 }
