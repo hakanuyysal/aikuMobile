@@ -39,7 +39,7 @@ const Login = ({navigation}: Props) => {
     email: string;
   } | null>(null);
   const [isCheckingAuthMethod, setIsCheckingAuthMethod] = useState(false);
-  const {login, loading, googleLogin, linkedInLogin} = useAuth();
+  const {login, loading, linkedInLogin} = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogin = async () => {
@@ -92,23 +92,23 @@ const Login = ({navigation}: Props) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const response = await googleLogin();
-      console.error('Google Login Response:', response);
-      if (response?.success && response?.user) {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'Main'}],
-        });
-      } else {
-        console.error('Google Login Error:', response?.error);
-      }
-    } catch (error) {
-      console.error('Google Login Exception:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
-    }
-  };
+  // const handleGoogleLogin = async () => {
+  //   try {
+  //     const response = await googleLogin();
+  //     console.error('Google Login Response:', response);
+  //     if (response?.success && response?.user) {
+  //       navigation.reset({
+  //         index: 0,
+  //         routes: [{name: 'Main'}],
+  //       });
+  //     } else {
+  //       console.error('Google Login Error:', response?.error);
+  //     }
+  //   } catch (error) {
+  //     console.error('Google Login Exception:', error);
+  //     Alert.alert('Error', error instanceof Error ? error.message : 'Google login failed');
+  //   }
+  // };
 
   // const handleLinkedInLogin = async () => {
   //   try {
@@ -213,16 +213,16 @@ const Login = ({navigation}: Props) => {
               )}
             </TouchableOpacity>
 
-            <View style={styles.divider}>
+            {/* <View style={styles.divider}>
               <View style={styles.line} />
               <Text style={styles.dividerText}>
                 Sign in with social accounts
               </Text>
               <View style={styles.line} />
-            </View>
+            </View> */}
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
                 disabled={loading}>
@@ -233,7 +233,7 @@ const Login = ({navigation}: Props) => {
                   style={styles.socialIcon}
                 />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               {/* <TouchableOpacity 
                 style={styles.socialButton}
                 onPress={handleLinkedInLogin}
