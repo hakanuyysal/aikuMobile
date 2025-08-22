@@ -7,8 +7,9 @@ try {
 } catch (_e) {
   OneSignal = null;
 }
-import { Platform } from 'react-native';
-import { ENV } from '../../config/env';
+import {Platform} from 'react-native';
+import {ENV} from '../../config/env';
+import notificationService from '../notificationService';
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
@@ -16,6 +17,37 @@ export async function getOneSignalPlayerId(): Promise<string | null> {
     return id ?? null;
   } catch (error) {
     return null;
+  }
+}
+
+// Kullanıcının bildirim ayarlarını kontrol et
+async function checkNotificationSettings(): Promise<boolean> {
+  try {
+    const settings = await notificationService.getPushSettings();
+    return settings.pushNotificationsEnabled;
+  } catch (error) {
+    console.error('Bildirim ayarları kontrol edilirken hata:', error);
+    // Hata durumunda varsayılan olarak bildirimleri etkinleştir
+    return true;
+  }
+}
+
+// OneSignal'ı etkinleştir veya devre dışı bırak
+async function toggleOneSignal(enabled: boolean): Promise<void> {
+  if (!OneSignal) return;
+
+  try {
+    if (enabled) {
+      // OneSignal'ı etkinleştir
+      await OneSignal.Notifications.requestPermission(true);
+      console.log('OneSignal bildirimleri etkinleştirildi');
+    } else {
+      // OneSignal'ı devre dışı bırak - sadece mevcut bildirimleri temizle
+      await OneSignal.Notifications.clearAll();
+      console.log('OneSignal bildirimleri devre dışı bırakıldı');
+    }
+  } catch (error) {
+    console.error('OneSignal durumu değiştirilirken hata:', error);
   }
 }
 
@@ -37,20 +69,41 @@ export function initializePush(): void {
       OneSignal.Debug.setLogLevel(OneSignal.LogLevel.Verbose);
     } catch (_e) {
       // Eski sürümlerde sayı ile de çalışır; yoksa pas geç.
-      try { OneSignal.Debug.setLogLevel(6); } catch {} 
+      try {
+        OneSignal.Debug.setLogLevel(6);
+      } catch {}
     }
   }
 
   OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
 
-  // iOS ve Android 13+ için izin iste
-  OneSignal.Notifications.requestPermission(true);
-
-  OneSignal.Notifications.addEventListener('foregroundWillDisplay', event => {
-    const notification = event.getNotification();
-    // Varsayılan davranış: bildirimi göster. Sadece logluyoruz.
-    console.log('OneSignal foreground notification:', notification);
+  // Kullanıcının bildirim ayarlarını kontrol et ve OneSignal'ı buna göre yapılandır
+  checkNotificationSettings().then(enabled => {
+    if (enabled) {
+      // iOS ve Android 13+ için izin iste
+      OneSignal.Notifications.requestPermission(true);
+    }
   });
+
+  OneSignal.Notifications.addEventListener(
+    'foregroundWillDisplay',
+    async (event: any) => {
+      const notification = event.getNotification();
+
+      // Kullanıcının bildirim ayarlarını kontrol et
+      const notificationsEnabled = await checkNotificationSettings();
+
+      if (!notificationsEnabled) {
+        // Kullanıcı bildirimleri kapattıysa bildirimi gösterme
+        event.preventDefault();
+        console.log('Bildirim kullanıcı ayarları nedeniyle engellendi');
+        return;
+      }
+
+      // Varsayılan davranış: bildirimi göster. Sadece logluyoruz.
+      console.log('OneSignal foreground notification:', notification);
+    },
+  );
 
   OneSignal.Notifications.addEventListener('click', event => {
     try {
@@ -74,4 +127,34 @@ export function initializePush(): void {
   });
 }
 
+// Bildirim ayarları değiştiğinde çağrılacak fonksiyon
+export async function updateNotificationSettings(
+  enabled: boolean,
+): Promise<void> {
+  await toggleOneSignal(enabled);
+}
 
+// Uygulama başlatıldığında bildirim ayarlarını kontrol et ve OneSignal'ı yapılandır
+export async function configureNotificationsOnStartup(): Promise<void> {
+  const enabled = await checkNotificationSettings();
+  await toggleOneSignal(enabled);
+}
+
+// Test fonksiyonu - kullanıcı bildirim ayarlarını test etmek için
+export async function testNotificationSettings(): Promise<{
+  enabled: boolean;
+  message: string;
+}> {
+  try {
+    const enabled = await checkNotificationSettings();
+    const message = enabled
+      ? 'Bildirimler etkin - OneSignal çalışıyor'
+      : 'Bildirimler devre dışı - OneSignal bildirimleri engelliyor';
+
+    console.log('Test sonucu:', message);
+    return {enabled, message};
+  } catch (error) {
+    console.error('Test hatası:', error);
+    return {enabled: false, message: 'Test sırasında hata oluştu'};
+  }
+}

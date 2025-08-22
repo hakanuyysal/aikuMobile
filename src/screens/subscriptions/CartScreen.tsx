@@ -234,7 +234,7 @@ const PlanCard: React.FC<PlanProps> = ({
           });
         } catch (error) {
           console.error('❌ Ücretsiz deneme hatası:', error);
-          Alert.alert('Hata', 'Ücretsiz deneme aktifleştirilemedi. Lütfen tekrar deneyin.');
+          Alert.alert('Error', 'Free trial could not be activated. Please try again.');
         }
         return;
       }
@@ -251,24 +251,24 @@ const PlanCard: React.FC<PlanProps> = ({
               message: `${title} başarıyla aktifleştirildi!`,
             });
           } else {
-            throw result.error;
+            throw new Error('Purchase failed');
           }
         } catch (error: any) {
           console.error('❌ RevenueCat satın alma hatası:', error);
           
           if (error.userCancelled) {
-            Alert.alert('İptal', 'Satın alma iptal edildi');
+            Alert.alert('Cancelled', 'Purchase cancelled');
           } else {
-            Alert.alert('Hata', 'Satın alma sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+            Alert.alert('Error', 'An error occurred during purchase. Please try again.');
           }
         }
       } else {
         console.error('❌ RevenueCat paketi bulunamadı:', planKey);
-        Alert.alert('Hata', 'Seçilen plan bulunamadı. Lütfen tekrar deneyin.');
+        Alert.alert('Error', 'Selected plan not found. Please try again.');
       }
     } catch (error) {
       console.error('❌ Plan seçimi sırasında hata:', error);
-      Alert.alert('Hata', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+      Alert.alert('Error', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

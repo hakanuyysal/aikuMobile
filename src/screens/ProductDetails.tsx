@@ -125,7 +125,7 @@ const ProductDetails: React.FC<Props> = ({ navigation }) => {
       }
     } catch (err) {
       if (err && err.message !== 'User cancelled document picker') {
-        Alert.alert('Hata', 'PDF seçilemedi.');
+        Alert.alert('Error', 'PDF could not be selected.');
       }
     }
   };

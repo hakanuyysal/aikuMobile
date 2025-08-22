@@ -352,9 +352,9 @@ const CompanyDetails = ({ navigation }: Props) => {
       }
 
       if (teamMemberErrors.length > 0) {
-        Alert.alert('Warning', `Şirket eklendi fakat bazı takım üyeleri eklenemedi:\n${teamMemberErrors.join('\n')}`);
+        Alert.alert('Warning', `Company added but some team members could not be added:\n${teamMemberErrors.join('\n')}`);
       } else {
-        Alert.alert('Success', 'Şirket ve takım üyeleri başarıyla eklendi!');
+        Alert.alert('Success', 'Company and team members added successfully!');
       }
 
       await fetchCompanies();
@@ -387,7 +387,7 @@ const CompanyDetails = ({ navigation }: Props) => {
     } catch (error) {
       let errorMessage = 'An error occurred.';
       if (error?.response?.data?.error?.includes('duplicate key error')) {
-        errorMessage = 'Bu isimde bir şirket zaten mevcut. Lütfen farklı bir isim seçin.';
+        errorMessage = 'A company with this name already exists. Please choose a different name.';
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }

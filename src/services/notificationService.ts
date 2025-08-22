@@ -1,4 +1,6 @@
-import { BaseService } from './BaseService';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppConfig from '../config/Config';
 
 interface NotificationSettings {
   chatNotifications: boolean;
@@ -15,7 +17,36 @@ interface ApiResponse<T> {
   data: T;
 }
 
-class NotificationService extends BaseService {
+class NotificationService {
+  private axios = axios.create({
+    baseURL: `${AppConfig.API_URL}/api`,
+    timeout: 30000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  constructor() {
+    // Token interceptor ekle
+    this.axios.interceptors.request.use(
+      async (config) => {
+        try {
+          const token = await AsyncStorage.getItem('token');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+          return config;
+        } catch (error) {
+          console.error('Token alınırken hata:', error);
+          return config;
+        }
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+  }
+
   /**
    * Tüm notification ayarlarını getir
    * GET /api/notifications/all-settings

@@ -116,7 +116,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
       await BaseService.toggleAutoRenewal(value);
       setIsAutoRenewalEnabled(value);
     } catch (err: any) {
-      Alert.alert('Hata', err?.message || 'Otomatik yenileme güncellenemedi');
+      Alert.alert('Error', err?.message || 'Auto-renewal could not be updated');
     } finally {
       setUpdatingAutoRenewal(false);
     }
@@ -138,10 +138,10 @@ const SubscriptionDetails = ({navigation}: Props) => {
             setCancelling(true);
             try {
               await BaseService.cancelSubscription();
-              Alert.alert('Başarılı', 'Aboneliğiniz iptal edildi.');
+              Alert.alert('Success', 'Your subscription has been cancelled.');
               fetchData();
             } catch (err: any) {
-              Alert.alert('Hata', err?.message || 'Abonelik iptal edilemedi');
+              Alert.alert('Error', err?.message || 'Subscription could not be cancelled');
             } finally {
               setCancelling(false);
             }

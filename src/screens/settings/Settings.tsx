@@ -20,6 +20,7 @@ import metrics from '../../constants/aikuMetric';
 import AuthService from '../../services/AuthService';
 import notificationService from '../../services/notificationService';
 import { useAuth } from '../../contexts/AuthContext';
+import { updateNotificationSettings, testNotificationSettings } from '../../services/push/oneSignal';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../App';
 import BaseService from '../../api/BaseService'; // <= senin BaseService.ts
@@ -118,6 +119,9 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       setIsLoading(true);
       await notificationService.updatePushSettings(value);
       setNotificationsEnabled(value);
+      
+      // OneSignal ayarlarını da güncelle
+      await updateNotificationSettings(value);
     } catch (error) {
       console.error('Notification ayarı güncellenirken hata:', error);
       Alert.alert(
@@ -284,6 +288,15 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   const handleContactUs = () => navigation.navigate('ContactUs');
 
+  const handleTestNotifications = async () => {
+    try {
+      const result = await testNotificationSettings();
+      Alert.alert('Bildirim Testi', result.message);
+    } catch (error) {
+      Alert.alert('Hata', 'Test sırasında bir hata oluştu');
+    }
+  };
+
   if (loadingUser) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -357,6 +370,13 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       gradient: ['#6366F1', '#8B5CF6'],
       onPress: handleContactUs,
     },
+    // {
+    //   icon: 'bell-ring-outline',
+    //   title: 'Test Notifications',
+    //   subtitle: 'Test your notification settings',
+    //   gradient: ['#F59E0B', '#F97316'],
+    //   onPress: handleTestNotifications,
+    // },
   ];
 
   return (

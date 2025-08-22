@@ -66,7 +66,7 @@ const RegisterPassword = ({navigation, route}: Props) => {
         });
         navigation.navigate('EmailVerification');
       } catch (error) {
-        Alert.alert('Hata', error instanceof Error ? error.message : 'Kayıt işlemi başarısız oldu');
+        Alert.alert('Error', error instanceof Error ? error.message : 'Registration failed');
       } finally {
         setLoading(false);
       }

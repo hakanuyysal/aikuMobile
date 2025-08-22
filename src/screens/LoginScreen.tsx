@@ -8,12 +8,12 @@ const LoginScreen = ({ navigation }: any) => {
     // Başarılı giriş sonrası yapılacak işlemler
     console.log('LinkedIn girişi başarılı:', data);
     // Token'ı kaydet ve ana sayfaya yönlendir
-    Alert.alert('Başarılı', 'LinkedIn ile giriş başarılı!');
+    Alert.alert('Success', 'LinkedIn login successful!');
   };
 
   const handleLinkedInError = (error: any) => {
     console.error('LinkedIn girişi hatası:', error);
-    Alert.alert('Hata', 'LinkedIn girişi sırasında bir hata oluştu: ' + error);
+    Alert.alert('Error', 'An error occurred during LinkedIn login: ' + error);
   };
 
   return (
