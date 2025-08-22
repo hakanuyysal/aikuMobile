@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native'; // Add Dimensions import
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native'; // Add Dimensions import
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'react-native';
@@ -144,8 +144,6 @@ const marginTop = screenHeight * 0.044;
 function AppContent(): React.JSX.Element {
   const { user, refreshUser } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
   const { showSplash, initialRoute } = useAppInitialization();
   const navigation = useNavigation<NativeStackScreenProps<RootStackParamList>['navigation']>();
 
@@ -205,11 +203,10 @@ function AppContent(): React.JSX.Element {
 
   return (
     <View style={styles.mainContainer}>
-      <Animated.View
+      <View
         style={[
           styles.mainContent,
           {
-            transform: [{ translateX: slideAnim }, { scale: scaleAnim }],
             marginTop: marginTop, // Apply 15% margin top
           },
         ]}>
@@ -390,13 +387,12 @@ function AppContent(): React.JSX.Element {
             }}
           />
         </RootStack.Navigator>
-      </Animated.View>
+      </View>
       {isMenuOpen && (
         <Menu
-          user={user}
           onClose={() => setIsMenuOpen(false)}
-          mainViewRef={slideAnim}
-          scaleRef={scaleAnim}
+          mainViewRef={null}
+          scaleRef={null}
         />
       )}
     </View>

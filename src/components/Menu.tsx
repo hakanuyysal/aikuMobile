@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  Animated,
   TouchableWithoutFeedback,
   Alert,
   Linking,
@@ -25,191 +24,135 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MenuProps {
   onClose: () => void;
-  mainViewRef: Animated.AnimatedValue;
-  scaleRef: Animated.AnimatedValue;
+  mainViewRef: any;
+  scaleRef: any;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = SCREEN_WIDTH * 0.8;
-const SCALE = 0.9;
 
-const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
+const Menu: React.FC<MenuProps> = ({ onClose }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { profile, updateProfile } = useProfileStore();
-  const slideAnim = useMemo(() => mainViewRef, [mainViewRef]);
-  const scaleAnim = useMemo(() => scaleRef, [scaleRef]);
-  const fadeAnim = useMemo(() => new Animated.Value(0), []);
-  const menuSlideAnim = useMemo(() => new Animated.Value(MENU_WIDTH), []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [planName, setPlanName] = useState('Loading...');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(menuSlideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: -MENU_WIDTH * 0.8,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: SCALE,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    return () => {};
-  }, [slideAnim, fadeAnim, menuSlideAnim, scaleAnim]);
-
-  useEffect(() => {
+  // Veri yükleme fonksiyonu
+  const loadData = useCallback(async () => {
     let isMounted = true;
-    const fetchData = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      // Fetch profile
       try {
-        // Fetch profile
-        try {
-          const user = await AuthService.getCurrentUser();
-          console.log('PROFILE FETCH RESPONSE:', JSON.stringify(user, null, 2));
-          if (user && isMounted) {
-            updateProfile(user);
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-          if (isMounted) {
-            setErrorMessage('Profile information could not be retrieved.');
-          }
+        const user = await AuthService.getCurrentUser();
+        console.log('PROFILE FETCH RESPONSE:', JSON.stringify(user, null, 2));
+        if (user && isMounted) {
+          updateProfile(user);
         }
-
-        // Fetch subscription
-        try {
-          const token = await AsyncStorage.getItem('token');
-          console.log('SUBSCRIPTION TOKEN:', token ? 'Token exists' : 'No token found');
-          if (!token) {
-            throw new Error('No auth token found');
-          }
-
-          const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          console.log('SUBSCRIPTION RESPONSE:', JSON.stringify(data, null, 2));
-          if (isMounted) {
-            if (
-              data?.success &&
-              data.data?.isSubscriptionActive &&
-              data.data?.planDetails?.name &&
-              typeof data.data.planDetails.name === 'string'
-            ) {
-              console.log('Setting planName to:', data.data.planDetails.name);
-              setPlanName(data.data.planDetails.name);
-            } else {
-              console.warn('No active subscription or invalid response:', data);
-              setPlanName('No Subscription');
-              setErrorMessage('No Subscription');
-            }
-          }
-        } catch (subscriptionError: any) {
-          console.error('Error fetching subscription:', subscriptionError.message, subscriptionError.stack);
-          if (isMounted) {
-            setPlanName('No Subscription');
-            setErrorMessage('Error fetching subscription: ' + (subscriptionError.message || 'Error fetching subscription'));
-          }
-        }
-      } catch (error: any) {
-        console.error('Unexpected error in fetchData:', error.message, error.stack);
+      } catch (profileError) {
+        console.error('Error fetching profile:', profileError);
         if (isMounted) {
-          setPlanName('No Subscription');
-          setErrorMessage('Error fetching subscription: ' + (error.message || 'Error fetching subscription'));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          setErrorMessage('Profile information could not be retrieved.');
         }
       }
-    };
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
+
+      // Fetch subscription
+      try {
+        const token = await AsyncStorage.getItem('token');
+        console.log('SUBSCRIPTION TOKEN:', token ? 'Token exists' : 'No token found');
+        if (!token) {
+          throw new Error('No auth token found');
+        }
+
+        const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('SUBSCRIPTION RESPONSE:', JSON.stringify(data, null, 2));
+        if (isMounted) {
+          if (
+            data?.success &&
+            data.data?.isSubscriptionActive &&
+            data.data?.planDetails?.name &&
+            typeof data.data.planDetails.name === 'string'
+          ) {
+            console.log('Setting planName to:', data.data.planDetails.name);
+            setPlanName(data.data.planDetails.name);
+          } else {
+            console.warn('No active subscription or invalid response:', data);
+            setPlanName('No Subscription');
+            setErrorMessage('No Subscription');
+          }
+        }
+      } catch (subscriptionError: any) {
+        console.error('Error fetching subscription:', subscriptionError.message, subscriptionError.stack);
+        if (isMounted) {
+          setPlanName('No Subscription');
+          setErrorMessage('Error fetching subscription: ' + (subscriptionError.message || 'Error fetching subscription'));
+        }
+      }
+    } catch (error: any) {
+      console.error('Unexpected error in loadData:', error.message, error.stack);
+      if (isMounted) {
+        setPlanName('No Subscription');
+        setErrorMessage('Error fetching subscription: ' + (error.message || 'Error fetching subscription'));
+      }
+    } finally {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }
   }, [updateProfile]);
 
-  const handleClose = () => {
-    Animated.parallel([
-      Animated.timing(menuSlideAnim, {
-        toValue: MENU_WIDTH,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
-  };
+  // Component mount olduğunda veri yükle
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const handleMenuItemPress = (title: string) => {
+  const handleMenuItemPress = useCallback((title: string) => {
     if (title === 'Resources') {
       setExpandedSection(expandedSection === 'Resources' ? null : 'Resources');
       return;
     }
 
-    handleClose();
-    setTimeout(() => {
-      if (title === 'Personal Details') {
-        navigation.navigate({ name: 'UpdateProfile', params: undefined });
-      } else if (title === 'Subscription Details') {
-        navigation.navigate({ name: 'SubscriptionDetails', params: undefined });
-      } else if (title === 'Favorites') {
-        navigation.navigate({ name: 'Favorites', params: undefined });
-      } else if (title === 'Company Details') {
-        navigation.navigate({ name: 'CompanyDetails', params: undefined });
-      } else if (title === 'Product Details') {
-        navigation.navigate({ name: 'ProductDetails', params: { id: '' } });
-      } else if (title === 'Investment Details') {
-        navigation.navigate({ name: 'InvestmentDetails', params: undefined });
-      } else if (title === 'Settings') {
-        navigation.navigate({ name: 'Settings', params: undefined });
-      } else if (title === 'Talent Pool') {
-        navigation.navigate({ name: 'TalentPool', params: undefined });
-      } else if (title === 'Investment Opportunities') {
-        navigation.navigate({ name: 'InvestmentDetails', params: undefined });
-      } else if (title === 'How It Works') {
-        navigation.navigate({ name: 'HowItWorks', params: undefined });
-      } else {
-        console.log(`${title} pressed`);
-      }
-    }, 300);
-  };
+    onClose();
+    
+    if (title === 'Personal Details') {
+      navigation.navigate({ name: 'UpdateProfile', params: undefined });
+    } else if (title === 'Subscription Details') {
+      navigation.navigate({ name: 'SubscriptionDetails', params: undefined });
+    } else if (title === 'Favorites') {
+      navigation.navigate({ name: 'Favorites', params: undefined });
+    } else if (title === 'Company Details') {
+      navigation.navigate({ name: 'CompanyDetails', params: undefined });
+    } else if (title === 'Product Details') {
+      navigation.navigate({ name: 'ProductDetails', params: { id: '' } });
+    } else if (title === 'Investment Details') {
+      navigation.navigate({ name: 'InvestmentDetails', params: undefined });
+    } else if (title === 'Settings') {
+      navigation.navigate({ name: 'Settings', params: undefined });
+    } else if (title === 'Talent Pool') {
+      navigation.navigate({ name: 'TalentPool', params: undefined });
+    } else if (title === 'Investment Opportunities') {
+      navigation.navigate({ name: 'InvestmentDetails', params: undefined });
+    } else if (title === 'How It Works') {
+      navigation.navigate({ name: 'HowItWorks', params: undefined });
+    } else {
+      console.log(`${title} pressed`);
+    }
+  }, [expandedSection, onClose, navigation]);
 
   const menuItems = [
     { title: 'Personal Details', icon: 'account-outline' },
@@ -228,37 +171,32 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
     { title: 'How It Works', icon: 'help-circle-outline' },
   ];
 
-  const openSocialMedia = (url: string) => {
+  const openSocialMedia = useCallback((url: string) => {
     Linking.openURL(url).catch(err => {
       console.error('Error opening link:', err);
       Alert.alert('Error', 'Could not open link');
     });
-  };
+  }, []);
 
-  const getProfilePhoto = () => {
+  const getProfilePhoto = useCallback(() => {
     const url = profile.photoURL || profile.profilePhoto;
     if (!url) return null;
     if (url.startsWith('http')) return url;
     if (url.startsWith('/uploads')) return `https://api.aikuaiplatform.com${url}`;
     return null;
-  };
+  }, [profile.photoURL, profile.profilePhoto]);
+
   const profilePhoto = getProfilePhoto();
 
   console.log('RENDER PLAN NAME:', planName);
 
   return (
-    <TouchableWithoutFeedback onPress={handleClose}>
-      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+    <TouchableWithoutFeedback onPress={onClose}>
+      <View style={styles.overlay}>
         <TouchableWithoutFeedback>
-          <Animated.View
-            style={[
-              styles.menuContent,
-              {
-                transform: [{ translateX: menuSlideAnim }],
-              },
-            ]}>
+          <View style={styles.menuContent}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <MaterialCommunityIcons
                   name="close"
                   size={metrics.scale(24)}
@@ -282,7 +220,7 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeText}>Welcome</Text>
                   {!profile?.firstName ? (
-                    <ActivityIndicator />
+                    <ActivityIndicator size="small" color={Colors.primary} />
                   ) : (
                     <Text style={styles.userName}>
                       {profile.firstName} {profile.lastName}
@@ -399,9 +337,9 @@ const Menu: React.FC<MenuProps> = ({ onClose, mainViewRef, scaleRef }) => {
                 </View>
               </View>
             </ScrollView>
-          </Animated.View>
+          </View>
         </TouchableWithoutFeedback>
-      </Animated.View>
+      </View>
     </TouchableWithoutFeedback>
   );
 };
