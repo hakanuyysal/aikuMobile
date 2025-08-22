@@ -48,6 +48,7 @@ import AddBillingInfo from './src/screens/subscriptions/AddBillingInfo';
 import ThreeDSecure from './src/screens/subscriptions/ThreeDSecure';
 import CartScreen from 'screens/subscriptions/CartScreen';
 import RevenueCatService from './src/services/RevenueCatService';
+import { initializePush } from './src/services/push/oneSignal';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -171,6 +172,21 @@ function AppContent(): React.JSX.Element {
     };
 
     initializeRevenueCat();
+  }, []);
+
+  // OneSignal'ı başlat
+  useEffect(() => {
+    const initializeOneSignal = async () => {
+      try {
+        console.log('🚀 OneSignal başlatılıyor...');
+        initializePush();
+        console.log('✅ OneSignal başlatma tamamlandı');
+      } catch (error) {
+        console.error('❌ OneSignal başlatma hatası:', error);
+      }
+    };
+
+    initializeOneSignal();
   }, []);
 
   useEffect(() => {

@@ -1,10 +1,11 @@
-// OneSignal bazı ortamlarda native link sorunu yaşarsa uygulamanın çökmesini
-// engellemek için dinamik import kullanıyoruz.
+// Using dynamic import to prevent app crashes when OneSignal has native linking issues in some environments.
 let OneSignal: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   OneSignal = require('react-native-onesignal').default;
+  console.log('✅ OneSignal module loaded successfully');
 } catch (_e) {
+  console.warn('❌ OneSignal module not available:', _e);
   OneSignal = null;
 }
 import {Platform} from 'react-native';
@@ -20,34 +21,34 @@ export async function getOneSignalPlayerId(): Promise<string | null> {
   }
 }
 
-// Kullanıcının bildirim ayarlarını kontrol et
+// Check user's notification settings
 async function checkNotificationSettings(): Promise<boolean> {
   try {
     const settings = await notificationService.getPushSettings();
     return settings.pushNotificationsEnabled;
   } catch (error) {
-    console.error('Bildirim ayarları kontrol edilirken hata:', error);
-    // Hata durumunda varsayılan olarak bildirimleri etkinleştir
+    console.error('Error checking notification settings:', error);
+    // Enable notifications by default in case of error
     return true;
   }
 }
 
-// OneSignal'ı etkinleştir veya devre dışı bırak
+// Enable or disable OneSignal
 async function toggleOneSignal(enabled: boolean): Promise<void> {
   if (!OneSignal) return;
 
   try {
     if (enabled) {
-      // OneSignal'ı etkinleştir
+      // Enable OneSignal
       await OneSignal.Notifications.requestPermission(true);
-      console.log('OneSignal bildirimleri etkinleştirildi');
+      console.log('OneSignal notifications enabled');
     } else {
-      // OneSignal'ı devre dışı bırak - sadece mevcut bildirimleri temizle
+      // Disable OneSignal - just clear current notifications
       await OneSignal.Notifications.clearAll();
-      console.log('OneSignal bildirimleri devre dışı bırakıldı');
+      console.log('OneSignal notifications disabled');
     }
   } catch (error) {
-    console.error('OneSignal durumu değiştirilirken hata:', error);
+    console.error('Error changing OneSignal status:', error);
   }
 }
 
@@ -68,7 +69,7 @@ export function initializePush(): void {
     try {
       OneSignal.Debug.setLogLevel(OneSignal.LogLevel.Verbose);
     } catch (_e) {
-      // Eski sürümlerde sayı ile de çalışır; yoksa pas geç.
+      // Older versions also work with numbers; skip if not available.
       try {
         OneSignal.Debug.setLogLevel(6);
       } catch {}
@@ -77,10 +78,10 @@ export function initializePush(): void {
 
   OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
 
-  // Kullanıcının bildirim ayarlarını kontrol et ve OneSignal'ı buna göre yapılandır
+  // Check user's notification settings and configure OneSignal accordingly
   checkNotificationSettings().then(enabled => {
     if (enabled) {
-      // iOS ve Android 13+ için izin iste
+      // Request permission for iOS and Android 13+
       OneSignal.Notifications.requestPermission(true);
     }
   });
@@ -90,22 +91,22 @@ export function initializePush(): void {
     async (event: any) => {
       const notification = event.getNotification();
 
-      // Kullanıcının bildirim ayarlarını kontrol et
+      // Check user's notification settings
       const notificationsEnabled = await checkNotificationSettings();
 
       if (!notificationsEnabled) {
-        // Kullanıcı bildirimleri kapattıysa bildirimi gösterme
+        // Don't show notification if user has disabled them
         event.preventDefault();
-        console.log('Bildirim kullanıcı ayarları nedeniyle engellendi');
+        console.log('Notification blocked due to user settings');
         return;
       }
 
-      // Varsayılan davranış: bildirimi göster. Sadece logluyoruz.
+      // Default behavior: show notification. Just logging it.
       console.log('OneSignal foreground notification:', notification);
     },
   );
 
-  OneSignal.Notifications.addEventListener('click', event => {
+  OneSignal.Notifications.addEventListener('click', (event: any) => {
     try {
       console.log('OneSignal notification opened:', JSON.stringify(event));
     } catch (e) {
@@ -118,29 +119,29 @@ export function initializePush(): void {
     console.log('OneSignal Player ID:', playerId);
   });
 
-  // İlk açılışta Player ID ve token logla
-  OneSignal.User.pushSubscription.getId().then(id => {
+  // Log Player ID and token on first launch
+  OneSignal.User.pushSubscription.getId().then((id: any) => {
     console.log('OneSignal Player ID:', id);
   });
-  OneSignal.User.pushSubscription.getToken().then(token => {
+  OneSignal.User.pushSubscription.getToken().then((token: any) => {
     if (token) console.log('Push Token:', token);
   });
 }
 
-// Bildirim ayarları değiştiğinde çağrılacak fonksiyon
+// Function to call when notification settings change
 export async function updateNotificationSettings(
   enabled: boolean,
 ): Promise<void> {
   await toggleOneSignal(enabled);
 }
 
-// Uygulama başlatıldığında bildirim ayarlarını kontrol et ve OneSignal'ı yapılandır
+// Check notification settings and configure OneSignal on app startup
 export async function configureNotificationsOnStartup(): Promise<void> {
   const enabled = await checkNotificationSettings();
   await toggleOneSignal(enabled);
 }
 
-// Test fonksiyonu - kullanıcı bildirim ayarlarını test etmek için
+// Test function - to test user notification settings
 export async function testNotificationSettings(): Promise<{
   enabled: boolean;
   message: string;
@@ -148,13 +149,13 @@ export async function testNotificationSettings(): Promise<{
   try {
     const enabled = await checkNotificationSettings();
     const message = enabled
-      ? 'Bildirimler etkin - OneSignal çalışıyor'
-      : 'Bildirimler devre dışı - OneSignal bildirimleri engelliyor';
+      ? 'Notifications enabled - OneSignal working'
+      : 'Notifications disabled - OneSignal blocking notifications';
 
-    console.log('Test sonucu:', message);
+    console.log('Test result:', message);
     return {enabled, message};
   } catch (error) {
-    console.error('Test hatası:', error);
-    return {enabled: false, message: 'Test sırasında hata oluştu'};
+    console.error('Test error:', error);
+    return {enabled: false, message: 'Error occurred during test'};
   }
 }

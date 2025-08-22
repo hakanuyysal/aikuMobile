@@ -27,6 +27,8 @@ import { Product } from '../types';
 import AIBlogSection from 'components/AiBlogSection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getActiveMobileModalMessage } from '../api/modalMessagesApi';
+import PushPermissionPrompt from '../components/PushPermissionPrompt';
+import { storage } from '../storage/mmkv';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -57,9 +59,7 @@ const CARD_GAP = metrics.spacing.md;
 const TWO_COL_W = (CONTENT_MAX - CARD_GAP) / 2;
 
 const CARD_HEIGHT = metrics.moderateScale(metrics.isTablet ? 72 : 60);
-const CARD_TOP = metrics.moderateScale(metrics.isTablet ? 140 : 120);
 
-const GRID_GAP = metrics.spacing.md;
 
 const LOGO_W = metrics.isTablet ? Math.min(CONTENT_MAX * 0.32, 220) : 150;
 const LOGO_H = metrics.isTablet ? 56 : 42;
@@ -78,6 +78,9 @@ const HomeScreen = (props: HomeScreenProps) => {
     null,
   );
   const [_postHomeModalId, setPostHomeModalId] = useState<string | null>(null);
+
+  // Push notification permission prompt state
+  const [pushPromptVisible, setPushPromptVisible] = useState(false);
 
   // Modal state'ini debug için logla
   React.useEffect(() => {
@@ -254,6 +257,78 @@ const HomeScreen = (props: HomeScreenProps) => {
     checkTooltipShown();
   }, []);
 
+  // Push notification permission prompt kontrolü
+  React.useEffect(() => {
+    const checkAndShowPushPrompt = async () => {
+      try {
+        // Kullanıcı giriş yapmış mı kontrol et (token var mı)
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          console.log('🚫 Kullanıcı giriş yapmamış, push prompt gösterilmez');
+          return;
+        }
+
+        // Debug: Storage durumunu kontrol et (sadece geliştirme aşamasında)
+        if (__DEV__) {
+          console.log('🔍 Storage durumu:');
+          console.log('  - pushPromptNeverAsk:', storage.getBoolean('pushPromptNeverAsk'));
+          console.log('  - pushPromptShown:', storage.getBoolean('pushPromptShown'));
+          console.log('  - pushPromptNextShow:', storage.getNumber('pushPromptNextShow'));
+          console.log('  - pushPermissionStatus:', storage.getString('pushPermissionStatus'));
+        }
+
+        // "Bir daha sorma" seçilmiş mi kontrol et
+        const neverAsk = storage.getBoolean('pushPromptNeverAsk');
+        if (neverAsk) {
+          console.log('🚫 Kullanıcı "bir daha sorma" seçmiş, push prompt gösterilmez');
+          return;
+        }
+
+        // Zaten gösterilmiş mi kontrol et
+        const alreadyShown = storage.getBoolean('pushPromptShown');
+        if (alreadyShown) {
+          console.log('🚫 Push prompt zaten gösterilmiş');
+
+          // İzin durumunu kontrol et
+          const permissionStatus = storage.getString('pushPermissionStatus');
+          if (permissionStatus === 'granted') {
+            console.log('✅ İzin zaten verilmiş, push prompt gösterilmez');
+            return;
+          }
+
+          // "Belki Sonra" seçilmiş ve 3 gün geçmiş mi kontrol et
+          const nextShowTime = storage.getNumber('pushPromptNextShow');
+          if (nextShowTime && Date.now() < nextShowTime) {
+            console.log('⏰ Henüz 3 gün geçmemiş, push prompt gösterilmez');
+            return;
+          }
+
+          // 3 gün geçmiş, tekrar gösterebiliriz
+          console.log('✅ 3 gün geçmiş, push prompt tekrar gösterilebilir');
+        } else {
+          console.log('✅ İlk kez gösteriliyor');
+        }
+
+        // İlk uygulama açılışı mı kontrol et - 5 saniye bekle
+        setTimeout(() => {
+          // Diğer modallar açık mı kontrol et
+          if (postHomeModalVisible || showCenterCards) {
+            console.log('⏰ Diğer modal açık, push prompt bekletiliyor');
+            return;
+          }
+
+          console.log('✅ Push notification permission prompt gösteriliyor');
+          setPushPromptVisible(true);
+        }, 5000); // 5 saniye bekle
+
+      } catch (error) {
+        console.error('🚨 Push prompt kontrol hatası:', error);
+      }
+    };
+
+    checkAndShowPushPrompt();
+  }, [postHomeModalVisible, showCenterCards]);
+
   React.useEffect(() => {
     const fetchAndMaybeShowPostHomeModal = async () => {
       try {
@@ -262,7 +337,7 @@ const HomeScreen = (props: HomeScreenProps) => {
         // 24 saatlik kontrol
         const lastShown = await AsyncStorage.getItem('lastModalShown');
         if (lastShown) {
-          const lastShownTime = parseInt(lastShown);
+          const lastShownTime = parseInt(lastShown, 10);
           const now = new Date().getTime();
           const twentyFourHours = 24 * 60 * 60 * 1000; // 24 saat milisaniye cinsinden
 
@@ -338,6 +413,32 @@ const HomeScreen = (props: HomeScreenProps) => {
     }
   };
 
+  // Push permission prompt callback fonksiyonları
+  const handlePushPermissionGranted = () => {
+    console.log('✅ Push notification permission granted');
+    // İsteğe bağlı: burada kullanıcıya başarı mesajı gösterebilir veya analytics gönderebilirsiniz
+  };
+
+  const handlePushPermissionDenied = () => {
+    console.log('❌ Push notification permission denied or postponed');
+    // İsteğe bağlı: analytics gönderebilirsiniz
+  };
+
+  const closePushPrompt = () => {
+    setPushPromptVisible(false);
+  };
+
+  // Test için storage reset fonksiyonu (sadece geliştirme aşamasında)
+  const resetPushPromptStorage = () => {
+    if (__DEV__) {
+      storage.delete('pushPromptNeverAsk');
+      storage.delete('pushPromptShown');
+      storage.delete('pushPromptNextShow');
+      storage.delete('pushPermissionStatus');
+      console.log('✅ Push prompt storage temizlendi');
+    }
+  };
+
   const renderMessageWithLinks = (text: string) => {
     const elements: React.ReactNode[] = [];
     const urlRegex = /((https?:\/\/|www\.)[^\s]+)/g;
@@ -396,8 +497,8 @@ const HomeScreen = (props: HomeScreenProps) => {
     </View>
   );
 
-  const CARD_TOP = 120; // Kartın yukarıdan uzaklığı
-  const CARD_HEIGHT = 60; // Kartın yüksekliği
+  const tooltipCardTop = 120; // Tooltip kartının yukarıdan uzaklığı
+  const tooltipCardHeight = 60; // Tooltip kartının yüksekliği
 
   return (
     <LinearGradient
@@ -584,7 +685,7 @@ const HomeScreen = (props: HomeScreenProps) => {
                           height: SCREEN_WIDTH * 0.52,
                           position: 'absolute',
                           left: SCREEN_WIDTH * 0.5 - (SCREEN_WIDTH * 0.52) / 2,
-                          top: CARD_TOP + CARD_HEIGHT - 120, // Kartın hemen altı
+                          top: tooltipCardTop + tooltipCardHeight - 120, // Kartın hemen altı
                           zIndex: 100,
                           transform: [{ scale: handScale }],
                         }}
@@ -641,15 +742,23 @@ const HomeScreen = (props: HomeScreenProps) => {
               </View>
             </View>
           )}
+
+          {/* Push Notification Permission Prompt */}
+          <PushPermissionPrompt
+            visible={pushPromptVisible}
+            onClose={closePushPrompt}
+            onPermissionGranted={handlePushPermissionGranted}
+            onPermissionDenied={handlePushPermissionDenied}
+          />
         </View>
       </SafeAreaView>
     </LinearGradient >
   );
 };
 
-type HomeScreenProps = {
+interface HomeScreenProps {
   onMenuOpen?: () => void;
-};
+}
 
 const styles = StyleSheet.create({
   gradientBackground: {
