@@ -13,12 +13,31 @@ export class BaseService {
   private constructor(baseURL = '') {
     this.baseURL = baseURL;
     this.axios = axios.create({
-      baseURL: AppConfig.API_URL,
+      baseURL: `${AppConfig.API_URL}/api`,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    // Token interceptor ekle
+    this.axios.interceptors.request.use(
+      async (config) => {
+        try {
+          const token = await AsyncStorage.getItem('token');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+          return config;
+        } catch (error) {
+          console.error('Token alınırken hata:', error);
+          return config;
+        }
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
   }
 
   public static getInstance(): BaseService {

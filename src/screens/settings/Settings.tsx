@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import AuthService from '../../services/AuthService';
+import notificationService from '../../services/notificationService';
 import {useAuth} from '../../contexts/AuthContext';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../../App';
@@ -30,7 +31,66 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({navigation}) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  // const [chatNotificationsEnabled, setChatNotificationsEnabled] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const {updateUser} = useAuth();
+
+  // Sayfa yüklendiğinde mevcut notification ayarlarını getir
+  useEffect(() => {
+    loadNotificationSettings();
+  }, []);
+
+  const loadNotificationSettings = async () => {
+    try {
+      setIsInitialLoading(true);
+      // Önce tüm ayarları getir
+      const allSettings = await notificationService.getAllSettings();
+      setNotificationsEnabled(allSettings.pushNotifications);
+      // setChatNotificationsEnabled(allSettings.chatNotifications);
+    } catch (error) {
+      console.error('Notification ayarları yüklenirken hata:', error);
+      // Hata durumunda varsayılan değerleri kullan
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = async (value: boolean) => {
+    try {
+      setIsLoading(true);
+      await notificationService.updatePushSettings(value);
+      setNotificationsEnabled(value);
+    } catch (error) {
+      console.error('Notification ayarı güncellenirken hata:', error);
+      Alert.alert(
+        'Hata',
+        'Bildirim ayarları güncellenirken bir hata oluştu. Lütfen tekrar deneyin.',
+      );
+      // Hata durumunda eski değere geri dön
+      setNotificationsEnabled(!value);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // const handleChatNotificationToggle = async (value: boolean) => {
+  //   try {
+  //     setIsLoading(true);
+  //     await notificationService.updateChatSettings(value);
+  //     setChatNotificationsEnabled(value);
+  //   } catch (error) {
+  //     console.error('Chat notification ayarı güncellenirken hata:', error);
+  //     Alert.alert(
+  //       'Hata',
+  //       'Chat bildirim ayarları güncellenirken bir hata oluştu. Lütfen tekrar deneyin.',
+  //     );
+  //     // Hata durumunda eski değere geri dön
+  //     setChatNotificationsEnabled(!value);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
@@ -66,19 +126,34 @@ const Settings: React.FC<SettingsProps> = ({navigation}) => {
   const settingsItems = [
     {
       icon: 'bell-outline',
-      title: 'Notifications',
-      subtitle: 'Manage notification preferences',
+      title: 'Push Notifications',
+      subtitle: 'Manage push notification preferences',
       gradient: ['#EC4899', '#D946EF'],
       rightElement: (
         <Switch
           value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
+          onValueChange={handleNotificationToggle}
           trackColor={{false: Colors.border, true: Colors.primary}}
           ios_backgroundColor={Colors.border}
+          disabled={isLoading || isInitialLoading}
         />
       ),
     },
-
+    // {
+    //   icon: 'chat-outline',
+    //   title: 'Chat Notifications',
+    //   subtitle: 'Manage chat notification preferences',
+    //   gradient: ['#10B981', '#059669'],
+    //   rightElement: (
+    //     <Switch
+    //       value={chatNotificationsEnabled}
+    //       onValueChange={handleChatNotificationToggle}
+    //       trackColor={{false: Colors.border, true: Colors.primary}}
+    //       ios_backgroundColor={Colors.border}
+    //       disabled={isLoading || isInitialLoading}
+    //     />
+    //   ),
+    // },
     {
       icon: 'email-outline',
       title: 'Contact Us',
