@@ -129,11 +129,30 @@ export const companyService = {
     }
   },
 
+  getBusinesses: async (): Promise<Company[]> => {
+    try {
+      const response = await api.get('https://api.aikuaiplatform.com/api/company/all');
+      if (response.data.success) {
+        const businesses = response.data.companies
+          .filter((c: Company) => c.companyType === "Business")
+          .map(processCompanyLogo);
+        return [
+          ...businesses.filter((c: Company) => c.isHighlighted),
+          ...businesses.filter((c: Company) => !c.isHighlighted)
+        ];
+      }
+      return [];
+    } catch (error) {
+      console.error('İşletmeler getirilirken hata oluştu:', error);
+      return [];
+    }
+  },
+
   // Yeni şirket ekle
   addCompany: async (companyData: Partial<Company> | FormData): Promise<Company> => {
     try {
       const isFormData = companyData instanceof FormData;
-      
+
       const config = {
         headers: {
           'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',

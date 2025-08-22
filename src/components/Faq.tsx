@@ -14,8 +14,19 @@ import { Text as PaperText, IconButton, Surface } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../constants/colors';
+import metrics from '../constants/aikuMetric';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IS_TABLET = metrics.isTablet || SCREEN_WIDTH >= 768;
+
+const CONTENT_MAX = IS_TABLET
+  ? Math.min(metrics.WIDTH * 0.88, 900)
+  : SCREEN_WIDTH - 40;
+
+const GAP = metrics.spacing.md;
+const GET_CARD_W = IS_TABLET ? Math.min((CONTENT_MAX - GAP) / 2, 420) : Math.round(SCREEN_WIDTH * 0.85);
+const FAQ_W = IS_TABLET ? Math.min(CONTENT_MAX, 720) : SCREEN_WIDTH - 40;
 
 const mainSteps = [
   {
@@ -145,7 +156,7 @@ const HowItWorksScreen = () => {
 
   const renderMainStep = ({ item }: { item: typeof mainSteps[0] }) => (
     <View style={styles.mainStepItem}>
-      <Ionicons name={item.iconName} size={30} color={Colors.lightText} style={styles.mainStepIcon} />
+      <Ionicons name={item.iconName} size={IS_TABLET ? 26 : 30} color={Colors.lightText} style={styles.mainStepIcon} />
       <View style={styles.mainStepTextContainer}>
         <PaperText style={styles.mainStepTitle}>{item.title.toUpperCase()}</PaperText>
         <PaperText style={styles.mainStepDescription}>{item.description}</PaperText>
@@ -156,7 +167,7 @@ const HowItWorksScreen = () => {
   const renderGetStartedStep = ({ item }: { item: typeof getStartedSteps[0] }) => (
     <View style={styles.getStartedCard}>
       <View style={styles.getStartedContentContainer}>
-        <Ionicons name={item.iconName} size={30} color={Colors.lightText} style={styles.getStartedIcon} />
+        <Ionicons name={item.iconName} size={IS_TABLET ? 26 : 30} color={Colors.lightText} style={styles.getStartedIcon} />
         <View style={styles.getStartedTextContainer}>
           <PaperText style={styles.getStartedTitle}>{item.title}</PaperText>
           <PaperText style={styles.getStartedDescription}>{item.description}</PaperText>
@@ -186,7 +197,7 @@ const HowItWorksScreen = () => {
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          <Surface style={styles.header} elevation={0}>
+          <Surface style={[styles.header, { width: CONTENT_MAX }]} elevation={0}>
             <View style={styles.backButtonContainer}>
               <IconButton
                 icon={() => <Ionicons name="chevron-back" size={24} color={Colors.lightText} />}
@@ -211,16 +222,17 @@ const HowItWorksScreen = () => {
                 </PaperText>
               </View>
             </View>
-            <IconButton
+            {/* <IconButton
               icon="menu"
               iconColor={Colors.lightText}
               size={24}
               onPress={handleMenuOpen}
               style={styles.menuButton}
-            />
+            /> */}
+            
           </Surface>
 
-          <View style={styles.tabBar}>
+          <View style={[styles.tabBar, { width: CONTENT_MAX, alignSelf: 'center' }]}>
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'HowItWorks' && styles.activeTab]}
               onPress={() => setActiveTab('HowItWorks')}
@@ -231,7 +243,7 @@ const HowItWorksScreen = () => {
                   activeTab === 'HowItWorks' && styles.activeTabText,
                 ]}
               >
-                HOW IT WORKS ?
+                HOW IT WORKS?
               </PaperText>
             </TouchableOpacity>
             <TouchableOpacity
@@ -247,7 +259,7 @@ const HowItWorksScreen = () => {
           </View>
 
           {activeTab === 'HowItWorks' ? (
-            <View style={styles.contentContainer}>
+            <View style={[styles.contentContainer, { width: CONTENT_MAX, alignSelf: 'center' }]}>
               <FlatList
                 data={mainSteps}
                 renderItem={renderMainStep}
@@ -268,7 +280,7 @@ const HowItWorksScreen = () => {
               </View>
             </View>
           ) : (
-            <View style={styles.contentContainer}>
+            <View style={[styles.contentContainer, { width: CONTENT_MAX, alignSelf: 'center' }]}>
               <View style={styles.pageTitleContainer}>
                 <PaperText style={styles.pageTitle}>Frequently Asked Questions</PaperText>
               </View>
@@ -297,15 +309,16 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
     backgroundColor: 'transparent',
+    alignItems: 'center',                    // içerik ortalı
+    paddingHorizontal: metrics.spacing.md,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: IS_TABLET ? 4 : 8,            // daha kompakt
+    marginBottom: IS_TABLET ? 8 : 8,
     backgroundColor: 'transparent',
   },
   backButtonContainer: {
@@ -352,16 +365,23 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 12,
+    justifyContent: 'center',
+    marginVertical: metrics.spacing.sm,
+    gap: metrics.spacing.sm,
   },
   tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginHorizontal: 10,
+    paddingVertical: IS_TABLET ? 8 : 8,
+    paddingHorizontal: IS_TABLET ? 18 : 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  activeTab: {
+    backgroundColor: 'rgba(43,64,99,0.8)',
+    borderColor: Colors.primary,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: IS_TABLET ? 18 : 16,
     color: Colors.lightText,
     opacity: 0.7,
     fontWeight: '700',
@@ -384,14 +404,12 @@ const styles = StyleSheet.create({
   stepsList: {
     flex: 1,
   },
-  stepsContent: {
-    paddingBottom: 20,
-  },
+  stepsContent: { paddingBottom: metrics.spacing.lg },
   mainStepItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
-    paddingVertical: 8,
+    marginBottom: IS_TABLET ? 14 : 16,
+    paddingVertical: IS_TABLET ? 6 : 8,
   },
   mainStepIcon: {
     marginRight: 12,
@@ -403,35 +421,33 @@ const styles = StyleSheet.create({
   },
   mainStepTitle: {
     color: Colors.lightText,
-    fontSize: 14,
+    fontSize: IS_TABLET ? 15 : 14,
     fontWeight: '700',
     marginBottom: 4,
   },
   mainStepDescription: {
     color: Colors.lightText,
-    fontSize: 12,
+    fontSize: IS_TABLET ? 13 : 12,
     opacity: 0.8,
-    lineHeight: 20,
+    lineHeight: IS_TABLET ? 20 : 20,
   },
-  getStartedSection: {
-    marginVertical: 20,
-  },
+  getStartedSection: { marginVertical: metrics.spacing.lg },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: IS_TABLET ? 22 : 20,
     fontWeight: '700',
     color: Colors.lightText,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: metrics.spacing.sm,
   },
   getStartedContent: {
-    paddingHorizontal: 10,
-    paddingBottom: 20,
+    paddingHorizontal: metrics.spacing.sm,
+    paddingBottom: metrics.spacing.lg,
   },
   getStartedCard: {
-    width: SCREEN_WIDTH * 0.7,
-    marginHorizontal: 8,
-    padding: 16,
-    borderRadius: 12,
+    width: IS_TABLET ? GET_CARD_W : Math.round(SCREEN_WIDTH * 0.85),
+    marginHorizontal: metrics.spacing.xs,
+    padding: metrics.spacing.md,
+    borderRadius: metrics.borderRadius.lg,
     backgroundColor: Colors.cardBackground,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
@@ -440,7 +456,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-    marginBottom:'30%',
+    // ❌ dev boşluğu kaldır:
+    // marginBottom: '30%',
   },
   getStartedContentContainer: {
     flexDirection: 'row',
@@ -456,26 +473,26 @@ const styles = StyleSheet.create({
   },
   getStartedTitle: {
     color: Colors.lightText,
-    fontSize: 16,
+    fontSize: IS_TABLET ? 17 : 16,
     fontWeight: '700',
     marginBottom: 8,
   },
   getStartedDescription: {
     color: Colors.lightText,
-    fontSize: 14,
-    opacity: 0.8,
+    fontSize: IS_TABLET ? 15 : 14,
+    opacity: 0.8
   },
   faqList: {
     flex: 1,
   },
   faqContent: {
-    paddingBottom: 20,
+    paddingBottom: metrics.spacing.lg
   },
   faqCard: {
-    width: SCREEN_WIDTH - 40,
-    marginBottom: 12,
+    width: FAQ_W,
+    marginBottom: metrics.spacing.sm,
     alignSelf: 'center',
-    borderRadius: 12,
+    borderRadius: metrics.borderRadius.lg,
     overflow: 'hidden',
     backgroundColor: Colors.cardBackground,
     borderWidth: 1,
@@ -485,17 +502,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-    padding: 16,
+    padding: metrics.spacing.md,
   },
   faqQuestion: {
     color: Colors.lightText,
-    fontSize: 16,
+    fontSize: IS_TABLET ? 17 : 16,
     fontWeight: '700',
     marginBottom: 8,
   },
   faqAnswer: {
     color: Colors.lightText,
-    fontSize: 14,
+    fontSize: IS_TABLET ? 15 : 14,
     opacity: 0.8,
   },
 });

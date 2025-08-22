@@ -30,6 +30,9 @@ interface Company {
   acceptMessages: boolean;
 }
 
+const MAX_WIDTH = metrics.isTablet ? Math.min(metrics.WIDTH * 0.75, 820) : undefined;
+
+
 const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -171,13 +174,13 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       onPress={() => handleCompanyPress(item)}
     >
       <View style={styles.avatar}>
-        <Image 
-          source={{ 
+        <Image
+          source={{
             uri: item.companyLogo?.startsWith('/uploads')
               ? `https://api.aikuaiplatform.com${item.companyLogo}`
               : item.companyLogo || 'default_avatar_url_here'
-          }} 
-          style={styles.avatarImage} 
+          }}
+          style={styles.avatarImage}
           resizeMode="contain"
         />
       </View>
@@ -192,8 +195,8 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
         locations={[0, 0.3, 0.6, 0.9]}
-        start={{x: 0, y: 0}}
-        end={{x: 2, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 2, y: 1 }}
         style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           {renderHeader()}
@@ -209,8 +212,8 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {renderHeader()}
@@ -255,21 +258,22 @@ const CompanyListScreen = ({ navigation }: CompanyListScreenProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+
+  // HEADER
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: metrics.padding.md,
-    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.isTablet ? metrics.padding.md : metrics.padding.md,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
+    width: MAX_WIDTH,
+    alignSelf: metrics.isTablet ? 'center' : 'stretch',
   },
   headerTitle: {
-    fontSize: metrics.fontSize.xxl,
+    // tablette küçült
+    fontSize: metrics.isTablet ? metrics.fontSize.lg : metrics.fontSize.xxl,
     fontWeight: 'bold',
     color: Colors.lightText,
     flex: 1,
@@ -277,50 +281,62 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: metrics.padding.sm,
-    width: metrics.scale(40),
+    width: metrics.scale(metrics.isTablet ? 36 : 40),
   },
   headerButton: {
     padding: metrics.padding.sm,
-    width: metrics.scale(40),
+    width: metrics.scale(metrics.isTablet ? 36 : 40),
   },
+
+  // SEARCH
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    margin: metrics.margin.md,
-    marginBottom: metrics.margin.sm,
-    paddingHorizontal: metrics.padding.md,
+    marginHorizontal: metrics.isTablet ? 0 : metrics.margin.md,
+    marginVertical: metrics.isTablet ? metrics.margin.sm : metrics.margin.md,
+    paddingHorizontal: metrics.isTablet ? metrics.padding.md : metrics.padding.md,
     borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    height: metrics.isTablet ? metrics.scale(42) : undefined,
+    width: MAX_WIDTH,
+    alignSelf: metrics.isTablet ? 'center' : 'stretch',
   },
   searchIcon: {
-    marginRight: metrics.margin.sm,
+    marginRight: metrics.isTablet ? metrics.margin.sm : metrics.margin.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: metrics.padding.sm,
-    fontSize: metrics.fontSize.md,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
+    fontSize: metrics.isTablet ? metrics.fontSize.md : metrics.fontSize.md,
     color: Colors.lightText,
   },
+
+  // LIST
   list: {
     flex: 1,
-    paddingTop: metrics.padding.xl,
+    paddingTop: metrics.isTablet ? metrics.padding.md : metrics.padding.xl,
   },
   listContent: {
-    paddingHorizontal: metrics.padding.md,
+    paddingHorizontal: metrics.isTablet ? 0 : metrics.padding.md,
+    width: MAX_WIDTH,
+    alignSelf: metrics.isTablet ? 'center' : 'stretch',
   },
+
+  // ROW
   companyItem: {
     flexDirection: 'row',
-    paddingVertical: metrics.padding.sm,
-    paddingHorizontal: metrics.padding.xs,
+    paddingVertical: metrics.isTablet ? metrics.padding.sm : metrics.padding.sm,
+    paddingHorizontal: metrics.isTablet ? 0 : metrics.padding.xs,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: metrics.scale(52),
-    height: metrics.scale(52),
-    borderRadius: metrics.scale(26),
+    // tablette küçültüldü
+    width: metrics.scale(metrics.isTablet ? 48 : 52),
+    height: metrics.scale(metrics.isTablet ? 48 : 52),
+    borderRadius: metrics.scale(metrics.isTablet ? 24 : 26),
     backgroundColor: '#fff',
     padding: metrics.padding.xs,
     justifyContent: 'center',
@@ -330,26 +346,29 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: metrics.scale(24),
+    borderRadius: metrics.scale(metrics.isTablet ? 22 : 24),
   },
   companyInfo: {
     flex: 1,
     justifyContent: 'center',
-    marginLeft: metrics.margin.md,
+    marginLeft: metrics.isTablet ? metrics.margin.md : metrics.margin.md,
   },
   companyName: {
-    fontSize: metrics.fontSize.lg,
+    // tablette yazı boyutu küçültüldü
+    fontSize: metrics.isTablet ? metrics.fontSize.md : metrics.fontSize.lg,
     fontWeight: 'bold',
     color: Colors.lightText,
   },
+
+  // STATES
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderLogo: {
-    width: 40,
-    height: 40,
+    width: metrics.isTablet ? 44 : 40,
+    height: metrics.isTablet ? 44 : 40,
     marginRight: 12,
     borderRadius: 8,
     backgroundColor: '#fff',

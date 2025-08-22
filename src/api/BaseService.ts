@@ -209,6 +209,89 @@ class BaseService {
       throw this.handleError(error);
     }
   }
+
+  // Mevcut kullanıcı
+  async getCurrentUser() {
+    try {
+      const res = await this.axios.get('/auth/currentUser');
+      return res.data; // { success, user: {...} }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Kullanıcı güncelle (acceptChatNotification, accountStatus vb.)
+  async updateUser(userData: Partial<{
+    acceptChatNotification: boolean;
+    accountStatus: 'active' | 'deactivated';
+    email?: string;
+  }>) {
+    try {
+      const res = await this.axios.put('/auth/updateUser', userData);
+      return res.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Şifre değiştir
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword: string) {
+    try {
+      const res = await this.axios.put('/auth/change-password', {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      return res.data; // { success, message }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Email değişimi — kod gönder
+  async requestEmailChange(newEmail: string) {
+    try {
+      const res = await this.axios.post('/auth/email/change/request', { newEmail });
+      return res.data; // { success, message }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Email değişimi — kod doğrula
+  async confirmEmailChange(code: string) {
+    try {
+      const res = await this.axios.post('/auth/email/change/confirm', { code });
+      return res.data; // { success, message }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Hesabı sil (email kullanıcılarında şifre gerekebilir)
+  async deleteAccount(password?: string) {
+    try {
+      const config: any = { data: {} };
+      if (password) config.data.password = password;
+      const res = await this.axios.delete('/auth/delete-account', config);
+      // token'ı temizle
+      storage.delete('token');
+      return res.data; // { success, message }
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Opsiyonel: logout’u burada da tutmak istersen
+  async logout() {
+    try {
+      const res = await this.axios.post('/auth/logout', {});
+      storage.delete('token');
+      return res.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
 }
 
 export default new BaseService(); 

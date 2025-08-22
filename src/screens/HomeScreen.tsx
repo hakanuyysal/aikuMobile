@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,19 +13,20 @@ import {
   Modal,
   Linking,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {IconButton, Surface} from 'react-native-paper';
+import metrics from '../constants/aikuMetric';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { IconButton, Surface } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
-import {Colors} from '../constants/colors';
-import {PRODUCTS} from '../constants/data';
+import { Colors } from '../constants/colors';
+import { PRODUCTS } from '../constants/data';
 import ProductCard from '../components/ProductCard';
 import FeaturedProduct from '../components/FeaturedProduct';
-import {Product} from '../types';
+import { Product } from '../types';
 import AIBlogSection from 'components/AiBlogSection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getActiveMobileModalMessage} from '../api/modalMessagesApi';
+import { getActiveMobileModalMessage } from '../api/modalMessagesApi';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -42,12 +43,33 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const CONTENT_MAX = metrics.isTablet
+  ? Math.min(metrics.WIDTH * 0.88, 1000)   // 11" iPad'de ~800–900 iyi
+  : metrics.WIDTH - metrics.spacing.lg * 2;
+
+const COMMUNITY_ITEM_W = metrics.isTablet
+  ? Math.min(metrics.menuWidth, CONTENT_MAX * 0.72)  // ~560’ı geçmez, nefes alır
+  : CONTENT_MAX;
+
+const CARD_GAP = metrics.spacing.md;
+const TWO_COL_W = (CONTENT_MAX - CARD_GAP) / 2;
+
+const CARD_HEIGHT = metrics.moderateScale(metrics.isTablet ? 72 : 60);
+const CARD_TOP = metrics.moderateScale(metrics.isTablet ? 140 : 120);
+
+const GRID_GAP = metrics.spacing.md;
+
+const LOGO_W = metrics.isTablet ? Math.min(CONTENT_MAX * 0.32, 220) : 150;
+const LOGO_H = metrics.isTablet ? 56 : 42;
+
+const HERO_HEIGHT = metrics.isTablet ? 240 : 180;
 
 const HomeScreen = (props: HomeScreenProps) => {
   const navigation = useNavigation<NavigationProp>();
   const [products, setProducts] = useState(PRODUCTS);
-  const [activeTab, setActiveTab] = useState<'blog' | 'pulse'>('blog');
+  const [activeTab, setActiveTab] = useState<'pulse' | 'blog'>('pulse');
   const [postHomeModalVisible, setPostHomeModalVisible] = useState(false);
   const [postHomeModalMessage, setPostHomeModalMessage] = useState<
     string | null
@@ -65,7 +87,7 @@ const HomeScreen = (props: HomeScreenProps) => {
       message: postHomeModalMessage,
     });
   }, [postHomeModalVisible, postHomeModalTitle, postHomeModalMessage]);
-  const {onMenuOpen} = props;
+  const { onMenuOpen } = props;
   // ANİMASYON: Ortada gösterilecek kartlar için animated values
   const [showCenterCards, setShowCenterCards] = useState(false);
   const [activeCenterIndex, setActiveCenterIndex] = useState(0);
@@ -77,10 +99,10 @@ const HomeScreen = (props: HomeScreenProps) => {
   ]).current;
   // Her kart için pozisyon animasyonu (sonda kullanılacak)
   const cardPositions = useRef([
-    new Animated.ValueXY({x: 0, y: 0}),
-    new Animated.ValueXY({x: 0, y: 0}),
-    new Animated.ValueXY({x: 0, y: 0}),
-    new Animated.ValueXY({x: 0, y: 0}),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
+    new Animated.ValueXY({ x: 0, y: 0 }),
   ]).current;
   // Her kart için scale animasyonu
   const cardScales = useRef([
@@ -95,20 +117,23 @@ const HomeScreen = (props: HomeScreenProps) => {
   // Kapanış animasyonu için her kartın X kayması
   const cardEndX = [-30, 0, 30, 0];
 
-  const handleProductPress = (_productId: string) => {};
+  const handleProductPress = (_productId: string) => { };
 
   const handleFavoritePress = (productId: string) => {
     setProducts(
       products.map(product =>
         product.id === productId
-          ? {...product, isFavorite: !product.isFavorite}
+          ? { ...product, isFavorite: !product.isFavorite }
           : product,
       ),
     );
   };
 
-  const renderProduct = ({item}: {item: (typeof PRODUCTS)[0]}) => (
-    <View style={styles.productCardWrapper}>
+  const renderProduct = ({ item }: { item: (typeof PRODUCTS)[0] }) => (
+    <View style={[
+      styles.productCardWrapper,
+      metrics.isTablet ? { width: TWO_COL_W } : { width: '100%' }
+    ]}>
       <ProductCard
         product={item}
         onPress={() => handleProductPress(item.id)}
@@ -196,7 +221,7 @@ const HomeScreen = (props: HomeScreenProps) => {
       communityItems.forEach((item, idx) => {
         Animated.parallel([
           Animated.timing(cardPositions[idx], {
-            toValue: {x: cardEndX[idx], y: 80},
+            toValue: { x: cardEndX[idx], y: 80 },
             duration: 700,
             useNativeDriver: true,
           }),
@@ -352,14 +377,19 @@ const HomeScreen = (props: HomeScreenProps) => {
         {communityItems.map(item => (
           <TouchableOpacity
             key={item.key}
-            style={styles.communityItem}
+            style={[
+              styles.communityItem,
+              metrics.isTablet
+                ? { width: COMMUNITY_ITEM_W }   // tablette dar ve ortalı
+                : { width: '100%' },            // telefonda tam genişlik
+            ]}
             onPress={() => navigation.navigate(item.nav as any)}>
             <MaterialCommunityIcons
               name={item.icon}
-              size={24}
+              size={metrics.isTablet ? metrics.tabBar.iconSize : 24}
               color={Colors.lightText}
             />
-            <Text style={styles.communityItemText}>{item.label}</Text>
+            <Text style={[styles.communityItemText, metrics.isTablet && { fontSize: metrics.fontSize.lg }]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -373,16 +403,16 @@ const HomeScreen = (props: HomeScreenProps) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}>
       <StatusBar backgroundColor="#1A1E29" barStyle="light-content" />
       <SafeAreaView
-        style={[styles.safeArea, {paddingBottom: 90, paddingTop: -10}]}>
-        <View style={styles.container}>
-          <Surface style={styles.header} elevation={0}>
+        style={[styles.safeArea, { paddingBottom: 90, paddingTop: -10 }]}>
+        <View style={[styles.container, { alignItems: 'center' }]}>
+          <Surface style={[styles.header, { width: CONTENT_MAX }]} elevation={0}>
             <View style={styles.logoAndTitleContainer}>
-              <View style={styles.logoContainer}>
+              <View style={[styles.logoContainer, { width: LOGO_W, height: LOGO_H }]}>
                 <Image
                   source={require('../assets/images/aistartupplatform.png')}
                   style={styles.logo}
@@ -406,64 +436,41 @@ const HomeScreen = (props: HomeScreenProps) => {
               marginBottom: 10,
               marginTop: -15,
               gap: 10,
+              width: CONTENT_MAX,
             }}>
             <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor:
-                  activeTab === 'blog'
-                    ? 'rgba(43, 64, 99, 0.8)'
-                    : 'transparent',
-                borderRadius: 16,
-                paddingVertical: 10,
-                alignItems: 'center',
-                borderWidth: activeTab === 'blog' ? 1 : 0,
-                borderColor:
-                  activeTab === 'blog' ? Colors.primary : 'transparent',
-              }}
-              onPress={() => setActiveTab('blog')}>
+              style={[
+                styles.tabPill,
+                activeTab === 'pulse' ? styles.tabPillActive : styles.tabPillInactive,
+              ]}
+              onPress={() => setActiveTab('pulse')}>
               <Text
-                style={{
-                  color: Colors.lightText,
-                  fontWeight: 'bold',
-                  fontSize: 16,
-                }}>
-                AI Blog
+                style={styles.tabText}>
+                AI Pulse
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor:
-                  activeTab === 'pulse'
-                    ? 'rgba(43, 64, 99, 0.8)'
-                    : 'transparent',
-                borderRadius: 16,
-                paddingVertical: 10,
-                alignItems: 'center',
-                borderWidth: activeTab === 'pulse' ? 1 : 0,
-                borderColor:
-                  activeTab === 'pulse' ? Colors.primary : 'transparent',
-              }}
-              onPress={() => setActiveTab('pulse')}>
+              style={[
+                styles.tabPill,
+                activeTab === 'blog' ? styles.tabPillActive : styles.tabPillInactive,
+              ]}
+              onPress={() => setActiveTab('blog')}>
               <Text
-                style={{
-                  color: Colors.lightText,
-                  fontWeight: 'bold',
-                  fontSize: 16,
-                }}>
-                AI Pulse
+                style={styles.tabText}>
+                AI Blog
               </Text>
             </TouchableOpacity>
           </View>
 
-          {activeTab === 'blog' ? (
-            <AIBlogSection title="" navigation={navigation} />
+
+          {activeTab === 'pulse' ? (
+            <AIBlogSection title="" navigation={navigation} height={HERO_HEIGHT} />
           ) : (
-            <FeaturedProduct />
+            <FeaturedProduct height={HERO_HEIGHT} />
           )}
 
-          {renderCommunitySection()}
+
+          <View style={{ width: CONTENT_MAX }}>{renderCommunitySection()}</View>
 
           <FlatList
             data={filteredProducts}
@@ -472,7 +479,7 @@ const HomeScreen = (props: HomeScreenProps) => {
             scrollEnabled={true}
             contentContainerStyle={[
               styles.productsContent,
-              {paddingBottom: 100},
+              { paddingBottom: 100 },
             ]}
             style={styles.productsList}
           />
@@ -551,7 +558,7 @@ const HomeScreen = (props: HomeScreenProps) => {
                       opacity: cardOpacities[idx],
                       transform: [
                         ...cardPositions[idx].getTranslateTransform(),
-                        {scale: cardScales[idx]},
+                        { scale: cardScales[idx] },
                       ],
                       backgroundColor:
                         activeCenterIndex === idx
@@ -579,7 +586,7 @@ const HomeScreen = (props: HomeScreenProps) => {
                           left: SCREEN_WIDTH * 0.5 - (SCREEN_WIDTH * 0.52) / 2,
                           top: CARD_TOP + CARD_HEIGHT - 120, // Kartın hemen altı
                           zIndex: 100,
-                          transform: [{scale: handScale}],
+                          transform: [{ scale: handScale }],
                         }}
                         resizeMode="contain"
                       />
@@ -610,10 +617,10 @@ const HomeScreen = (props: HomeScreenProps) => {
                         {idx === 0
                           ? 'Tap here to explore startups and add them to your favorites.'
                           : idx === 1
-                          ? 'Tap here to explore investor.'
-                          : idx === 2
-                          ? 'Tap here to explore business'
-                          : 'Tap here to explore products and services'}
+                            ? 'Tap here to explore investor.'
+                            : idx === 2
+                              ? 'Tap here to explore business'
+                              : 'Tap here to explore products and services'}
                       </Text>
                     </View>
                   </Animated.View>
@@ -636,7 +643,7 @@ const HomeScreen = (props: HomeScreenProps) => {
           )}
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </LinearGradient >
   );
 };
 
@@ -651,18 +658,19 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: 'transparent',
+    paddingBottom: metrics.bottomSpacing + metrics.tabBar.androidOffset,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: metrics.isTablet ? metrics.spacing.lg : metrics.spacing.md,
     backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: -10,
-    marginBottom: 18,
+    paddingTop: metrics.isIOS ? 0 : 0,
+    marginBottom: metrics.spacing.lg,
     backgroundColor: 'transparent',
   },
   logoAndTitleContainer: {
@@ -671,15 +679,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: metrics.spacing.xs,
   },
   logo: {
-    width: '130%',
-    height: '130%',
+    width: '100%',   // 120% yerine %100: kabı tamamen doldurur
+    height: '100%',
   },
   titleContainer: {
     flex: 1,
@@ -721,16 +727,18 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     width: SCREEN_WIDTH - 40,
-    height: 80,
+    minHeight: CARD_HEIGHT,
+    height: CARD_HEIGHT,
     marginBottom: 15,
     alignSelf: 'center',
-    borderRadius: 12,
+    borderRadius: metrics.borderRadius.md,
+    padding: metrics.spacing.md,
     overflow: 'hidden',
     backgroundColor: Colors.cardBackground,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
@@ -810,7 +818,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   tooltipContainer: {
@@ -835,7 +843,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     textShadowColor: 'rgba(0, 0, 0, 0.7)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
     width: 200,
   },
@@ -845,35 +853,39 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: metrics.isTablet ? metrics.fontSize.xxl : metrics.fontSize.xl,
     fontWeight: 'bold',
     color: Colors.lightText,
-    marginBottom: 20,
+    marginBottom: metrics.spacing.md,
     marginTop: 0,
     textAlign: 'center',
   },
   communityItems: {
-    gap: 12,
+    width: '100%',
+    alignItems: 'center',              // çocuklar ortada hizalansın
+    // gap kullanmak yerine aşağıda marginBottom veriyoruz (RN sürüm uyumu için)
   },
   communityItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: 16,
-    paddingHorizontal: 44,
-    borderRadius: 12,
+    paddingVertical: metrics.spacing.sm,
+    paddingHorizontal: metrics.isTablet ? metrics.spacing.lg : metrics.spacing.md,
+    borderRadius: metrics.borderRadius.lg,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-    marginHorizontal: 10,
+    marginBottom: metrics.spacing.md,
+    alignSelf: 'center',
+    minHeight: metrics.isTablet ? metrics.moderateScale(64) : metrics.moderateScale(56),
   },
   communityItemText: {
-    fontSize: 18,
     color: Colors.lightText,
     marginLeft: 12,
     fontWeight: '600',
     textAlign: 'center',
     flex: 1,
+    fontSize: 18,
   },
   tooltipHandContainer: {
     position: 'absolute',
@@ -894,7 +906,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: metrics.isTablet ? 480 : 360,
     backgroundColor: '#23283A',
     borderRadius: 24,
     padding: 20,
@@ -903,15 +915,15 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: Colors.lightText,
-    fontSize: 18,
+    fontSize: metrics.fontSize.lg,
     fontWeight: '700',
     marginBottom: 8,
     textAlign: 'center',
   },
   modalMessage: {
     color: Colors.lightText,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: metrics.fontSize.md,
+    lineHeight: metrics.moderateScale(22, 0.4),
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -925,19 +937,52 @@ const styles = StyleSheet.create({
   modalOkButton: {
     alignSelf: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: metrics.spacing.lg,
+    paddingVertical: metrics.spacing.xs,
     borderRadius: 12,
   },
   modalOkText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: metrics.fontSize.md,
   },
   modalLink: {
     color: Colors.primary,
     textDecorationLine: 'underline',
   },
+  heroCard: {
+    alignSelf: 'center',
+    borderRadius: metrics.borderRadius.lg,
+    overflow: 'hidden',
+  },
+  tabs: {
+    flexDirection: 'row',
+    gap: metrics.spacing.sm,
+    marginBottom: metrics.spacing.sm,
+    marginTop: -metrics.spacing.xs,
+  },
+  tabPill: {
+    flex: 1,
+    borderRadius: metrics.borderRadius.xl,
+    paddingVertical: metrics.isTablet ? metrics.spacing.sm : metrics.spacing.xs,
+    alignItems: 'center',
+  },
+  tabPillActive: {
+    backgroundColor: 'rgba(43,64,99,0.8)',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  tabPillInactive: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  tabText: {
+    color: Colors.lightText,
+    fontWeight: 'bold',
+    fontSize: metrics.isTablet ? metrics.fontSize.lg : metrics.fontSize.md,
+  },
+
 });
 
 export default HomeScreen;

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,25 @@ import {
   ScrollView,
   SafeAreaView,
   Linking,
+  Dimensions
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
-import {Colors} from '../../constants/colors';
+import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {AuthStackParamList} from '../../navigation/AuthNavigator';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../navigation/AuthNavigator';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
-const Register = ({navigation}: Props) => {
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IS_TABLET = (metrics?.isTablet ?? false) || SCREEN_WIDTH >= 768;
+
+const MAX_FORM_WIDTH = IS_TABLET
+  ? Math.min(Math.round(SCREEN_WIDTH * 0.7), 820)
+  : SCREEN_WIDTH - metrics.padding.lg * 2;
+
+const Register = ({ navigation }: Props) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -111,7 +119,7 @@ const Register = ({navigation}: Props) => {
                     onChangeText={text => {
                       setFirstName(text);
                       if (errors.firstName) {
-                        setErrors({...errors, firstName: ''});
+                        setErrors({ ...errors, firstName: '' });
                       }
                     }}
                     selectionColor={Colors.primary}
@@ -143,7 +151,7 @@ const Register = ({navigation}: Props) => {
                     onChangeText={text => {
                       setLastName(text);
                       if (errors.lastName) {
-                        setErrors({...errors, lastName: ''});
+                        setErrors({ ...errors, lastName: '' });
                       }
                     }}
                     selectionColor={Colors.primary}
@@ -175,7 +183,7 @@ const Register = ({navigation}: Props) => {
                     onChangeText={text => {
                       setEmail(text);
                       if (errors.email) {
-                        setErrors({...errors, email: ''});
+                        setErrors({ ...errors, email: '' });
                       }
                     }}
                     keyboardType="email-address"
@@ -244,32 +252,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+   content: {
     padding: metrics.padding.lg,
+    alignItems: 'center',
   },
   header: {
+    width: MAX_FORM_WIDTH,
+    alignSelf: 'center',
     marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.xxl,
+    marginBottom: metrics.margin.xl,
   },
   title: {
-    fontSize: metrics.fontSize.xxxl,
+    fontSize: IS_TABLET ? metrics.fontSize.xxl * 1.1 : metrics.fontSize.xxl,
     fontWeight: 'bold',
-    marginBottom: metrics.margin.sm,
+    marginBottom: IS_TABLET ? metrics.margin.lg : metrics.margin.sm,
     color: Colors.lightText,
   },
   subtitle: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
     color: Colors.inactive,
-    lineHeight: metrics.fontSize.lg * 1.4,
+    lineHeight: IS_TABLET ? metrics.fontSize.xl * 1.4 : metrics.fontSize.lg * 1.4,
   },
   form: {
     flex: 1,
+    width: MAX_FORM_WIDTH,
+    alignSelf: 'center',
   },
   inputContainer: {
-    marginBottom: metrics.margin.lg,
+    marginBottom: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
   },
   label: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
     fontWeight: '600',
     marginBottom: metrics.margin.md,
     color: Colors.lightText,
@@ -280,78 +293,76 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    height: metrics.verticalScale(55),
-    paddingHorizontal: metrics.padding.md,
+    borderRadius: IS_TABLET ? metrics.borderRadius.lg : metrics.borderRadius.md,
+    height: IS_TABLET ? metrics.verticalScale(60) : metrics.verticalScale(55),
+    paddingHorizontal: IS_TABLET ? metrics.padding.lg : metrics.padding.md,
   },
   inputError: {
     borderColor: Colors.error,
   },
   errorText: {
     color: Colors.error,
-    fontSize: metrics.fontSize.sm,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.sm,
     marginTop: metrics.margin.xs,
     marginLeft: metrics.margin.xs,
   },
   inputIcon: {
-    marginRight: metrics.margin.md,
+    marginRight: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
     opacity: 0.7,
   },
   input: {
     flex: 1,
-    fontSize: metrics.fontSize.lg,
+    fontSize: IS_TABLET ? metrics.fontSize.lg * 1.05 : metrics.fontSize.lg,
     color: Colors.lightText,
     height: '100%',
     paddingVertical: metrics.padding.md,
     backgroundColor: 'transparent',
-    opacity: 0.7,
+    opacity: 0.8,
   },
   continueButton: {
-    width: '90%',
+    width: '100%',
     alignSelf: 'center',
     backgroundColor: Colors.primary,
-    height: metrics.verticalScale(50),
-    borderRadius: metrics.borderRadius.md,
+    height: IS_TABLET ? metrics.verticalScale(56) : metrics.verticalScale(50),
+    borderRadius: metrics.borderRadius.circle,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: metrics.margin.xl,
-    marginTop: metrics.margin.xl,
+    marginTop: IS_TABLET ? metrics.margin.xl : metrics.margin.xl,
+    marginBottom: IS_TABLET ? metrics.margin.xxl : metrics.margin.xl,
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: metrics.scale(8),
-    },
+    shadowOffset: { width: 0, height: metrics.scale(8) },
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(12),
     elevation: 8,
   },
   continueButtonText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.lg,
+    fontSize: IS_TABLET ? metrics.fontSize.xl : metrics.fontSize.lg,
     fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: IS_TABLET ? metrics.margin.xl : metrics.margin.xl,
   },
   footerText: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.md,
     color: Colors.inactive,
   },
   loginText: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.md,
     color: Colors.primary,
     fontWeight: '600',
   },
   privacyContainer: {
-    marginTop: 16,
+    marginTop: metrics.margin.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   privacyText: {
     color: Colors.inactive,
-    fontSize: metrics.fontSize.sm,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.sm,
     textAlign: 'center',
   },
   privacyLink: {

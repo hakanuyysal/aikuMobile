@@ -10,6 +10,7 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  
 } from 'react-native';
 import { Surface, Text, IconButton, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -49,9 +50,10 @@ type RootStackParamList = {
 type AIBlogSectionProps = {
   title: string;
   navigation?: NativeStackNavigationProp<RootStackParamList>;
+  height?: number;                      // <-- eklendi
 };
 
-const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
+const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height }) => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -130,7 +132,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, height ? { height } : null]}>
       <Surface style={styles.cardContainer} elevation={4}>
         <LinearGradient
           colors={['rgba(43, 64, 99, 0.8)', 'rgba(43, 64, 99, 0.3)']}
@@ -205,12 +207,12 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
                             defaultSource={{ uri: DEFAULT_IMAGE }}
                           />
                           <LinearGradient
-                          colors={['rgba(0, 0, 0, 0.87)', 'rgba(0, 0, 0, 0.45)', 'transparent']}
-                          locations={[0, 0.5, 0.7, 1]}
-                          start={{ x: 0, y: 1 }}
-                          end={{ x: 0, y: 0 }}
-                          style={styles.imageOverlay}
-                        >
+                            colors={['rgba(0, 0, 0, 0.87)', 'rgba(0, 0, 0, 0.45)', 'transparent']}
+                            locations={[0, 0.5, 0.7, 1]}
+                            start={{ x: 0, y: 1 }}
+                            end={{ x: 0, y: 0 }}
+                            style={styles.imageOverlay}
+                          >
                             <Text
                               style={styles.blogTitle}
                               numberOfLines={3}
@@ -297,7 +299,8 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: '30%',
+    // height: '30%',
+    minHeight: 250,
     marginVertical: 10,
     position: 'relative',
     alignSelf: 'center',
@@ -320,6 +323,7 @@ const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
     padding: 16,
+    paddingTop: 0,
   },
   titleRow: {
     flexDirection: 'row',

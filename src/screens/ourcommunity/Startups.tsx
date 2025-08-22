@@ -13,6 +13,7 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
+import metrics from '../../constants/aikuMetric';
 import { Text as PaperText } from 'react-native-paper';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -26,7 +27,15 @@ import axios from 'axios';
 
 const IMAGE_BASE_URL = 'https://api.aikuaiplatform.com';
 const API_URL = 'https://api.aikuaiplatform.com/api';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const scale = (size: number) => {
+  if (metrics.isTablet) {
+    return size * 1.2;
+  }
+  return size;
+};
 
 interface TeamMember {
   _id?: string;
@@ -136,8 +145,8 @@ const Startups = () => {
           }),
           companyData.user || companyData.userId
             ? axios.get(`${API_URL}/auth/user/${companyData.user || companyData.userId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              })
+              headers: { Authorization: `Bearer ${token}` },
+            })
             : Promise.resolve({ data: { user: null } }),
         ]);
 
@@ -334,8 +343,8 @@ const Startups = () => {
                   uri: item.companyLogo.startsWith('http')
                     ? item.companyLogo
                     : item.companyLogo.startsWith('/uploads')
-                    ? `${IMAGE_BASE_URL}${item.companyLogo}`
-                    : `${IMAGE_BASE_URL}/uploads/images/defaultCompanyLogo.png`,
+                      ? `${IMAGE_BASE_URL}${item.companyLogo}`
+                      : `${IMAGE_BASE_URL}/uploads/images/defaultCompanyLogo.png`,
                 }}
                 style={styles.companyLogo}
                 resizeMode="contain"
@@ -359,8 +368,8 @@ const Startups = () => {
                     !item._id || item._id.includes('-')
                       ? '#ccc'
                       : isCurrentlyFavorite
-                      ? Colors.primary
-                      : `${Colors.primary}70`
+                        ? Colors.primary
+                        : `${Colors.primary}70`
                   }
                 />
               </TouchableOpacity>
@@ -405,11 +414,11 @@ const Startups = () => {
         onRequestClose={closeModal}
       >
         <LinearGradient
-         colors={['#181C2A', '#232946', '#3B82F7', '#232946']}
-         locations={[0, 0.4, 0.7, 1]}
-         start={{ x: 0, y: 0 }}
-         end={{ x: 2, y: 1 }}
-         style={styles.modalOverlay}
+          colors={['#181C2A', '#232946', '#3B82F7', '#232946']}
+          locations={[0, 0.4, 0.7, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 2, y: 1 }}
+          style={styles.modalOverlay}
         >
           <SafeAreaView style={styles.modalSafeArea}>
             <View style={styles.modalHeader}>
@@ -444,8 +453,8 @@ const Startups = () => {
                           uri: (startupDetails?.companyLogo ?? selectedStartup?.companyLogo ?? '').startsWith('http')
                             ? (startupDetails?.companyLogo ?? selectedStartup?.companyLogo ?? '')
                             : (startupDetails?.companyLogo ?? selectedStartup?.companyLogo ?? '').startsWith('/uploads')
-                            ? `${IMAGE_BASE_URL}${startupDetails?.companyLogo ?? selectedStartup?.companyLogo ?? ''}`
-                            : `${IMAGE_BASE_URL}/uploads/images/defaultCompanyLogo.png`,
+                              ? `${IMAGE_BASE_URL}${startupDetails?.companyLogo ?? selectedStartup?.companyLogo ?? ''}`
+                              : `${IMAGE_BASE_URL}/uploads/images/defaultCompanyLogo.png`,
                         }}
                         style={styles.modalLogo}
                         resizeMode="contain"
@@ -542,42 +551,42 @@ const Startups = () => {
                         {(startupDetails?.companyLinkedIn || selectedStartup?.companyLinkedIn ||
                           startupDetails?.companyInstagram || selectedStartup?.companyInstagram ||
                           startupDetails?.companyTwitter || selectedStartup?.companyTwitter) && (
-                          <View style={styles.detail}>
-                            <PaperText style={styles.detailLabel}>Social Media</PaperText>
-                            <View style={styles.socialMediaContainer}>
-                              {(startupDetails?.companyLinkedIn || selectedStartup?.companyLinkedIn) && (
-                                <TouchableOpacity
-                                  onPress={() => {
-                                    const url = startupDetails?.companyLinkedIn ?? selectedStartup?.companyLinkedIn;
-                                    if (url) Linking.openURL(url);
-                                  }}
-                                >
-                                  <Icon name="logo-linkedin" size={24} color="#3B82F7" style={styles.socialIcon} />
-                                </TouchableOpacity>
-                              )}
-                              {(startupDetails?.companyInstagram || selectedStartup?.companyInstagram) && (
-                                <TouchableOpacity
-                                  onPress={() => {
-                                    const url = startupDetails?.companyInstagram ?? selectedStartup?.companyInstagram;
-                                    if (url) Linking.openURL(url);
-                                  }}
-                                >
-                                  <Icon name="logo-instagram" size={24} color="#3B82F7" style={styles.socialIcon} />
-                                </TouchableOpacity>
-                              )}
-                              {(startupDetails?.companyTwitter || selectedStartup?.companyTwitter) && (
-                                <TouchableOpacity
-                                  onPress={() => {
-                                    const url = startupDetails?.companyTwitter ?? selectedStartup?.companyTwitter;
-                                    if (url) Linking.openURL(url);
-                                  }}
-                                >
-                                  <Icon name="logo-twitter" size={24} color="#3B82F7" style={styles.socialIcon} />
-                                </TouchableOpacity>
-                              )}
+                            <View style={styles.detail}>
+                              <PaperText style={styles.detailLabel}>Social Media</PaperText>
+                              <View style={styles.socialMediaContainer}>
+                                {(startupDetails?.companyLinkedIn || selectedStartup?.companyLinkedIn) && (
+                                  <TouchableOpacity
+                                    onPress={() => {
+                                      const url = startupDetails?.companyLinkedIn ?? selectedStartup?.companyLinkedIn;
+                                      if (url) Linking.openURL(url);
+                                    }}
+                                  >
+                                    <Icon name="logo-linkedin" size={24} color="#3B82F7" style={styles.socialIcon} />
+                                  </TouchableOpacity>
+                                )}
+                                {(startupDetails?.companyInstagram || selectedStartup?.companyInstagram) && (
+                                  <TouchableOpacity
+                                    onPress={() => {
+                                      const url = startupDetails?.companyInstagram ?? selectedStartup?.companyInstagram;
+                                      if (url) Linking.openURL(url);
+                                    }}
+                                  >
+                                    <Icon name="logo-instagram" size={24} color="#3B82F7" style={styles.socialIcon} />
+                                  </TouchableOpacity>
+                                )}
+                                {(startupDetails?.companyTwitter || selectedStartup?.companyTwitter) && (
+                                  <TouchableOpacity
+                                    onPress={() => {
+                                      const url = startupDetails?.companyTwitter ?? selectedStartup?.companyTwitter;
+                                      if (url) Linking.openURL(url);
+                                    }}
+                                  >
+                                    <Icon name="logo-twitter" size={24} color="#3B82F7" style={styles.socialIcon} />
+                                  </TouchableOpacity>
+                                )}
+                              </View>
                             </View>
-                          </View>
-                        )}
+                          )}
                         {(startupDetails?.acceptMessages || selectedStartup?.acceptMessages) !== false &&
                           startupDetails?._id && (
                             <TouchableOpacity
@@ -627,8 +636,8 @@ const Startups = () => {
                                     uri: founder.profilePhoto.startsWith('http')
                                       ? founder.profilePhoto
                                       : founder.profilePhoto.startsWith('/uploads')
-                                      ? `${IMAGE_BASE_URL}${founder.profilePhoto}`
-                                      : `${IMAGE_BASE_URL}/uploads/images/default-avatar.png`,
+                                        ? `${IMAGE_BASE_URL}${founder.profilePhoto}`
+                                        : `${IMAGE_BASE_URL}/uploads/images/default-avatar.png`,
                                   }}
                                   style={styles.teamPhoto}
                                   resizeMode="cover"
@@ -658,8 +667,8 @@ const Startups = () => {
                                     uri: member.profilePhoto.startsWith('http')
                                       ? member.profilePhoto
                                       : member.profilePhoto.startsWith('/uploads')
-                                      ? `${IMAGE_BASE_URL}${member.profilePhoto}`
-                                      : `${IMAGE_BASE_URL}/uploads/images/default-avatar.png`,
+                                        ? `${IMAGE_BASE_URL}${member.profilePhoto}`
+                                        : `${IMAGE_BASE_URL}/uploads/images/default-avatar.png`,
                                   }}
                                   style={styles.teamPhoto}
                                   resizeMode="cover"
@@ -761,20 +770,20 @@ const Startups = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 0,
+    padding: scale(12),
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(12),
     paddingTop: Platform.OS === 'ios' ? 32 : 0,
     paddingHorizontal: 16,
   },
   backButton: {
-    marginRight: 10,
+    marginRight: scale(8),
   },
   header: {
-    fontSize: 20,
+    fontSize: scale(20),
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
@@ -787,28 +796,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    marginVertical: scale(12),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(10),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    width: SCREEN_WIDTH - 32,
-    marginLeft: 16,
+    width: metrics.isTablet ? Math.min(metrics.WIDTH * 0.8, 800) : SCREEN_WIDTH - 32,
+    alignSelf: 'center',
+    // marginLeft: 16,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: scale(6),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 8,
-    fontSize: 16,
+    paddingVertical: Platform.OS === 'ios' ? scale(10) : scale(8),
+    fontSize: scale(16),
     color: '#fff',
   },
   list: {
-    paddingBottom: 20,
+   paddingBottom: scale(16),
   },
   cardContainer: {
-    width: SCREEN_WIDTH - 32,
+    width: metrics.isTablet ? Math.min(metrics.WIDTH * 0.8, 900) : SCREEN_WIDTH - 32,
     marginBottom: 18,
     alignSelf: 'center',
     borderRadius: 12,
@@ -829,69 +839,68 @@ const styles = StyleSheet.create({
   companyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+   marginBottom: scale(10),
   },
   highlightedBadge: {
     position: 'absolute',
-    top: -10,
-    right: -10,
+    top: -scale(8),
+    right: -scale(8),
     backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: scale(10),
+    padding: scale(3),
     zIndex: 1,
   },
   companyLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    marginRight: scale(8),
+    borderRadius: scale(6),
     backgroundColor: '#fff',
   },
   placeholderLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    marginRight: scale(8),
+    borderRadius: scale(6),
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
   companyName: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: scale(16),
     fontWeight: '600',
-    marginBottom: 14,
+    marginBottom: scale(10),
   },
   detail: {
-    marginBottom: 12,
+    marginBottom: scale(8),
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: scale(12),
     color: 'rgba(255,255,255,0.5)',
-    marginBottom: 4,
+    marginBottom: scale(2),
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: scale(14),
     color: '#fff',
     fontWeight: '400',
   },
   description: {
-    fontSize: 14,
+    fontSize: scale(12),
     color: 'rgba(255,255,255,0.8)',
-    lineHeight: 20,
-    marginBottom: 5,
+    marginBottom: scale(10),
   },
   visitButton: {
     backgroundColor: '#3B82F7',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+    paddingVertical: scale(6),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(4),
     alignSelf: 'flex-start',
   },
-  visitButtonText: {
+ visitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: scale(12),
   },
   companyNameContainer: {
     flex: 1,
@@ -989,7 +998,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   teamCard: {
-    width: (SCREEN_WIDTH - 80) / 2,
+    width: metrics.isTablet ? (metrics.WIDTH / 3) - 40 : (SCREEN_WIDTH - 80) / 2,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 8,
     padding: 8,
@@ -1019,7 +1028,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   productCard: {
-    width: (SCREEN_WIDTH - 80) / 2,
+    width: metrics.isTablet ? (metrics.WIDTH / 3) - 40 : (SCREEN_WIDTH - 80) / 2,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 8,
     padding: 8,

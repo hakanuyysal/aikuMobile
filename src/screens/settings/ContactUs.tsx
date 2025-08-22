@@ -8,19 +8,24 @@ import {
   Linking,
   Platform,
   SafeAreaView,
+  Dimensions
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import IoniconsIcon from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {Colors} from '../../constants/colors';
+import { Colors } from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../../App';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ContactUs'>;
 
-const ContactUs = ({navigation}: Props) => {
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IS_TABLET = (metrics?.isTablet ?? false) || SCREEN_WIDTH >= 768;
+const MAX_CARD_WIDTH = IS_TABLET ? Math.min(SCREEN_WIDTH * 0.9, 820) : Math.min(SCREEN_WIDTH - 32, 420);
+
+const ContactUs = ({ navigation }: Props) => {
   const handleInstagramPress = () => {
     Linking.openURL('https://www.instagram.com/aikuai_platform/');
   };
@@ -69,8 +74,8 @@ const ContactUs = ({navigation}: Props) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -143,79 +148,89 @@ const ContactUs = ({navigation}: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+
   header: {
-    padding: metrics.padding.md,
+    paddingVertical: IS_TABLET ? metrics.padding.lg : metrics.padding.md,
     alignItems: 'center',
     position: 'relative',
+    width: IS_TABLET ? MAX_CARD_WIDTH : '100%',
+    alignSelf: 'center',
+    paddingHorizontal: IS_TABLET ? metrics.padding.lg : metrics.padding.md,
   },
   backButton: {
     position: 'absolute',
-    left: metrics.margin.lg,
-    top: metrics.margin.md,
+    left: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
+    top: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
     zIndex: 1,
   },
   headerTitle: {
-    fontSize: metrics.fontSize.xl * 1.1,
+    fontSize: IS_TABLET ? metrics.fontSize.xxxl : metrics.fontSize.xl * 1.1,
     fontWeight: 'bold',
     color: Colors.lightText,
-    marginBottom: -metrics.margin.sm,
+    marginBottom: -metrics.margin.xs,
   },
+
   infoContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: metrics.padding.xl,
+    paddingVertical: IS_TABLET ? metrics.padding.xl : metrics.padding.xl,
+    paddingHorizontal: IS_TABLET ? 0 : metrics.padding.xl,
   },
+
+  // KART genişleyip ortalansın
   contactInfoContainer: {
-    width: '100%',
-    maxWidth: 420,
+    width: IS_TABLET ? MAX_CARD_WIDTH : '100%',
+    maxWidth: MAX_CARD_WIDTH,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: metrics.borderRadius.xl,
-    padding: metrics.padding.xl * 1.2,
+    paddingVertical: IS_TABLET ? metrics.padding.xl * 1.2 : metrics.padding.xl * 1.2,
+    paddingHorizontal: IS_TABLET ? metrics.padding.xl * 1.4 : metrics.padding.xl * 1.2,
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.13)',
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 16,
     elevation: 8,
   },
+
   socialItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: metrics.padding.lg,
+    paddingVertical: IS_TABLET ? metrics.padding.lg : metrics.padding.lg,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.13)',
+    gap: IS_TABLET ? 14 : 10,
   },
-  noBorder: {
-    borderBottomWidth: 0,
-  },
+  noBorder: { borderBottomWidth: 0 },
+
+  // ikon biraz büyüsün
   socialIconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: IS_TABLET ? 56 : 54,
+    height: IS_TABLET ? 56 : 54,
+    borderRadius: IS_TABLET ? 28 : 27,
     backgroundColor: 'rgba(255,255,255,0.13)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: metrics.margin.lg,
+    marginRight: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
     borderWidth: 1.2,
     borderColor: 'rgba(255,255,255,0.18)',
   },
+
+  // metinlerin taşmaması için
   socialText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.lg * 1.05,
+    fontSize: IS_TABLET ? metrics.fontSize.xl : metrics.fontSize.lg * 1.05,
     opacity: 0.95,
     fontWeight: '500',
+    flex: 1,
+    flexWrap: 'wrap',
+    minWidth: 0,        // Android'de satır kaydırma için
   },
 });
+
 
 export default ContactUs;

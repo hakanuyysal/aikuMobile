@@ -73,6 +73,10 @@ type RootStackParamList = {
 
 type MapScreenNavigationProp = NavigationProp<RootStackParamList>;
 
+const IS_TABLET = SCREEN_WIDTH >= 768;
+const MAX_CONTENT_WIDTH = IS_TABLET ? Math.min(SCREEN_WIDTH * 0.85, 980) : SCREEN_WIDTH - 24;
+
+
 const MapScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredResults, setFilteredResults] = useState<Company[]>([]);
@@ -119,10 +123,10 @@ const MapScreen = () => {
 
     try {
       const { companies } = await companyService.getAllCompanies();
-      
+
       // Filtreleme işlemi
       let filtered = companies;
-      
+
       // Metin araması
       if (text) {
         filtered = filtered.filter(item =>
@@ -131,12 +135,12 @@ const MapScreen = () => {
           (Array.isArray(item.companySector) ? item.companySector.join(' ').toLowerCase().includes(text.toLowerCase()) : false)
         );
       }
-      
+
       // Tip filtresi
       if (filters.types.length > 0) {
         filtered = filtered.filter(item => filters.types.includes(item.companyType));
       }
-      
+
       // Sektör filtresi
       if (filters.sectors.length > 0) {
         filtered = filtered.filter(item =>
@@ -228,15 +232,15 @@ const MapScreen = () => {
     };
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={handleCardPress}
         style={[styles.card, isSelected && styles.selectedCard]}
       >
         <View style={styles.cardContent}>
           <View style={styles.companyHeader}>
             {item.companyLogo ? (
-              <Image 
-                source={{ uri: item.companyLogo }} 
+              <Image
+                source={{ uri: item.companyLogo }}
                 style={styles.companyLogo}
                 defaultSource={require('../assets/images/defaultCompanyLogo.png')}
               />
@@ -360,7 +364,7 @@ const MapScreen = () => {
           <Icon name="search" size={20} color="rgba(255,255,255,0.5)" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search in aiku"
+            placeholder="Search in Aiku"
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={handleSearch}
@@ -558,25 +562,30 @@ const MapScreen = () => {
 const styles = StyleSheet.create({
   gradientBackground: { flex: 1 },
   container: { flex: 1, backgroundColor: 'transparent' },
+
+  // HEADER
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: IS_TABLET ? 10 : 12,
     borderBottomWidth: 1,
     borderBottomColor: '#3B82F680',
+    width: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
   },
   logoContainer: {
-    width: 100,
-    height: 100,
+    width: IS_TABLET ? 96 : 100,
+    height: IS_TABLET ? 96 : 100,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#1A1E29',
     borderRadius: 16,
-    marginLeft:'33%'
   },
   logo: { width: '130%', height: '130%' },
+
+  // SEARCH
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -584,10 +593,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     paddingHorizontal: 16,
-    marginVertical: 16,
-    width: SCREEN_WIDTH * 0.88,
+    marginVertical: IS_TABLET ? 14 : 16,
+    width: MAX_CONTENT_WIDTH,            // <- Daha geniş
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    height: IS_TABLET ? 50 : undefined,  // <- Biraz daha yüksek
   },
   searchIcon: {
     marginRight: 8,
@@ -595,50 +605,52 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 8,
-    fontSize: 16,
+    paddingVertical: IS_TABLET ? 8 : 8,
+    fontSize: IS_TABLET ? 16 : 16,       // <- Tablet font +1
     color: '#fff',
     backgroundColor: 'transparent',
     paddingRight: 10,
   },
   filterButton: { marginLeft: 8 },
-  listContent: { paddingHorizontal: 12, paddingBottom: 20 },
+
+  // LIST & CARD
+  listContent: {
+    paddingHorizontal: 0,                // <- Yan boşluğu kaldır
+    paddingBottom: 24,
+    width: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+  },
   card: {
-    width: SCREEN_WIDTH - 32,
-    minHeight: 180,
-    marginBottom: 18,
+    width: MAX_CONTENT_WIDTH,            // <- Daha geniş kart
+    minHeight: IS_TABLET ? 170 : 180,
+    marginBottom: IS_TABLET ? 16 : 18,
     alignSelf: 'center',
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-    padding: 16,
-    marginTop: 18,
+    padding: IS_TABLET ? 16 : 16,        // <- Tablet için padding’i artır
+    marginTop: IS_TABLET ? 16 : 18,
   },
-  selectedCard: {
-    borderColor: '#3B82F7',
-    borderWidth: 2,
-  },
-  cardContent: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+  selectedCard: { borderColor: '#3B82F7', borderWidth: 2 },
+  cardContent: { flex: 1, backgroundColor: 'transparent' },
+
   companyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: IS_TABLET ? 12 : 14,
   },
   companyLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
+    width: IS_TABLET ? 40 : 40,          // <- Logo biraz daha büyük
+    height: IS_TABLET ? 40 : 40,
+    marginRight: IS_TABLET ? 12 : 12,
     borderRadius: 8,
     backgroundColor: '#fff',
   },
   placeholderLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
+    width: IS_TABLET ? 40 : 40,
+    height: IS_TABLET ? 40 : 40,
+    marginRight: IS_TABLET ? 12 : 12,
     borderRadius: 8,
     backgroundColor: '#fff',
     justifyContent: 'center',
@@ -646,50 +658,50 @@ const styles = StyleSheet.create({
   },
   companyName: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: IS_TABLET ? 20 : 18,       // <- Başlık +2
     fontWeight: '600',
-    marginBottom: 14,
+    marginBottom: IS_TABLET ? 12 : 14,
+    flexShrink: 1,
   },
+
   detailsContainer: {
     flexDirection: 'column',
-    marginBottom: 20,
+    marginBottom: IS_TABLET ? 16 : 20,
   },
-  detail: {
-    marginBottom: 12,
-  },
+  detail: { marginBottom: IS_TABLET ? 10 : 12 },
   detailLabel: {
-    fontSize: 14,
+    fontSize: IS_TABLET ? 13 : 14,       // <- Etiket +1
     color: 'rgba(255,255,255,0.5)',
     marginBottom: 4,
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: IS_TABLET ? 16 : 16,       // <- Değer +2 (öncekine göre)
     color: '#fff',
     fontWeight: '400',
   },
+
   description: {
-    fontSize: 14,
+    fontSize: IS_TABLET ? 15 : 14,       // <- Açıklama +2
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: 15,
-    lineHeight: 20,
+    marginBottom: IS_TABLET ? 14 : 15,
+    lineHeight: IS_TABLET ? 22 : 20,     // <- Satır aralığı artışı
   },
+
+  // EMPTY STATE
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 24,
     paddingVertical: 20,
     backgroundColor: '#1A1E2920',
     borderRadius: 12,
-    width: '90%',
+    width: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
-  emptyText: { color: '#9CA3AF', fontSize: 16, textAlign: 'center', fontWeight: '500' },
-  emptySuggestion: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
+  emptyText: { color: '#9CA3AF', fontSize: IS_TABLET ? 16 : 16, textAlign: 'center', fontWeight: '500' },
+  emptySuggestion: { color: '#9CA3AF', fontSize: IS_TABLET ? 14 : 14, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
+
+
+  // HISTORY / SUGGESTION (değişmedi, ufak font düşüşü)
   suggestionItem: {
     padding: 12,
     backgroundColor: '#2D3748',
@@ -698,11 +710,11 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#3B82F620',
   },
-  suggestionText: { color: '#E5E7EB', fontSize: 16, fontWeight: '400' },
+  suggestionText: { color: '#E5E7EB', fontSize: IS_TABLET ? 15 : 16, fontWeight: '400' },
   historyContainer: { paddingHorizontal: 12, marginBottom: 12 },
   historyTitle: {
     color: '#F9FAFB',
-    fontSize: 16,
+    fontSize: IS_TABLET ? 15 : 16,
     fontWeight: '600',
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -719,14 +731,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  historyText: { color: '#E5E7EB', fontSize: 14, fontWeight: '400' },
+  historyText: { color: '#E5E7EB', fontSize: IS_TABLET ? 13 : 14, fontWeight: '400' },
+
+  // MODAL
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: IS_TABLET ? 60 : 20,
   },
   modalContent: {
-    margin: 20,
     padding: 20,
     borderRadius: 16,
     backgroundColor: '#1A1E29',
@@ -736,48 +750,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     maxHeight: '80%',
+    alignSelf: 'center',
+    width: IS_TABLET ? Math.min(SCREEN_WIDTH * 0.7, 780) : '100%',
   },
-  modalScrollContent: {
-    paddingBottom: 20,
-  },
+  modalScrollContent: { paddingBottom: 20 },
   modalTitle: {
     color: '#F9FAFB',
-    fontSize: 22,
+    fontSize: IS_TABLET ? 21 : 22,
     fontWeight: '700',
     marginBottom: 16,
     textAlign: 'center',
   },
-  filterSection: {
-    marginBottom: 10,
-  },
+  filterSection: { marginBottom: 10 },
   filterHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 5,
   },
-  filterLabel: {
-    color: '#F9FAFB',
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  filterLabel: { color: '#F9FAFB', fontSize: IS_TABLET ? 15 : 16, fontWeight: '500' },
   selectionSearchInput: {
     backgroundColor: '#2D3748',
     borderRadius: 12,
     padding: 10,
     color: '#E5E7EB',
-    fontSize: 14,
+    fontSize: IS_TABLET ? 14 : 14,
     marginBottom: 10,
   },
   selectionList: {
-    maxHeight: 150,
+    maxHeight: IS_TABLET ? 180 : 150,
     backgroundColor: '#2D3748',
     borderRadius: 12,
     marginBottom: 10,
   },
-  selectionListContent: {
-    paddingVertical: 5,
-  },
+  selectionListContent: { paddingVertical: 5 },
   selectionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -786,16 +792,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#4B5563',
   },
-  selectionItemSelected: {
-    backgroundColor: '#3B82F620',
-  },
-  selectionItemText: {
-    color: '#E5E7EB',
-    fontSize: 14,
-  },
-  checkIcon: {
-    marginLeft: 5,
-  },
+  selectionItemSelected: { backgroundColor: '#3B82F620' },
+  selectionItemText: { color: '#E5E7EB', fontSize: IS_TABLET ? 14 : 14 },
+  checkIcon: { marginLeft: 5 },
+
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -805,14 +805,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#3B82F620',
   },
-  modalActionButton: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
-  },
-  modalActionButtonLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  modalActionButton: { borderRadius: 12, paddingHorizontal: 12 },
+  modalActionButtonLabel: { fontSize: IS_TABLET ? 14 : 14, fontWeight: '500' },
 });
+
 
 export default MapScreen;

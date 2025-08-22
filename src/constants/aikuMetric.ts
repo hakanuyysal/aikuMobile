@@ -1,17 +1,18 @@
-import {Dimensions, Platform} from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
-const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window');
 const actualWidth = WINDOW_WIDTH > WINDOW_HEIGHT ? WINDOW_HEIGHT : WINDOW_WIDTH;
 const actualHeight = WINDOW_WIDTH > WINDOW_HEIGHT ? WINDOW_WIDTH : WINDOW_HEIGHT;
 
 const isIOS = Platform.OS === 'ios';
+const isTablet = Math.min(actualWidth, actualHeight) >= 600;
 
 const baseWidth = isIOS ? 428 : 412;
 const baseHeight = isIOS ? 926 : 915;
 
 const widthRem = actualWidth / baseWidth;
 const heightRem = actualHeight / baseHeight;
-const rem = Math.min(widthRem, heightRem); // Use the smaller scale factor to prevent overflow
+const rem = Math.min(widthRem, heightRem); 
 
 const scale = (size: number) => Math.round(size * widthRem);
 const verticalScale = (size: number) => Math.round(size * heightRem);
@@ -28,7 +29,7 @@ const platformValues = {
       : rem * 20
     : rem * 16,
   navigationBarHeight: isIOS ? rem * 44 : rem * 56,
-  menuWidth: Math.min(actualWidth * 0.85, 400), // Maximum menu width of 400 or 85% of screen width
+  menuWidth: Math.min(actualWidth * 0.85, isTablet ? 560 : 400),
 };
 
 const metrics = {
@@ -38,6 +39,7 @@ const metrics = {
   widthRem,
   heightRem,
   isIOS,
+  isTablet,
 
   statusBarHeight: platformValues.statusBarHeight,
   navigationBarHeight: platformValues.navigationBarHeight,
@@ -85,7 +87,7 @@ const metrics = {
 
   tabBar: {
     height: platformValues.tabBarHeight,
-    iconSize: rem * 24,
+    iconSize: rem * (isTablet ? 28 : 24),
     paddingBottom: isIOS
       ? actualHeight / actualWidth > 2.1
         ? rem * 20
@@ -97,7 +99,7 @@ const metrics = {
         : -(rem * 45)
       : -(rem * 40),
     paddingHorizontal: rem * 12,
-    activeIconSize: isIOS ? rem * 48 : rem * 44,
+    activeIconSize: (isIOS ? rem * 48 : rem * 44) * (isTablet ? 1.1 : 1),
     androidOffset: rem * 12, // Android için ekstra offset
   },
 
@@ -106,7 +108,7 @@ const metrics = {
   moderateScale,
   getHeightPercentage: (percentage: number) =>
     actualHeight * (percentage / 100),
-  getWidthPercentage: (percentage: number) => 
+  getWidthPercentage: (percentage: number) =>
     Math.min(actualWidth * (percentage / 100), platformValues.menuWidth),
 
   isSmallDevice: actualHeight < 667,

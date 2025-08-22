@@ -7,6 +7,7 @@ import {
   Image,
   Animated,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
@@ -21,6 +22,10 @@ import AuthService from '../services/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IS_TABLET = metrics?.isTablet ?? SCREEN_WIDTH >= 768;
+const MAX_CONTENT_WIDTH = IS_TABLET ? Math.min(SCREEN_WIDTH * 0.85, 980) : SCREEN_WIDTH;
 
 const ProfileScreen = () => {
   const { user } = useAuth();
@@ -109,47 +114,47 @@ const ProfileScreen = () => {
     onPress: () => void;
     gradient: string[];
   }[] = [
-    {
-      icon: 'account-outline',
-      title: 'Personal Details',
-      subtitle: 'Your personal information',
-      iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('UpdateProfile'),
-      gradient: ['#4F46E5', '#7C3AED'],
-    },
-    {
-      icon: 'heart-outline',
-      title: 'Favorites',
-      subtitle: 'Your favorite companies',
-      iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('Favorites'),
-      gradient: ['#EC4899', '#D946EF'],
-    },
-    {
-      icon: 'crown-outline',
-      title: 'Subscription Details',
-      subtitle: 'Subscription information',
-      iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('SubscriptionDetails'),
-      gradient: ['#F59E0B', '#EF4444'],
-    },
-    {
-      icon: 'domain',
-      title: 'Company Details',
-      subtitle: 'Company information',
-      iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('CompanyDetails'),
-      gradient: ['#10B981', '#3B82F6'],
-    },
-    {
-      icon: 'view-grid-outline',
-      title: 'Product Details',
-      subtitle: 'Product information',
-      iconType: 'MaterialCommunityIcons',
-      onPress: () => navigation.navigate('ProductDetails', { id: '' }),
-      gradient: ['#6366F1', '#8B5CF6'],
-    },
-  ];
+      {
+        icon: 'account-outline',
+        title: 'Personal Details',
+        subtitle: 'Your personal information',
+        iconType: 'MaterialCommunityIcons',
+        onPress: () => navigation.navigate('UpdateProfile'),
+        gradient: ['#4F46E5', '#7C3AED'],
+      },
+      {
+        icon: 'heart-outline',
+        title: 'Favorites',
+        subtitle: 'Your favorite companies',
+        iconType: 'MaterialCommunityIcons',
+        onPress: () => navigation.navigate('Favorites'),
+        gradient: ['#EC4899', '#D946EF'],
+      },
+      {
+        icon: 'crown-outline',
+        title: 'Subscription Details',
+        subtitle: 'Subscription information',
+        iconType: 'MaterialCommunityIcons',
+        onPress: () => navigation.navigate('SubscriptionDetails'),
+        gradient: ['#F59E0B', '#EF4444'],
+      },
+      {
+        icon: 'domain',
+        title: 'Company Details',
+        subtitle: 'Company information',
+        iconType: 'MaterialCommunityIcons',
+        onPress: () => navigation.navigate('CompanyDetails'),
+        gradient: ['#10B981', '#3B82F6'],
+      },
+      {
+        icon: 'view-grid-outline',
+        title: 'Product Details',
+        subtitle: 'Product information',
+        iconType: 'MaterialCommunityIcons',
+        onPress: () => navigation.navigate('ProductDetails', { id: '' }),
+        gradient: ['#6366F1', '#8B5CF6'],
+      },
+    ];
 
   const getProfilePhoto = () => {
     const url = profile.photoURL || profile.profilePhoto;
@@ -288,10 +293,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: metrics.padding.lg,
     justifyContent: 'flex-end',
     paddingBottom: metrics.padding.md,
-    marginTop: -metrics.padding.xxl * 1.5,
+    marginTop: -metrics.padding.xxl * 1.2,       // tablette daha az negatif offset
     marginBottom: metrics.margin.sm,
   },
   container: {
@@ -300,6 +304,9 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: IS_TABLET ? metrics.padding.md : metrics.padding.lg,
   },
   avatarContainer: {
     position: 'relative',
@@ -307,16 +314,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatar: {
-    width: metrics.scale(90),
-    height: metrics.scale(90),
-    borderRadius: metrics.scale(45),
+    width: IS_TABLET ? metrics.scale(104) : metrics.scale(90),
+    height: IS_TABLET ? metrics.scale(104) : metrics.scale(90),
+    borderRadius: IS_TABLET ? metrics.scale(52) : metrics.scale(45),
     borderWidth: 4,
     borderColor: Colors.primary,
   },
   avatarPlaceholder: {
-    width: metrics.scale(80),
-    height: metrics.scale(80),
-    borderRadius: metrics.scale(40),
+    width: IS_TABLET ? metrics.scale(96) : metrics.scale(80),
+    height: IS_TABLET ? metrics.scale(96) : metrics.scale(80),
+    borderRadius: IS_TABLET ? metrics.scale(48) : metrics.scale(40),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -325,24 +332,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: Colors.primary,
-    width: metrics.scale(32),
-    height: metrics.scale(32),
-    borderRadius: metrics.scale(16),
+    width: IS_TABLET ? metrics.scale(36) : metrics.scale(32),
+    height: IS_TABLET ? metrics.scale(36) : metrics.scale(32),
+    borderRadius: IS_TABLET ? metrics.scale(18) : metrics.scale(16),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
     borderColor: Colors.background,
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
   },
   userInfo: {
-    marginLeft: metrics.margin.lg,
+    marginLeft: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
     flex: 1,
   },
   userInfoHeader: {
@@ -351,12 +355,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   userName: {
-    fontSize: metrics.fontSize.xxl,
+    fontSize: IS_TABLET ? metrics.fontSize.xxxl : metrics.fontSize.xxl, // tablette biraz daha büyük
     fontWeight: 'bold',
     color: Colors.lightText,
   },
   userEmail: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
     color: Colors.lightText,
     opacity: 0.7,
     marginTop: metrics.margin.xxs,
@@ -365,35 +369,38 @@ const styles = StyleSheet.create({
     // Ayarlar butonu için stil
   },
   menuContainer: {
-    paddingHorizontal: metrics.padding.lg,
-    paddingTop: metrics.padding.sm,
+    width: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: IS_TABLET ? metrics.padding.sm : metrics.padding.lg,
+    paddingTop: IS_TABLET ? metrics.padding.md : metrics.padding.sm,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: metrics.borderRadius.lg,
-    padding: metrics.padding.md,
-    marginBottom: metrics.margin.md,
+    paddingVertical: IS_TABLET ? metrics.padding.md : metrics.padding.md,
+    paddingHorizontal: IS_TABLET ? metrics.padding.lg : metrics.padding.md,
+    marginBottom: IS_TABLET ? metrics.margin.md : metrics.margin.md,
   },
   menuItemIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: IS_TABLET ? 56 : 48,
+    height: IS_TABLET ? 56 : 48,
+    borderRadius: IS_TABLET ? 28 : 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuItemContent: {
     flex: 1,
-    marginLeft: metrics.margin.md,
+    marginLeft: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
   },
   menuItemTitle: {
-    fontSize: metrics.fontSize.lg,
+    fontSize: IS_TABLET ? metrics.fontSize.xl : metrics.fontSize.lg,
     fontWeight: 'bold',
     color: Colors.lightText,
   },
   menuItemSubtitle: {
-    fontSize: metrics.fontSize.sm,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.sm,
     color: Colors.lightText,
     opacity: 0.7,
     marginTop: 2,
@@ -406,8 +413,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: IS_TABLET ? 6 : 4,
+    paddingHorizontal: IS_TABLET ? 10 : 8,
     marginTop: metrics.margin.sm,
     alignSelf: 'flex-start',
   },
@@ -417,7 +424,7 @@ const styles = StyleSheet.create({
   roleText: {
     color: '#FFD700',
     fontWeight: 'bold',
-    fontSize: metrics.fontSize.xs,
+    fontSize: IS_TABLET ? metrics.fontSize.sm : metrics.fontSize.xs,
   },
 });
 

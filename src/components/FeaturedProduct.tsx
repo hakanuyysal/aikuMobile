@@ -33,7 +33,9 @@ interface Article {
   author?: string;
 }
 
-const FeaturedProduct: React.FC = () => {
+type FeaturedProps = { height?: number };
+
+const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,21 +125,21 @@ const FeaturedProduct: React.FC = () => {
 
   const cleanContent = (content: string | undefined) => {
     if (!content) return '';
-    
+
     // "4702 chars" gibi ifadeleri temizle
     let cleaned = content.replace(/\d+\s*chars?/gi, '');
-    
+
     // Fazla boşlukları temizle
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
+
     // Noktalama işaretlerinden sonra boşluk ekle
     cleaned = cleaned.replace(/([.,!?])([^\s])/g, '$1 $2');
-    
+
     return cleaned;
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, height ? { height } : null]}>
       <Surface style={styles.cardContainer} elevation={4}>
         <LinearGradient
           colors={['rgba(43, 64, 99, 0.8)', 'rgba(43, 64, 99, 0.3)']}
@@ -281,7 +283,8 @@ const FeaturedProduct: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: '30%',
+    // height: '30%',
+    minHeight: 250,  
     marginVertical: 10,
     position: 'relative',
     alignSelf: 'center',

@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,15 @@ import {
   RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {ChatListScreenProps, MessageStackParamList} from '../../types';
-import {Colors} from '../../constants/colors';
+import { ChatListScreenProps, MessageStackParamList } from '../../types';
+import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
 
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ChatProvider} from '../../components/Chat/ChatProvider';
-
+import { ChatProvider } from '../../components/Chat/ChatProvider';
+import { useProfileStore } from '../../store/profileStore';
 
 
 interface Company {
@@ -52,8 +52,7 @@ interface Chat {
 }
 
 
-
-const ChatListScreen = ({navigation}: ChatListScreenProps) => {
+const ChatListScreen = ({ navigation, route }: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -206,7 +205,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       if (chatIndex === -1) return prevChats;
 
       const updatedChats = [...prevChats];
-      const updatedChat = {...updatedChats[chatIndex]};
+      const updatedChat = { ...updatedChats[chatIndex] };
 
       // Mesaj içeriğini güncelle
       updatedChat.lastMessage = message.content;
@@ -233,7 +232,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       if (chatIndex === -1) return prevChats;
 
       const updatedChats = [...prevChats];
-      const updatedChat = {...updatedChats[chatIndex]};
+      const updatedChat = { ...updatedChats[chatIndex] };
 
       // Okunma durumunu güncelle
       if (sessionUpdate.type === 'read') {
@@ -254,7 +253,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       }
 
       const socket = await socketService.connect(token);
-      
+
       if (socket && currentCompanyId) {
         // Şirket chat odasına katıl
         socketService.joinCompanyChat(currentCompanyId);
@@ -274,14 +273,14 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
         // Mesaj okundu bildirimi
         socket.on('message-read', (data) => {
           console.log('Mesaj okundu bildirimi:', data);
-          updateChatSessionStatus({ 
-            type: 'read', 
-            chatSessionId: data.chatSessionId 
+          updateChatSessionStatus({
+            type: 'read',
+            chatSessionId: data.chatSessionId
           });
         });
 
         // Kullanıcı durumu dinleyicisi
-        socket.on('user-status-change', ({userId, isOnline}) => {
+        socket.on('user-status-change', ({ userId, isOnline }) => {
           console.log('Kullanıcı durumu değişti:', userId, isOnline);
           updateUserStatus(userId, isOnline);
         });
@@ -320,7 +319,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
     setChats(prevChats => {
       return prevChats.map(chat => {
         if (chat.id === userId) {
-          return {...chat, isOnline};
+          return { ...chat, isOnline };
         }
         return chat;
       });
@@ -343,7 +342,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
     </View>
   );
 
-  const renderItem = ({item}: {item: Chat}) => {
+  const renderItem = ({ item }: { item: Chat }) => {
     const handleChatPress = () => {
 
       const otherParticipantId = item.participants.find(p => p !== currentCompanyId);
@@ -372,7 +371,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       <TouchableOpacity style={styles.chatItem} onPress={handleChatPress}>
         <View style={styles.avatar}>
           <Image
-            source={{uri: avatarUrl || 'default_avatar_url_here'}}
+            source={{ uri: avatarUrl || 'default_avatar_url_here' }}
             style={styles.avatarImage}
             resizeMode="contain"
           />
@@ -401,8 +400,8 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
         locations={[0, 0.3, 0.6, 0.9]}
-        start={{x: 0, y: 0}}
-        end={{x: 2, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 2, y: 1 }}
         style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           {renderHeader()}
@@ -436,7 +435,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
                 <Text style={styles.emptySubtitle}>
                   You need to add a company to start messaging
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.createCompanyButton}
                   onPress={() => navigation.navigate('CompanyDetails')}
                 >
@@ -452,7 +451,7 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
                 colors={[Colors.primary]}
                 progressBackgroundColor="transparent"
                 progressViewOffset={-20}
-                style={{position: 'absolute', top: -20}}
+                style={{ position: 'absolute', top: -20 }}
               />
             }
           />
@@ -463,74 +462,83 @@ const ChatListScreen = ({navigation}: ChatListScreenProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+
+  // HEADER
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: metrics.padding.md,
-    paddingVertical: metrics.padding.sm,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
   },
   headerTitle: {
-    fontSize: metrics.fontSize.xxl,
-    fontWeight: 'bold',
+    // tablet için daha küçük başlık
+    fontSize: metrics.isTablet ? metrics.fontSize.lg : metrics.fontSize.xl,
+    fontWeight: '700',
     color: Colors.lightText,
     flex: 1,
     textAlign: 'center',
+    letterSpacing: metrics.isTablet ? 0.5 : 0.3,
   },
   backButton: {
-    padding: metrics.padding.sm,
-    width: metrics.scale(40),
+    padding: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
+    width: metrics.isTablet ? metrics.scale(32) : metrics.scale(40),
   },
   headerButton: {
-    padding: metrics.padding.sm,
-    width: metrics.scale(40),
+    padding: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
+    width: metrics.isTablet ? metrics.scale(32) : metrics.scale(40),
   },
+
+  // SEARCH
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
     margin: metrics.margin.md,
-    marginBottom: metrics.margin.sm,
+    marginBottom: metrics.isTablet ? metrics.margin.xs : metrics.margin.sm,
     paddingHorizontal: metrics.padding.md,
     borderRadius: metrics.borderRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    height: metrics.isTablet ? metrics.scale(44) : undefined,
   },
   searchIcon: {
     marginRight: metrics.margin.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: metrics.padding.sm,
+    paddingVertical: metrics.isTablet ? metrics.scale(6) : metrics.padding.sm,
     fontSize: metrics.fontSize.md,
     color: Colors.lightText,
   },
+
+  // LIST
   list: {
     flex: 1,
-    paddingTop: metrics.padding.xl,
+    paddingTop: metrics.isTablet ? metrics.padding.lg : metrics.padding.xl,
   },
   listContent: {
-    paddingHorizontal: metrics.padding.md,
+    paddingHorizontal: metrics.isTablet ? metrics.padding.lg : metrics.padding.md,
   },
+
+  // CHAT ROW
   chatItem: {
     flexDirection: 'row',
-    paddingVertical: metrics.padding.sm,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
     paddingHorizontal: metrics.padding.xs,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
+
+  // AVATAR
   avatar: {
-    width: metrics.scale(52),
-    height: metrics.scale(52),
-    borderRadius: metrics.scale(26),
+    width: metrics.isTablet ? metrics.scale(44) : metrics.scale(52),
+    height: metrics.isTablet ? metrics.scale(44) : metrics.scale(52),
+    borderRadius: metrics.isTablet ? metrics.scale(22) : metrics.scale(26),
     backgroundColor: '#fff',
-    padding: metrics.padding.xs,
+    padding: metrics.isTablet ? metrics.scale(4) : metrics.padding.xs, // küçük padding için scale kullandık
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -538,16 +546,18 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: metrics.scale(24),
+    borderRadius: metrics.isTablet ? metrics.scale(20) : metrics.scale(24),
   },
+
+  // BADGES
   unreadDot: {
     position: 'absolute',
-    top: -metrics.scale(2),
-    right: -metrics.scale(2),
+    top: metrics.isTablet ? -metrics.scale(1) : -metrics.scale(2),
+    right: metrics.isTablet ? -metrics.scale(1) : -metrics.scale(2),
     backgroundColor: Colors.primary,
-    minWidth: metrics.scale(20),
-    height: metrics.scale(20),
-    borderRadius: metrics.scale(10),
+    minWidth: metrics.isTablet ? metrics.scale(16) : metrics.scale(20),
+    height: metrics.isTablet ? metrics.scale(16) : metrics.scale(20),
+    borderRadius: metrics.isTablet ? metrics.scale(8) : metrics.scale(10),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -558,6 +568,7 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.xs,
     fontWeight: '600',
   },
+
   chatInfo: {
     flex: 1,
     marginLeft: metrics.margin.sm,
@@ -567,8 +578,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: metrics.margin.xs,
+    marginBottom: metrics.isTablet ? metrics.scale(2) : metrics.margin.xs,
   },
+
+  // TEXTS
   name: {
     fontSize: metrics.fontSize.md,
     fontWeight: '600',
@@ -582,15 +595,17 @@ const styles = StyleSheet.create({
   lastMessage: {
     fontSize: metrics.fontSize.sm,
     color: Colors.inactive,
-    lineHeight: metrics.scale(20),
+    lineHeight: metrics.isTablet ? metrics.scale(18) : metrics.scale(20),
   },
+
+  // ONLINE DOT
   onlineIndicator: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: metrics.isTablet ? 10 : 12,
+    height: metrics.isTablet ? 10 : 12,
+    borderRadius: metrics.isTablet ? 5 : 6,
     backgroundColor: '#4CAF50',
     borderWidth: 2,
     borderColor: '#1A1E29',
@@ -628,5 +643,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+
 
 export default ChatListScreen;

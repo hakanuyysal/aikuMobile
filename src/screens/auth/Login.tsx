@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useRef} from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,31 +9,45 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Dimensions
 } from 'react-native';
 import metrics from '../../constants/aikuMetric';
-import {Colors} from '../../constants/colors';
+import { Colors } from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useAuth} from '../../contexts/AuthContext';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {AuthStackParamList} from '../../navigation/AuthNavigator';
-import {RootStackParamList} from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import { RootStackParamList } from '../../types';
 import AuthMethodModal from '../../components/AuthMethodModal';
 import AuthService from '../../services/AuthService';
 
 type Props = NativeStackScreenProps<AuthStackParamList & RootStackParamList, 'Login'>;
 
-const Login = ({navigation}: Props) => {
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const IS_TABLET = (metrics?.isTablet ?? false) || SCREEN_WIDTH >= 768;
+
+const MAX_FORM_WIDTH = IS_TABLET
+  ? Math.min(Math.round(SCREEN_WIDTH * 0.7), 820)
+  : SCREEN_WIDTH - metrics.padding.lg * 2;
+
+interface LoginResponse {
+  user: any;
+  success?: boolean;
+  error?: string;
+}
+
+const Login = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { login, loading, googleLogin, linkedInLogin } = useAuth();
   const [showAuthMethodModal, setShowAuthMethodModal] = useState(false);
   const [authMethodData, setAuthMethodData] = useState<{
     authMethod: string;
     email: string;
   } | null>(null);
   const [isCheckingAuthMethod, setIsCheckingAuthMethod] = useState(false);
-  const {login, loading} = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogin = async () => {
@@ -42,7 +56,7 @@ const Login = ({navigation}: Props) => {
       if (response?.user) {
         navigation.reset({
           index: 0,
-          routes: [{name: 'Main'}],
+          routes: [{ name: 'Main' }],
         });
       }
     } catch (error) {
@@ -52,12 +66,12 @@ const Login = ({navigation}: Props) => {
 
   const checkAuthMethod = useCallback(async (emailToCheck: string) => {
     if (!emailToCheck || !emailToCheck.includes('@')) return;
-    
+
     setIsCheckingAuthMethod(true);
     try {
       const response = await AuthService.checkAuthMethod(emailToCheck);
       const authMethod = response?.data?.authMethod;
-      
+
       // Sadece google veya linkedin ise modal göster
       if (authMethod && ['google', 'linkedin'].includes(authMethod)) {
         setAuthMethodData({
@@ -125,8 +139,8 @@ const Login = ({navigation}: Props) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.gradientBackground}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -160,9 +174,9 @@ const Login = ({navigation}: Props) => {
                   selectionColor={Colors.primary}
                 />
                 {isCheckingAuthMethod && (
-                  <ActivityIndicator 
-                    size="small" 
-                    color={Colors.primary} 
+                  <ActivityIndicator
+                    size="small"
+                    color={Colors.primary}
                     style={styles.checkingIndicator}
                   />
                 )}
@@ -199,13 +213,13 @@ const Login = ({navigation}: Props) => {
               </View>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.forgotPasswordButton}
               onPress={() => navigation.navigate('ForgotPassword')}>
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
               disabled={loading}>
@@ -225,7 +239,7 @@ const Login = ({navigation}: Props) => {
             </View> */}
 
             <View style={styles.socialButtons}>
-              {/* <TouchableOpacity 
+              {/* <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleLogin}
                 disabled={loading}>
@@ -268,14 +282,14 @@ const Login = ({navigation}: Props) => {
                 >
                   Terms of Service
                 </Text>
-                {' '}|
+                {' '}|{' '}
                 <Text
                   style={styles.privacyLink}
                   onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}
                 >
                   Privacy Policy
                 </Text>
-                {' '}|
+                {' '}|{' '}
                 <Text
                   style={styles.privacyLink}
                   onPress={() => Linking.openURL('https://www.aikuaiplatform.com/cookie-policy')}
@@ -288,7 +302,7 @@ const Login = ({navigation}: Props) => {
           </View>
         </View>
       </SafeAreaView>
-      
+
       <AuthMethodModal
         visible={showAuthMethodModal}
         onClose={() => setShowAuthMethodModal(false)}
@@ -297,7 +311,7 @@ const Login = ({navigation}: Props) => {
         onLoginSuccess={() => {
           navigation.reset({
             index: 0,
-            routes: [{name: 'Main'}],
+            routes: [{ name: 'Main' }],
           });
         }}
       />
@@ -314,34 +328,40 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: metrics.padding.lg,
-    marginTop: -2, // Ekranı 2px yukarı kaydırır
+    padding: IS_TABLET ? metrics.padding.xl : metrics.padding.lg,
+    marginTop: -2,
+    alignItems: 'center',            // içerik ortalansın
   },
   header: {
-    marginTop: metrics.margin.xl,
-    marginBottom: metrics.margin.lg,
+    width: MAX_FORM_WIDTH,
+    alignSelf: 'center',
+    marginTop: IS_TABLET ? metrics.margin.xl : metrics.margin.xl,
+    marginBottom: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
   },
   title: {
-    fontSize: metrics.fontSize.xxxl,
+    fontSize: IS_TABLET ? metrics.fontSize.xxxl * 1.15 : metrics.fontSize.xxxl,
     fontWeight: 'bold',
-    marginBottom: metrics.margin.md,
+    marginBottom: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
     color: Colors.lightText,
   },
   subtitle: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
     color: Colors.inactive,
-    lineHeight: metrics.fontSize.lg * 1.4,
+    lineHeight: IS_TABLET ? metrics.fontSize.xl * 1.4 : metrics.fontSize.lg * 1.4,
   },
   form: {
     flex: 1,
+    width: MAX_FORM_WIDTH,           // form genişliği sabit
+    alignSelf: 'center',
   },
+
   inputContainer: {
-    marginBottom: metrics.margin.lg,
+    marginBottom: IS_TABLET ? metrics.margin.xl : metrics.margin.lg,
   },
   label: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
     fontWeight: '600',
-    marginBottom: metrics.margin.md,
+    marginBottom: IS_TABLET ? metrics.margin.md : metrics.margin.md,
     color: Colors.lightText,
   },
   inputWrapper: {
@@ -350,22 +370,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
-    height: metrics.verticalScale(55),
-    paddingHorizontal: metrics.padding.md,
+    borderRadius: IS_TABLET ? metrics.borderRadius.lg : metrics.borderRadius.md,
+    height: IS_TABLET ? metrics.verticalScale(60) : metrics.verticalScale(55),
+    paddingHorizontal: IS_TABLET ? metrics.padding.lg : metrics.padding.md,
   },
   inputIcon: {
-    marginRight: metrics.margin.md,
+    marginRight: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
     opacity: 0.7,
   },
   input: {
     flex: 1,
-    fontSize: metrics.fontSize.lg,
+    fontSize: IS_TABLET ? metrics.fontSize.lg * 1.05 : metrics.fontSize.lg,
     color: Colors.lightText,
     height: '100%',
-    paddingVertical: metrics.padding.md,
+    paddingVertical: IS_TABLET ? metrics.padding.md : metrics.padding.md,
     backgroundColor: 'transparent',
-    opacity: 0.7,
+    opacity: 0.8,
   },
   passwordInput: {
     flex: 1,
@@ -380,24 +400,22 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: Colors.primary,
-    height: metrics.verticalScale(50),
+    height: IS_TABLET ? metrics.verticalScale(56) : metrics.verticalScale(50),
     borderRadius: metrics.borderRadius.circle,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: metrics.margin.xxl,
-    marginTop: metrics.margin.xl,
+    marginTop: IS_TABLET ? metrics.margin.xl : metrics.margin.xl,
+    // divider’dan önce biraz daha nefes verelim
+    marginBottom: IS_TABLET ? metrics.margin.xxl : metrics.margin.xxl,
     shadowColor: Colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: metrics.scale(8),
-    },
+    shadowOffset: { width: 0, height: metrics.scale(8) },
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(12),
     elevation: 8,
   },
   loginButtonText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.lg,
+    fontSize: IS_TABLET ? metrics.fontSize.xl : metrics.fontSize.lg,
     fontWeight: '700',
   },
   forgotPasswordButton: {
@@ -412,67 +430,74 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: metrics.margin.xxl,
+    justifyContent: 'center',
+    // üst ve alt boşluğu artır
+    marginTop: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
+    marginBottom: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
   },
   line: {
     flex: 1,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.1)',
+    // yazı ile çizgi arasında yatay nefes
+    marginHorizontal: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
   },
   dividerText: {
-    marginHorizontal: metrics.margin.md,
     color: Colors.inactive,
-    fontSize: metrics.fontSize.sm,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.sm,
+    // yazının üst-altında min boşluk
+    paddingVertical: IS_TABLET ? 6 : 4,
   },
+
   socialButtons: {
-    gap: metrics.margin.md,
+    // divider ile sosyal butonlar arasına mesafe
+    marginTop: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
+    gap: IS_TABLET ? metrics.margin.lg : metrics.margin.md,
   },
   socialButton: {
     flexDirection: 'row',
-    height: metrics.verticalScale(50),
+    height: IS_TABLET ? metrics.verticalScale(54) : metrics.verticalScale(50),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: metrics.borderRadius.md,
+    borderRadius: IS_TABLET ? metrics.borderRadius.lg : metrics.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
-    opacity: 1.5,
+    opacity: 1, // 1.5 yerine 1 olsun
     shadowColor: 'rgba(255,255,255,0.1)',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 2,
     elevation: 2,
   },
-  socialIcon: {
-    marginRight: metrics.margin.sm,
-  },
+  socialIcon: { marginRight: metrics.margin.sm },
   socialButtonText: {
     color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.md,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: metrics.margin.xl,
+    marginTop: IS_TABLET ? metrics.margin.xl : metrics.margin.xl,
   },
   footerText: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.md,
     color: Colors.inactive,
   },
   signUpText: {
-    fontSize: metrics.fontSize.md,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.md,
     color: Colors.primary,
     fontWeight: '600',
   },
   privacyContainer: {
-    marginTop: 5,
+    marginTop: metrics.margin.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   privacyText: {
     color: Colors.inactive,
-    fontSize: metrics.fontSize.sm,
+    fontSize: IS_TABLET ? metrics.fontSize.md : metrics.fontSize.sm,
     textAlign: 'center',
   },
   privacyLink: {

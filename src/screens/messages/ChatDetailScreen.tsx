@@ -24,7 +24,7 @@ import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 
-const API_URL = __DEV__ 
+const API_URL = __DEV__
   ? 'http://10.0.2.2:3004'  // Android emülatör için localhost
   : Config.API_URL || 'https://api.aikuaiplatform.com';
 
@@ -177,7 +177,7 @@ const ChatDetailScreen: React.FC = () => {
       try {
         setSending(true);
         const token = await AsyncStorage.getItem('token');
-        
+
         if (!token) {
           console.error('Token bulunamadı');
           return;
@@ -199,12 +199,12 @@ const ChatDetailScreen: React.FC = () => {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
           setNewMessage('');
-          
+
           setTimeout(() => {
-            flatListRef.current?.scrollToEnd({animated: true});
+            flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);
         } else {
           console.error('Mesaj gönderilemedi:', data);
@@ -227,7 +227,7 @@ const ChatDetailScreen: React.FC = () => {
         }
 
         const socket = await socketService.connect(token);
-        
+
         if (socket) {
           socketService.joinChat(chatSessionId);
           socketService.joinCompanyChat(companyId);
@@ -290,10 +290,10 @@ const ChatDetailScreen: React.FC = () => {
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const isToday = messageDate.toDateString() === now.toDateString();
     const isYesterday = messageDate.toDateString() === yesterday.toDateString();
-    
+
     if (isToday) {
       return 'Bugün';
     } else if (isYesterday) {
@@ -321,7 +321,7 @@ const ChatDetailScreen: React.FC = () => {
 
     messages.forEach((item, index) => {
       const messageDate = new Date(item.createdAt).toDateString();
-      
+
       if (messageDate !== currentDate) {
         currentDate = messageDate;
         messageElements.push(
@@ -347,7 +347,7 @@ const ChatDetailScreen: React.FC = () => {
               {item.content}
             </Text>
             <Text style={[styles.timeText, item.sender._id === companyId ? styles.myTimeText : styles.otherTimeText]}>
-              {new Date(item.createdAt).toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}
+              {new Date(item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         </View>
@@ -374,8 +374,8 @@ const ChatDetailScreen: React.FC = () => {
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
         locations={[0, 0.3, 0.6, 0.9]}
-        start={{x: 0, y: 0}}
-        end={{x: 2, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 2, y: 1 }}
         style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           {renderHeader()}
@@ -391,8 +391,8 @@ const ChatDetailScreen: React.FC = () => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{x: 0, y: 0}}
-      end={{x: 2, y: 1}}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {renderHeader()}
@@ -404,7 +404,7 @@ const ChatDetailScreen: React.FC = () => {
             style={styles.messageList}
             contentContainerStyle={styles.messageListContent}
             ref={scrollViewRef}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({animated: true})}>
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}>
             {renderMessages()}
           </ScrollView>
           <View style={styles.inputContainer}>
@@ -446,57 +446,51 @@ const ChatDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  keyboardAvoid: { flex: 1 },
+
+  // HEADER
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: metrics.padding.md,
-    paddingVertical: metrics.padding.sm,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
   },
-  backButton: {
-    padding: metrics.padding.sm,
-  },
+  backButton: { padding: metrics.padding.sm },
   headerTitle: {
-    fontSize: metrics.fontSize.xl,
+    // tablette başlığı küçült
+    fontSize: metrics.isTablet ? metrics.fontSize.lg : metrics.fontSize.xl,
     fontWeight: '600',
     color: Colors.lightText,
     marginLeft: -metrics.margin.sm,
-  },
-  headerButton: {
-    padding: metrics.padding.sm,
-  },
-  messageList: {
+    textAlign: 'center',
     flex: 1,
   },
+  headerButton: { padding: metrics.padding.sm },
+
+  // LIST
+  messageList: { flex: 1 },
   messageListContent: {
-    padding: metrics.padding.md,
-    paddingBottom: metrics.padding.xl,
+    padding: metrics.isTablet ? metrics.padding.lg : metrics.padding.md,
+    paddingBottom: metrics.isTablet ? metrics.padding.lg : metrics.padding.xl,
   },
+
+  // MESSAGES
   messageContainer: {
-    marginVertical: 2,
+    marginVertical: metrics.isTablet ? 1 : 2,
     flexDirection: 'row',
     width: '100%',
-    paddingHorizontal: 8,
+    paddingHorizontal: metrics.isTablet ? 4 : 8,
   },
-  myMessage: {
-    justifyContent: 'flex-end',
-  },
-  otherMessage: {
-    justifyContent: 'flex-start',
-  },
+  myMessage: { justifyContent: 'flex-end' },
+  otherMessage: { justifyContent: 'flex-start' },
+
   messageBubble: {
-    maxWidth: '75%',
-    padding: 8,
-    paddingHorizontal: 12,
+    maxWidth: metrics.isTablet ? '85%' : '75%',
+    paddingVertical: metrics.isTablet ? 6 : 8,
+    paddingHorizontal: metrics.isTablet ? 10 : 12,
     borderRadius: 18,
   },
   myBubble: {
@@ -513,96 +507,88 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 5,
     borderBottomRightRadius: 18,
   },
+
   messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  myMessageText: {
-    color: '#000000',
-  },
-  otherMessageText: {
-    color: '#000000',
-  },
+  fontSize: metrics.isTablet ? 18 : 16,
+  lineHeight: metrics.isTablet ? 24 : 20,
+},
+  myMessageText: { color: '#000000' },
+  otherMessageText: { color: '#000000' },
+
   timeText: {
-    fontSize: 11,
-    marginTop: 3,
-    alignSelf: 'flex-end',
-  },
-  myTimeText: {
-    color: '#7EAA71',
-  },
-  otherTimeText: {
-    color: '#8D8D8D',
-  },
+  fontSize: metrics.isTablet ? 13 : 11,
+  marginTop: metrics.isTablet ? 4 : 3,
+  alignSelf: 'flex-end',
+},
+  myTimeText: { color: '#7EAA71' },
+  otherTimeText: { color: '#8D8D8D' },
+
+  // INPUT BAR
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: metrics.padding.md,
+    paddingHorizontal: metrics.isTablet ? metrics.padding.lg : metrics.padding.md,
+    paddingVertical: metrics.isTablet ? metrics.padding.sm : metrics.padding.md,
     backgroundColor: Colors.background,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    paddingBottom: metrics.isIOS ? metrics.padding.lg : metrics.padding.sm,
+    paddingBottom: Platform.OS === 'ios'
+      ? (metrics.isTablet ? metrics.padding.lg : metrics.padding.lg)
+      : (metrics.isTablet ? metrics.padding.sm : metrics.padding.sm),
     marginTop: metrics.margin.xs,
-
   },
   input: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: metrics.borderRadius.xl,
-    paddingHorizontal: metrics.padding.md,
-    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.isTablet ? metrics.padding.md : metrics.padding.md,
+    paddingVertical: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
     marginHorizontal: metrics.margin.sm,
-    minHeight: metrics.scale(40),
-    maxHeight: metrics.scale(100),
+    minHeight: metrics.isTablet ? metrics.scale(36) : metrics.scale(40),
+    maxHeight: metrics.isTablet ? metrics.scale(120) : metrics.scale(100),
     color: Colors.lightText,
-    fontSize: metrics.fontSize.md,
+    fontSize: metrics.isTablet ? metrics.fontSize.sm : metrics.fontSize.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
   sendButton: {
-    padding: metrics.padding.sm,
-    width: metrics.scale(40),
-    height: metrics.scale(40),
+    padding: metrics.isTablet ? metrics.padding.xs : metrics.padding.sm,
+    width: metrics.isTablet ? metrics.scale(36) : metrics.scale(40),
+    height: metrics.isTablet ? metrics.scale(36) : metrics.scale(40),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: metrics.borderRadius.circle,
     backgroundColor: 'transparent',
   },
-  sendButtonActive: {
-    backgroundColor: Colors.primary + '20',
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  sendButtonActive: { backgroundColor: Colors.primary + '20' },
+  sendButtonDisabled: { opacity: 0.5 },
+
+  // LOADING
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // DATE BADGE
   dateBadgeContainer: {
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: metrics.isTablet ? 8 : 10,
   },
   dateBadge: {
     backgroundColor: 'rgba(225, 245, 254, 0.92)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: metrics.isTablet ? 10 : 12,
+    paddingVertical: metrics.isTablet ? 5 : 6,
     borderRadius: 8,
   },
-  dateBadgeText: {
-    color: '#1B1B1B',
-    fontSize: 12,
-    fontWeight: '500',
-  },
+ dateBadgeText: {
+  color: '#1B1B1B',
+  fontSize: metrics.isTablet ? 14 : 12,
+  fontWeight: '500',
+},
+
+  // (avatar burada kullanılmıyor ama kalsın)
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff',
+    justifyContent: 'center', alignItems: 'center', marginRight: 8,
   },
 });
+
 
 export default ChatDetailScreen;
