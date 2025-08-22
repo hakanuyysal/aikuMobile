@@ -2,8 +2,15 @@
 let OneSignal: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  OneSignal = require('react-native-onesignal').default;
+  const OneSignalModule = require('react-native-onesignal');
+  console.log('🔍 OneSignalModule:', OneSignalModule);
+  console.log('🔍 OneSignalModule keys:', Object.keys(OneSignalModule || {}));
+  
+  // Try different export patterns
+  OneSignal = OneSignalModule.default || OneSignalModule.OneSignal || OneSignalModule;
   console.log('✅ OneSignal module loaded successfully');
+  console.log('🔍 OneSignal type:', typeof OneSignal);
+  console.log('🔍 OneSignal value:', OneSignal);
 } catch (_e) {
   console.warn('❌ OneSignal module not available:', _e);
   OneSignal = null;
@@ -14,9 +21,25 @@ import notificationService from '../notificationService';
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
-    const id = await OneSignal.User.pushSubscription.getId();
-    return id ?? null;
+    // Try different API methods for getting Player ID
+    if (OneSignal.User && OneSignal.User.pushSubscription) {
+      if (typeof OneSignal.User.pushSubscription.getIdAsync === 'function') {
+        const id = await OneSignal.User.pushSubscription.getIdAsync();
+        return id ?? null;
+      } else if (typeof OneSignal.User.pushSubscription.getId === 'function') {
+        const id = await OneSignal.User.pushSubscription.getId();
+        return id ?? null;
+      } else if (typeof OneSignal.User.pushSubscription.getPushSubscriptionId === 'function') {
+        const id = await OneSignal.User.pushSubscription.getPushSubscriptionId();
+        return id ?? null;
+      } else {
+        console.log('🔍 OneSignal.User.pushSubscription methods:', Object.keys(OneSignal.User.pushSubscription || {}));
+        return null;
+      }
+    }
+    return null;
   } catch (error) {
+    console.error('Error getting OneSignal Player ID:', error);
     return null;
   }
 }
@@ -59,7 +82,12 @@ export function initializePush(): void {
   }
 
   if (!OneSignal) {
-    console.warn('OneSignal native module not available. Skipping init.');
+    console.warn('❌ OneSignal is null or undefined. Skipping initialization.');
+    return;
+  }
+
+  if (!OneSignal.Notifications || !OneSignal.User) {
+    console.warn('❌ OneSignal native interfaces (Notifications/User) not available. Skipping initialization.');
     return;
   }
 
@@ -76,13 +104,24 @@ export function initializePush(): void {
     }
   }
 
-  OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
+  try {
+    OneSignal.initialize(ENV.ONESIGNAL_APP_ID);
+    console.log('✅ OneSignal initialized successfully');
+  } catch (error) {
+    console.error('❌ OneSignal initialization failed:', error);
+    return;
+  }
 
   // Check user's notification settings and configure OneSignal accordingly
   checkNotificationSettings().then(enabled => {
     if (enabled) {
       // Request permission for iOS and Android 13+
-      OneSignal.Notifications.requestPermission(true);
+      try {
+        OneSignal.Notifications.requestPermission(true);
+        console.log('✅ OneSignal permission requested');
+      } catch (error) {
+        console.error('❌ OneSignal permission request failed:', error);
+      }
     }
   });
 
@@ -101,8 +140,11 @@ export function initializePush(): void {
         return;
       }
 
-      // Default behavior: show notification. Just logging it.
+      // Show notification in foreground
       console.log('OneSignal foreground notification:', notification);
+      
+      // Don't prevent default - let OneSignal show the notification
+      // event.preventDefault(); // Remove this line to allow notifications to show
     },
   );
 
@@ -114,18 +156,38 @@ export function initializePush(): void {
     }
   });
 
+  // Handle background notifications
+  OneSignal.Notifications.addEventListener('permissionChange', (event: any) => {
+    console.log('OneSignal permission changed:', event);
+  });
+
+  // Handle notification display
+  OneSignal.Notifications.addEventListener('display', (event: any) => {
+    console.log('OneSignal notification displayed:', event);
+  });
+
   OneSignal.User.pushSubscription.addEventListener('change', async () => {
-    const playerId = await OneSignal.User.pushSubscription.getId();
+    const playerId = await getOneSignalPlayerId();
     console.log('OneSignal Player ID:', playerId);
   });
 
   // Log Player ID and token on first launch
-  OneSignal.User.pushSubscription.getId().then((id: any) => {
+  getOneSignalPlayerId().then((id: any) => {
     console.log('OneSignal Player ID:', id);
   });
-  OneSignal.User.pushSubscription.getToken().then((token: any) => {
-    if (token) console.log('Push Token:', token);
-  });
+  
+  // Try to get push token
+  try {
+    if (OneSignal.User.pushSubscription.getToken) {
+      OneSignal.User.pushSubscription.getToken().then((token: any) => {
+        if (token) console.log('Push Token:', token);
+      });
+    } else {
+      console.log('🔍 OneSignal.User.pushSubscription.getToken not available');
+    }
+  } catch (error) {
+    console.log('Error getting push token:', error);
+  }
 }
 
 // Function to call when notification settings change
