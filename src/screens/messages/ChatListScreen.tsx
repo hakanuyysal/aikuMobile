@@ -9,18 +9,17 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {ChatListScreenProps, MessageStackParamList} from '../../types';
 import {Colors} from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import metrics from '../../constants/aikuMetric';
-import chatApi from '../../api/chatApi';
+
 import socketService from '../../services/socketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ChatProvider} from '../../components/Chat/ChatProvider';
-import { useProfileStore } from '../../store/profileStore';
+
 
 
 interface Company {
@@ -52,19 +51,13 @@ interface Chat {
   participants: string[];
 }
 
-interface ChatDetailParams {
-  chatSessionId: string;
-  receiverId: string;
-  receiverName: string;
-  companyId: string;
-}
 
-const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
+
+const ChatListScreen = ({navigation}: ChatListScreenProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentCompanyId, setCurrentCompanyId] = useState<string>('');
-  const { profile } = useProfileStore();
 
   const fetchCurrentCompany = async (userId: string) => {
     try {
@@ -91,14 +84,18 @@ const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
       const data = await response.json();
       console.log('Company API Response:', data);
 
-      if (data.success && data.companies.length > 0) {
-        const companyId = data.companies[0].id;
+      if (data.success && data.companies && data.companies.length > 0) {
+        const companyId = data.companies[0].id || data.companies[0]._id;
         console.log('Seçilen Company ID:', companyId);
         setCurrentCompanyId(companyId);
         return companyId;
+      } else if (data.success && (!data.companies || data.companies.length === 0)) {
+        console.log('Kullanıcının hiç şirketi yok');
+        return null;
+      } else {
+        console.log('API yanıtı başarısız:', data);
+        return null;
       }
-      console.error('Şirket bulunamadı veya API yanıtı başarısız');
-      return null;
     } catch (error) {
       console.error('Şirket bilgisi alınırken hata:', error);
       return null;
@@ -177,7 +174,8 @@ const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
         if (companyId) {
           await fetchChatSessions(companyId);
         } else {
-          console.error('Company ID alınamadı');
+          console.log('Kullanıcının şirketi yok - mesajlaşma özelliği kullanılamaz');
+          // Şirket yoksa sadece log yaz, kullanıcıyı rahatsız etme
         }
       } else {
         console.error('Kullanıcı bilgisi bulunamadı');
@@ -347,14 +345,7 @@ const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
 
   const renderItem = ({item}: {item: Chat}) => {
     const handleChatPress = () => {
-      if (route.name === 'Message' && !profile.isSubscriber) {
-        Alert.alert(
-          'Subscription Required',
-          'You need to be a subscriber to use the messaging feature.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
+
       const otherParticipantId = item.participants.find(p => p !== currentCompanyId);
       if (!otherParticipantId) {
         console.error('Karşı katılımcı bulunamadı');
@@ -439,6 +430,20 @@ const ChatListScreen = ({navigation, route}: ChatListScreenProps) => {
             style={styles.list}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>No messages</Text>
+                <Text style={styles.emptySubtitle}>
+                  You need to add a company to start messaging
+                </Text>
+                <TouchableOpacity 
+                  style={styles.createCompanyButton}
+                  onPress={() => navigation.navigate('CompanyDetails')}
+                >
+                  <Text style={styles.createCompanyButtonText}>Add New Company</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -589,6 +594,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     borderWidth: 2,
     borderColor: '#1A1E29',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: metrics.padding.xxl,
+  },
+  emptyTitle: {
+    fontSize: metrics.fontSize.lg,
+    fontWeight: '600',
+    color: Colors.lightText,
+    marginBottom: metrics.margin.sm,
+  },
+  emptySubtitle: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.inactive,
+    textAlign: 'center',
+    lineHeight: metrics.scale(20),
+  },
+  createCompanyButton: {
+    marginTop: metrics.margin.md,
+    backgroundColor: Colors.primary,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.lg,
+    borderRadius: metrics.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  createCompanyButtonText: {
+    color: Colors.lightText,
+    fontSize: metrics.fontSize.md,
+    fontWeight: '600',
   },
 });
 
