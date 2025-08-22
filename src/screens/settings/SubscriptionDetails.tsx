@@ -237,12 +237,14 @@ const SubscriptionDetails = ({navigation}: Props) => {
               <Text style={styles.infoLabel}>Status:</Text>
               <View style={styles.statusContainer}>
                 <MaterialCommunityIcons
-                  name={planInfo?.subscriptionStatus === 'active' ? 'check-circle' : 'close-circle'}
+                  name={planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? 'check-circle' : 'close-circle'}
                   size={20}
-                  color={planInfo?.subscriptionStatus === 'active' ? '#4CAF50' : 'red'}
+                  color={planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? '#4CAF50' : 'red'}
                 />
-                <Text style={[styles.infoValue, planInfo?.subscriptionStatus === 'active' ? styles.activeText : {color:'red'}]}>
-                  {planInfo?.subscriptionStatus === 'active' ? 'Active' : (planInfo?.subscriptionStatus ? planInfo.subscriptionStatus.charAt(0).toUpperCase() + planInfo.subscriptionStatus.slice(1) : 'Inactive')}
+                <Text style={[styles.infoValue, planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? styles.activeText : {color:'red'}]}>
+                  {planInfo?.subscriptionStatus === 'active' ? 'Active' : 
+                   planInfo?.subscriptionStatus === 'trial' ? 'Trial' :
+                   (planInfo?.subscriptionStatus ? planInfo.subscriptionStatus.charAt(0).toUpperCase() + planInfo.subscriptionStatus.slice(1) : 'Inactive')}
                 </Text>
               </View>
             </View>
@@ -310,7 +312,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
             onPress={handleCancelSubscription}
             disabled={cancelling}
           >
-            <Text style={styles.cancelButtonText}>{cancelling ? 'İptal Ediliyor...' : 'Cancel Subscription'}</Text>
+            <Text style={styles.cancelButtonText}>{cancelling ? 'Cancelling...' : 'Cancel Subscription'}</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
