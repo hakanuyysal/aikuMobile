@@ -29,6 +29,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getActiveMobileModalMessage } from '../api/modalMessagesApi';
 import PushPermissionPrompt from '../components/PushPermissionPrompt';
 import { storage } from '../storage/mmkv';
+import notificationService from '../services/notificationService';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -291,17 +292,31 @@ const HomeScreen = (props: HomeScreenProps) => {
           return;
         }
 
+        // İzin durumunu kontrol et - önce bunu kontrol et
+        const permissionStatus = storage.getString('pushPermissionStatus');
+        if (permissionStatus === 'granted') {
+          console.log('✅ İzin zaten verilmiş, push prompt gösterilmez');
+          return;
+        }
+
+        // Database'de bildirimlerin açık olup olmadığını kontrol et
+        try {
+          const settings = await notificationService.getPushSettings();
+          if (settings.pushNotificationsEnabled) {
+            console.log('✅ Database\'de bildirimler zaten açık, push prompt gösterilmez');
+            // Storage'ı da güncelle
+            storage.set('pushPermissionStatus', 'granted');
+            storage.set('pushPromptShown', true);
+            return;
+          }
+        } catch (error) {
+          console.log('⚠️ Database kontrol hatası, devam ediliyor:', error);
+        }
+
         // Zaten gösterilmiş mi kontrol et
         const alreadyShown = storage.getBoolean('pushPromptShown');
         if (alreadyShown) {
           console.log('🚫 Push prompt zaten gösterilmiş');
-
-          // İzin durumunu kontrol et
-          const permissionStatus = storage.getString('pushPermissionStatus');
-          if (permissionStatus === 'granted') {
-            console.log('✅ İzin zaten verilmiş, push prompt gösterilmez');
-            return;
-          }
 
           // "Belki Sonra" seçilmiş ve 3 gün geçmiş mi kontrol et
           const nextShowTime = storage.getNumber('pushPromptNextShow');
@@ -441,17 +456,6 @@ const HomeScreen = (props: HomeScreenProps) => {
 
   const closePushPrompt = () => {
     setPushPromptVisible(false);
-  };
-
-  // Test için storage reset fonksiyonu (sadece geliştirme aşamasında)
-  const resetPushPromptStorage = () => {
-    if (__DEV__) {
-      storage.delete('pushPromptNeverAsk');
-      storage.delete('pushPromptShown');
-      storage.delete('pushPromptNextShow');
-      storage.delete('pushPermissionStatus');
-      console.log('✅ Push prompt storage temizlendi');
-    }
   };
 
   const renderMessageWithLinks = (text: string) => {
