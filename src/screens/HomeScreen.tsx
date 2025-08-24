@@ -268,6 +268,13 @@ const HomeScreen = (props: HomeScreenProps) => {
           return;
         }
 
+        // Kullanıcı bilgisini kontrol et
+        const userStr = await AsyncStorage.getItem('user');
+        if (!userStr) {
+          console.log('🚫 Kullanıcı bilgisi bulunamadı, push prompt gösterilmez');
+          return;
+        }
+
         // Debug: Storage durumunu kontrol et (sadece geliştirme aşamasında)
         if (__DEV__) {
           console.log('🔍 Storage durumu:');
@@ -309,7 +316,7 @@ const HomeScreen = (props: HomeScreenProps) => {
           console.log('✅ İlk kez gösteriliyor');
         }
 
-        // İlk uygulama açılışı mı kontrol et - 5 saniye bekle
+        // Login sonrası 2 saniye bekle, sonra kontrol et
         setTimeout(() => {
           // Diğer modallar açık mı kontrol et
           if (postHomeModalVisible || showCenterCards) {
@@ -319,14 +326,22 @@ const HomeScreen = (props: HomeScreenProps) => {
 
           console.log('✅ Push notification permission prompt gösteriliyor');
           setPushPromptVisible(true);
-        }, 5000); // 5 saniye bekle
+        }, 2000); // 2 saniye bekle
 
       } catch (error) {
         console.error('🚨 Push prompt kontrol hatası:', error);
       }
     };
 
-    checkAndShowPushPrompt();
+    // Sadece kullanıcı giriş yapmışsa çalıştır
+    const checkUserAndShowPrompt = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        checkAndShowPushPrompt();
+      }
+    };
+
+    checkUserAndShowPrompt();
   }, [postHomeModalVisible, showCenterCards]);
 
   React.useEffect(() => {

@@ -117,11 +117,22 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const handleNotificationToggle = async (value: boolean) => {
     try {
       setIsLoading(true);
+      
+      // Database'de push notification ayarlarını güncelle
       await notificationService.updatePushSettings(value);
       setNotificationsEnabled(value);
       
       // OneSignal ayarlarını da güncelle
       await updateNotificationSettings(value);
+      
+      // Eski API ile de uyumluluk için güncelle
+      try {
+        await BaseService.updateUser({ acceptChatNotification: value });
+      } catch (e) {
+        console.log('Eski API güncelleme hatası (önemli değil):', e);
+      }
+      
+      console.log('✅ Notification ayarları başarıyla güncellendi:', value);
     } catch (error) {
       console.error('Notification ayarı güncellenirken hata:', error);
       Alert.alert(
@@ -171,16 +182,16 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     ]);
   };
 
-  // Notifications toggle
-  const onToggleNotifications = async (val: boolean) => {
-    setNotificationsEnabled(val);
-    try {
-      await BaseService.updateUser({ acceptChatNotification: val });
-    } catch (e) {
-      setNotificationsEnabled(!val);
-      Alert.alert('Error', 'Failed to update notification preference.');
-    }
-  };
+  // Notifications toggle - eski fonksiyon, artık kullanılmıyor
+  // const onToggleNotifications = async (val: boolean) => {
+  //   setNotificationsEnabled(val);
+  //   try {
+  //     await BaseService.updateUser({ acceptChatNotification: val });
+  //   } catch (e) {
+  //     setNotificationsEnabled(!val);
+  //     Alert.alert('Error', 'Failed to update notification preference.');
+  //   }
+  // };
 
   // Email change
   const sendCode = async () => {

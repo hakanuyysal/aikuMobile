@@ -15,9 +15,9 @@ try {
   console.warn('❌ OneSignal module not available:', _e);
   OneSignal = null;
 }
-import {Platform} from 'react-native';
 import {ENV} from '../../config/env';
 import notificationService from '../notificationService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
@@ -47,12 +47,19 @@ export async function getOneSignalPlayerId(): Promise<string | null> {
 // Check user's notification settings
 async function checkNotificationSettings(): Promise<boolean> {
   try {
+    // Önce token kontrolü yap
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      console.log('🔒 Token bulunamadı, bildirim ayarları kontrol edilmiyor');
+      return false;
+    }
+
     const settings = await notificationService.getPushSettings();
     return settings.pushNotificationsEnabled;
   } catch (error) {
     console.error('Error checking notification settings:', error);
-    // Enable notifications by default in case of error
-    return true;
+    // Token yoksa veya hata varsa bildirimleri kapalı kabul et
+    return false;
   }
 }
 
@@ -112,19 +119,7 @@ export function initializePush(): void {
     return;
   }
 
-  // Check user's notification settings and configure OneSignal accordingly
-  checkNotificationSettings().then(enabled => {
-    if (enabled) {
-      // Request permission for iOS and Android 13+
-      try {
-        OneSignal.Notifications.requestPermission(true);
-        console.log('✅ OneSignal permission requested');
-      } catch (error) {
-        console.error('❌ OneSignal permission request failed:', error);
-      }
-    }
-  });
-
+  // Event listener'ları ekle ama permission request yapma
   OneSignal.Notifications.addEventListener(
     'foregroundWillDisplay',
     async (event: any) => {
@@ -178,15 +173,51 @@ export function initializePush(): void {
   
   // Try to get push token
   try {
-    if (OneSignal.User.pushSubscription.getToken) {
-      OneSignal.User.pushSubscription.getToken().then((token: any) => {
-        if (token) console.log('Push Token:', token);
+    if (OneSignal.User.pushSubscription) {
+      OneSignal.User.pushSubscription.getPushSubscriptionId().then((token: any) => {
+        console.log('OneSignal Push Token:', token);
       });
-    } else {
-      console.log('🔍 OneSignal.User.pushSubscription.getToken not available');
     }
   } catch (error) {
-    console.log('Error getting push token:', error);
+    console.log('OneSignal push token error:', error);
+  }
+}
+
+// Yeni fonksiyon: Login sonrası bildirim ayarlarını kontrol et ve permission request yap
+export async function configureNotificationsAfterLogin(): Promise<void> {
+  try {
+    console.log('🔔 Login sonrası bildirim ayarları kontrol ediliyor...');
+    
+    // Token kontrolü yap
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      console.log('🔒 Token bulunamadı, bildirim ayarları yapılandırılmıyor');
+      return;
+    }
+
+    // Kullanıcı bilgisi kontrolü yap
+    const userStr = await AsyncStorage.getItem('user');
+    if (!userStr) {
+      console.log('🔒 Kullanıcı bilgisi bulunamadı, bildirim ayarları yapılandırılmıyor');
+      return;
+    }
+    
+    // Kullanıcının bildirim ayarlarını kontrol et
+    const enabled = await checkNotificationSettings();
+    
+    if (enabled && OneSignal && OneSignal.Notifications) {
+      try {
+        // Permission request yap
+        const permission = await OneSignal.Notifications.requestPermission(true);
+        console.log('✅ OneSignal permission requested after login:', permission);
+      } catch (error) {
+        console.error('❌ OneSignal permission request failed after login:', error);
+      }
+    } else {
+      console.log('📱 Bildirimler kapalı veya OneSignal mevcut değil');
+    }
+  } catch (error) {
+    console.error('❌ Login sonrası bildirim ayarları kontrol hatası:', error);
   }
 }
 

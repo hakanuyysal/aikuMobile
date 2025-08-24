@@ -11,6 +11,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {Colors} from '../constants/colors';
 import metrics from '../constants/aikuMetric';
 import {storage} from '../storage/mmkv';
+import notificationService from '../services/notificationService';
 
 interface PushPermissionPromptProps {
   visible: boolean;
@@ -67,6 +68,16 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
         if (permission) {
           console.log('Push notification permission granted');
+          
+          // Database'de pushNotificationsEnabled'i true yap
+          try {
+            await notificationService.updatePushSettings(true);
+            console.log('✅ Database\'de pushNotificationsEnabled true yapıldı');
+          } catch (dbError) {
+            console.error('❌ Database güncelleme hatası:', dbError);
+            // Database hatası olsa bile devam et
+          }
+          
           // Save to storage to prevent showing again
           storage.set('pushPromptShown', true);
           storage.set('pushPermissionStatus', 'granted');
@@ -112,23 +123,40 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
     }
   };
 
-  const handleMaybeLater = () => {
+  const handleMaybeLater = async () => {
     // User selected "Maybe Later", show again after 3 days
     const nextShowTime = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 days
     storage.set('pushPromptNextShow', nextShowTime);
     storage.set('pushPermissionStatus', 'postponed');
     console.log('✅ "Maybe Later" seçildi, push prompt 3 gün sonra tekrar gösterilecek');
+    
+    // Database'de pushNotificationsEnabled'i false yap (kullanıcı şimdilik istemiyor)
+    try {
+      await notificationService.updatePushSettings(false);
+      console.log('✅ Database\'de pushNotificationsEnabled false yapıldı (Maybe Later)');
+    } catch (dbError) {
+      console.error('❌ Database güncelleme hatası:', dbError);
+    }
+    
     onPermissionDenied?.();
     onClose();
   };
 
-  const handleNeverAsk = () => {
+  const handleNeverAsk = async () => {
     // User selected "Don't Ask Again"
     storage.set('pushPromptShown', true);
     storage.set('pushPromptNeverAsk', true);
     storage.set('pushPermissionStatus', 'never');
-    storage.delete('pushPromptNextShow'); // Clear any scheduled next show time
     console.log('✅ "Don\'t Ask Again" seçildi, push prompt bir daha gösterilmeyecek');
+    
+    // Database'de pushNotificationsEnabled'i false yap (kullanıcı hiç istemiyor)
+    try {
+      await notificationService.updatePushSettings(false);
+      console.log('✅ Database\'de pushNotificationsEnabled false yapıldı (Never Ask)');
+    } catch (dbError) {
+      console.error('❌ Database güncelleme hatası:', dbError);
+    }
+    
     onPermissionDenied?.();
     onClose();
   };
