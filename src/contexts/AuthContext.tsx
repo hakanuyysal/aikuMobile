@@ -2,7 +2,7 @@ import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AuthService from '../services/AuthService';
 import RevenueCatService from '../services/RevenueCatService';
-import { configureNotificationsAfterLogin } from '../services/push/oneSignal';
+import { configureNotificationsAfterLogin, cleanupNotificationsOnLogout } from '../services/push/oneSignal';
 
 interface User {
   id: string;
@@ -137,6 +137,13 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const logout = async () => {
     try {
+      // Logout sonrası push token'ı temizle (YENİ EKLENEN KISIM)
+      try {
+        await cleanupNotificationsOnLogout();
+      } catch (error) {
+        console.log('⚠️ Push token temizleme hatası, devam ediliyor:', error);
+      }
+
       await AuthService.clearAuth();
       setUser(null);
       setToken(null);

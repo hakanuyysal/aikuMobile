@@ -18,6 +18,7 @@ try {
 import {ENV} from '../../config/env';
 import notificationService from '../notificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Platform} from 'react-native';
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
@@ -40,6 +41,25 @@ export async function getOneSignalPlayerId(): Promise<string | null> {
     return null;
   } catch (error) {
     console.error('Error getting OneSignal Player ID:', error);
+    return null;
+  }
+}
+
+// Get OneSignal push token
+export async function getOneSignalPushToken(): Promise<string | null> {
+  try {
+    if (OneSignal.User && OneSignal.User.pushSubscription) {
+      if (typeof OneSignal.User.pushSubscription.getPushSubscriptionId === 'function') {
+        const token = await OneSignal.User.pushSubscription.getPushSubscriptionId();
+        return token ?? null;
+      } else if (typeof OneSignal.User.pushSubscription.getId === 'function') {
+        const token = await OneSignal.User.pushSubscription.getId();
+        return token ?? null;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting OneSignal push token:', error);
     return null;
   }
 }
@@ -210,6 +230,11 @@ export async function configureNotificationsAfterLogin(): Promise<void> {
         // Permission request yap
         const permission = await OneSignal.Notifications.requestPermission(true);
         console.log('✅ OneSignal permission requested after login:', permission);
+        
+        // Push token'ı backend'e kaydet (YENİ EKLENEN KISIM)
+        if (permission) {
+          await savePushTokenToBackend();
+        }
       } catch (error) {
         console.error('❌ OneSignal permission request failed after login:', error);
       }
@@ -218,6 +243,81 @@ export async function configureNotificationsAfterLogin(): Promise<void> {
     }
   } catch (error) {
     console.error('❌ Login sonrası bildirim ayarları kontrol hatası:', error);
+  }
+}
+
+// Push token'ı backend'e kaydet
+async function savePushTokenToBackend(): Promise<void> {
+  try {
+    if (!OneSignal) {
+      console.log('❌ OneSignal mevcut değil, push token kaydedilemedi');
+      return;
+    }
+
+    // Player ID ve push token al
+    const playerId = await getOneSignalPlayerId();
+    const pushToken = await getOneSignalPushToken();
+
+    if (!playerId) {
+      console.log('❌ Player ID alınamadı, push token kaydedilemedi');
+      return;
+    }
+
+    if (!pushToken) {
+      console.log('❌ Push token alınamadı, push token kaydedilemedi');
+      return;
+    }
+
+    console.log('🔔 Push token backend\'e kaydediliyor...');
+    console.log('  - Player ID:', playerId);
+    console.log('  - Platform:', Platform.OS);
+    console.log('  - Push Token Length:', pushToken.length);
+
+    // Backend'e kaydet
+    const success = await notificationService.savePushToken(
+      playerId,
+      pushToken,
+      Platform.OS as 'ios' | 'android',
+      playerId // deviceId olarak playerId kullan
+    );
+
+    if (success) {
+      console.log('✅ Push token başarıyla backend\'e kaydedildi');
+    } else {
+      console.error('❌ Push token backend\'e kaydedilemedi');
+    }
+  } catch (error) {
+    console.error('❌ Push token kaydetme hatası:', error);
+  }
+}
+
+// Logout sonrası push token'ı temizle
+export async function cleanupNotificationsOnLogout(): Promise<void> {
+  try {
+    console.log('🧹 Logout sonrası push token temizleniyor...');
+    
+    if (!OneSignal) {
+      console.log('❌ OneSignal mevcut değil, temizlik yapılamadı');
+      return;
+    }
+
+    // Player ID al
+    const playerId = await getOneSignalPlayerId();
+    
+    if (playerId) {
+      // Backend'den push token'ı sil
+      const success = await notificationService.deletePushToken(playerId);
+      
+      if (success) {
+        console.log('✅ Push token başarıyla backend\'den silindi');
+      } else {
+        console.error('❌ Push token backend\'den silinemedi');
+      }
+    } else {
+      console.log('❌ Player ID bulunamadı, temizlik yapılamadı');
+    }
+  } catch (error) {
+    console.error('❌ Push token temizleme hatası:', error);
   }
 }
 
@@ -250,5 +350,19 @@ export async function testNotificationSettings(): Promise<{
   } catch (error) {
     console.error('Test error:', error);
     return {enabled: false, message: 'Error occurred during test'};
+  }
+}
+
+// Test push token kaydetme
+export async function testPushTokenSaving(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    await savePushTokenToBackend();
+    return {success: true, message: 'Push token kaydetme testi tamamlandı'};
+  } catch (error) {
+    console.error('Push token kaydetme testi hatası:', error);
+    return {success: false, message: 'Push token kaydetme testi başarısız'};
   }
 }

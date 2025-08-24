@@ -20,7 +20,7 @@ import metrics from '../../constants/aikuMetric';
 import AuthService from '../../services/AuthService';
 import notificationService from '../../services/notificationService';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateNotificationSettings, testNotificationSettings } from '../../services/push/oneSignal';
+import { updateNotificationSettings, testNotificationSettings, testPushTokenSaving } from '../../services/push/oneSignal';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../App';
 import BaseService from '../../api/BaseService'; // <= senin BaseService.ts
@@ -308,6 +308,28 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     }
   };
 
+  const handleTestPushToken = async () => {
+    try {
+      const result = await testPushTokenSaving();
+      Alert.alert('Push Token Testi', result.message);
+    } catch (error) {
+      Alert.alert('Hata', 'Push token testi sırasında bir hata oluştu');
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    try {
+      const success = await notificationService.sendTestNotification();
+      if (success) {
+        Alert.alert('Başarılı', 'Test bildirimi gönderildi!');
+      } else {
+        Alert.alert('Hata', 'Test bildirimi gönderilemedi');
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'Test bildirimi gönderilirken bir hata oluştu');
+    }
+  };
+
   if (loadingUser) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -349,6 +371,27 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     //   ),
     // },
     {
+      icon: 'bell-ring-outline',
+      title: 'Test Notifications',
+      subtitle: 'Test your notification settings',
+      gradient: ['#F59E0B', '#F97316'],
+      onPress: handleTestNotifications,
+    },
+    {
+      icon: 'key-variant',
+      title: 'Test Push Token',
+      subtitle: 'Test push token saving to backend',
+      gradient: ['#8B5CF6', '#7C3AED'],
+      onPress: handleTestPushToken,
+    },
+    {
+      icon: 'send',
+      title: 'Send Test Notification',
+      subtitle: 'Send a test push notification',
+      gradient: ['#06B6D4', '#0EA5E9'],
+      onPress: handleSendTestNotification,
+    },
+    {
       icon: 'email-edit-outline',
       title: 'Change Email',
       subtitle: currentEmail ? `Current: ${currentEmail}` : 'Update your email address',
@@ -381,13 +424,6 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       gradient: ['#6366F1', '#8B5CF6'],
       onPress: handleContactUs,
     },
-    // {
-    //   icon: 'bell-ring-outline',
-    //   title: 'Test Notifications',
-    //   subtitle: 'Test your notification settings',
-    //   gradient: ['#F59E0B', '#F97316'],
-    //   onPress: handleTestNotifications,
-    // },
   ];
 
   return (
