@@ -70,7 +70,7 @@ const HERO_HEIGHT = metrics.isTablet ? 240 : 180;
 const HomeScreen = (props: HomeScreenProps) => {
   const navigation = useNavigation<NavigationProp>();
   const [products, setProducts] = useState(PRODUCTS);
-  const [activeTab, setActiveTab] = useState<'pulse' | 'blog'>('pulse');
+  const [activeTab, setActiveTab] = useState<'pulse' | 'blog'>('blog');
   const [postHomeModalVisible, setPostHomeModalVisible] = useState(false);
   const [postHomeModalMessage, setPostHomeModalMessage] = useState<
     string | null
@@ -561,23 +561,23 @@ const HomeScreen = (props: HomeScreenProps) => {
             <TouchableOpacity
               style={[
                 styles.tabPill,
-                activeTab === 'pulse' ? styles.tabPillActive : styles.tabPillInactive,
-              ]}
-              onPress={() => setActiveTab('pulse')}>
-              <Text
-                style={styles.tabText}>
-                AI Pulse
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
                 activeTab === 'blog' ? styles.tabPillActive : styles.tabPillInactive,
               ]}
               onPress={() => setActiveTab('blog')}>
               <Text
                 style={styles.tabText}>
                 AI Blog
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabPill,
+                activeTab === 'pulse' ? styles.tabPillActive : styles.tabPillInactive,
+              ]}
+              onPress={() => setActiveTab('pulse')}>
+              <Text
+                style={styles.tabText}>
+                AI Pulse
               </Text>
             </TouchableOpacity>
           </View>

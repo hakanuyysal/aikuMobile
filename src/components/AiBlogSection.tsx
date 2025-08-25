@@ -65,7 +65,7 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
   const scrollOffset = useRef(0);
   const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
   const itemWidth = width - 90;
-  const scrollSpeed = 1.2;
+  const scrollSpeed = 0.8;
 
   const fetchBlogs = async () => {
     try {
@@ -108,10 +108,10 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
         });
       }
 
-      scrollAnimation.current = setTimeout(animateScroll, 16);
+      scrollAnimation.current = setTimeout(animateScroll, 25);
     };
 
-    scrollAnimation.current = setTimeout(animateScroll, 16);
+    scrollAnimation.current = setTimeout(animateScroll, 25);
 
     return () => {
       if (scrollAnimation.current) {
@@ -128,7 +128,24 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
   };
 
   const handleTouchEnd = () => {
-    setIsScrolling(true);
+    // Kullanıcı dokunma bittikten 2 saniye sonra otomatik kaydırmayı tekrar başlat
+    setTimeout(() => {
+      setIsScrolling(true);
+    }, 2000);
+  };
+
+  const handleScrollBeginDrag = () => {
+    setIsScrolling(false);
+    if (scrollAnimation.current) {
+      clearTimeout(scrollAnimation.current);
+    }
+  };
+
+  const handleScrollEndDrag = () => {
+    // Kullanıcı kaydırma bittikten 3 saniye sonra otomatik kaydırmayı tekrar başlat
+    setTimeout(() => {
+      setIsScrolling(true);
+    }, 3000);
   };
 
   return (
@@ -181,6 +198,8 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
                   showsHorizontalScrollIndicator={false}
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
+                  onScrollBeginDrag={handleScrollBeginDrag}
+                  onScrollEndDrag={handleScrollEndDrag}
                   renderItem={({ item }) => {
                     console.log('Blog item:', item);
                     return (
