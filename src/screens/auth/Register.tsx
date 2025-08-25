@@ -86,6 +86,17 @@ const Register = ({ navigation }: Props) => {
           style={styles.container}
           showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
+            {/* Back Button */}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}>
+              <Icon
+                name="arrow-back"
+                size={24}
+                color={Colors.lightText}
+              />
+            </TouchableOpacity>
+            
             <View style={styles.header}>
               <Text style={styles.title}>
                 Join the Future of AI Innovation!
@@ -252,7 +263,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-   content: {
+   backButton: {
+    position: 'absolute',
+    top: IS_TABLET ? metrics.margin.xl : metrics.margin.xs,
+    left: metrics.padding.lg,
+    zIndex: 10,
+    padding: metrics.margin.xs,
+    borderRadius: metrics.borderRadius.circle,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  content: {
     padding: metrics.padding.lg,
     alignItems: 'center',
   },
