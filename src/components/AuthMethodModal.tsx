@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Colors} from '../constants/colors';
@@ -134,7 +136,10 @@ const AuthMethodModal: React.FC<AuthMethodModalProps> = ({
       transparent
       animationType="fade"
       onRequestClose={handleClose}>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <View style={styles.modalContainer}>
           <View style={styles.iconContainer}>
             <MaterialCommunityIcons
@@ -194,7 +199,7 @@ const AuthMethodModal: React.FC<AuthMethodModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
