@@ -42,7 +42,7 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   };
 
   return (
-    <View style={[styles.outerContainer, {paddingBottom: insets.bottom}]}>
+    <View style={[styles.outerContainer, {paddingBottom: insets.bottom + (metrics.isTablet ? metrics.spacing.sm : 0)}]}>
       <LinearGradient
         colors={[
           'rgba(26, 30, 41, 0.03)',
@@ -56,12 +56,13 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
           {
             marginBottom: metrics.tabBar.marginBottom,
             paddingTop: metrics.spacing.md * -2,
+            marginTop: metrics.isTablet ? -metrics.spacing.lg : 0, // iPad için negatif margin top
           },
         ]}>
         <View
           style={[
             styles.container,
-            {paddingBottom: metrics.tabBar.paddingBottom},
+            {paddingBottom: metrics.tabBar.paddingBottom + (metrics.isTablet ? metrics.spacing.md : metrics.spacing.sm)},
           ]}>
           {state.routes.map((route: any, index: number) => {
             const {options} = descriptors[route.key];
