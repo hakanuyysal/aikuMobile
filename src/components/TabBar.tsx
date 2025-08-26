@@ -36,9 +36,9 @@ const TabBar: React.FC<TabBarProps> = ({state, descriptors, navigation}) => {
   const labelMap: Record<string, string> = {
     Home: 'Home',
     Map: 'Search',
-    Cart: 'Premium',
+    Cart: 'Subscriptions',
     Profile: 'Profile',
-    Message: 'Messages',
+    Message: 'Chat',
   };
 
   return (
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     width: metrics.WIDTH,
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 0 :22,
+    bottom: Platform.OS === 'ios' ? 5 : 22,
     left: 0,
     right: 0,
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   tab: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: metrics.spacing.xs,
+    padding: metrics.spacing.xxs,
   },
   activeIconContainer: {
     alignItems: 'center',
@@ -173,31 +173,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeGradient: {
-    width: metrics.tabBar.activeIconSize,
-    height: metrics.tabBar.activeIconSize,
-    borderRadius: metrics.tabBar.activeIconSize / 2,
+    width: metrics.tabBar.activeIconSize * 0.9,
+    height: metrics.tabBar.activeIconSize * 0.9,
+    borderRadius: (metrics.tabBar.activeIconSize * 0.9) / 2,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: metrics.spacing.xs,
     shadowColor: Colors.primary,
     shadowOffset: {
       width: 0,
-      height: 5,
+      height: 3,
     },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 6,
   },
   activeLabel: {
     color: Colors.primary,
-    fontSize: metrics.fontSize.xs,
+    fontSize: metrics.fontSize.xs * 0.9,
     fontWeight: '600',
-    marginTop: metrics.spacing.xs,
+    marginTop: metrics.spacing.xxs,
   },
   label: {
     color: Colors.inactive,
-    fontSize: metrics.fontSize.xs,
-    marginTop: metrics.spacing.xs,
+    fontSize: metrics.fontSize.xs * 0.9,
+    marginTop: metrics.spacing.xxs,
   },
 });
 
