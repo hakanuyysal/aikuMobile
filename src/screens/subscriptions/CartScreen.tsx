@@ -548,7 +548,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             By subscribing, you agree to our{' '}
             <Text
               style={styles.legalLink}
-              onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
+              onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
               Terms of Use
             </Text>{' '}
             and{' '}

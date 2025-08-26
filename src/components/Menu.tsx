@@ -317,7 +317,7 @@ const Menu: React.FC<MenuProps> = ({ onClose }) => {
                 <Text style={styles.brandText}>Aiku</Text>
                 <Text style={styles.versionText}>Version 1.0.0</Text>
                 <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: 8}}>
-                  <TouchableOpacity onPress={() => Linking.openURL('https://www.aikuaiplatform.com/terms')}>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
                     <Text style={{color: Colors.primary, textAlign: 'center', textDecorationLine: 'underline', fontSize: 13}}>
                       Terms of Service
                     </Text>

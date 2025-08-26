@@ -224,7 +224,7 @@ const Register = ({ navigation }: Props) => {
                   By continuing, you accept our{' '}
                   <Text
                     style={styles.privacyLink}
-                    onPress={() => Linking.openURL('https://www.aikuaiplatform.com/terms')}
+                    onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
                   >
                     Terms of Service
                   </Text>

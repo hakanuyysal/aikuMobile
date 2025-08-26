@@ -613,7 +613,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               By using our services, you agree to our{' '}
               <Text
                 style={styles.legalLink}
-                onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
+                onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
                 Terms of Use
               </Text>{' '}
               and{' '}
