@@ -614,7 +614,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               <Text
                 style={styles.legalLink}
                 onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
-                Terms of Service
+                Terms of Use
               </Text>{' '}
               and{' '}
               <Text
@@ -622,6 +622,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                 onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
                 Privacy Policy
               </Text>
+              . Subscriptions auto-renew unless cancelled.
             </Text>
           </View>
         </ScrollView>

@@ -394,6 +394,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
                 onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
                 Privacy Policy
               </Text>
+              . Subscriptions auto-renew unless cancelled.
             </Text>
         </View>
       </SafeAreaView>

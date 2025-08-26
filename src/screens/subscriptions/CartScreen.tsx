@@ -294,6 +294,9 @@ const PlanCard: React.FC<PlanProps> = ({
       <View style={{ flex: 1, paddingBottom: 64 }}>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subscriptionType}>
+          {isYearly ? 'Annual Subscription' : 'Monthly Subscription'}
+        </Text>
         <Text style={styles.price}>
           {isStartupPlan && showFreeTrial ? (
             <>
@@ -430,6 +433,7 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
               onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
               Privacy Policy
             </Text>
+            . Subscriptions auto-renew unless cancelled.
           </Text>
         </View>
       </SafeAreaView>
@@ -560,6 +564,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: metrics.margin.sm,
     color: Colors.lightText,
+  },
+  subscriptionType: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.primary,
+    fontWeight: '600',
+    marginBottom: metrics.margin.sm,
   },
   price: {
     fontSize: metrics.fontSize.xxxl,
