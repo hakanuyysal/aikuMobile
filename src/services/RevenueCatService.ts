@@ -18,6 +18,38 @@ try {
   };
 }
 
+// New interfaces for subscription management
+export interface Subscription {
+  _id: string;
+  plan: string;
+  period: string;
+  status: string;
+  startDate: string;
+  amount: number;
+  autoRenewal: boolean;
+  paymentMethod: string;
+  lastPaymentDate: string;
+  nextPaymentDate: string;
+  transactionId: string;
+  revenueCatProductId: string;
+  isActive: boolean;
+}
+
+export interface SubscriptionsResponse {
+  success: boolean;
+  subscriptions: Subscription[];
+  subscriptionCount: number;
+  activeSubscriptionCount: number;
+  message?: string;
+}
+
+export interface CancelSubscriptionResponse {
+  success: boolean;
+  message: string;
+  cancelledSubscription: Subscription;
+  remainingActiveCount: number;
+}
+
 class RevenueCatService {
   private baseURL: string;
 
@@ -377,6 +409,50 @@ class RevenueCatService {
       console.error('❌ RevenueCat status check hatası:', error);
       return null;
     }
+  }
+
+  // Kullanıcının tüm aboneliklerini getir
+  async getAllSubscriptions(): Promise<SubscriptionsResponse> {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(`${this.baseURL}/revenuecat/subscriptions`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Belirli bir aboneliği iptal et
+  async cancelSubscription(subscriptionId: string): Promise<CancelSubscriptionResponse> {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.delete(`${this.baseURL}/revenuecat/subscriptions/${subscriptionId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  private handleError(error: any) {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'An error occurred',
+        data: error.response?.data,
+      };
+    }
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred',
+    };
   }
 }
 
