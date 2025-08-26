@@ -80,6 +80,8 @@ const PlanCard: React.FC<PlanProps> = ({
   const [showFreeTrial, setShowFreeTrial] = useState(false);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [revenueCatPackages, setRevenueCatPackages] = useState<any[]>([]);
+  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const yearlyPrice = title === 'Business Plan' ? 809.99 : title === 'Investor Plan' ? 1000 : Math.floor(price * 12 * 0.9);
   const isStartupPlan = title === 'Startup Plan';
@@ -97,6 +99,37 @@ const PlanCard: React.FC<PlanProps> = ({
           console.error('❌ RevenueCat offerings boş! Dashboard\'da offerings kontrol edin.');
         } else {
           console.log('✅ RevenueCat offerings başarıyla yüklendi');
+        }
+
+        // Kullanıcının mevcut aboneliklerini kontrol et
+        try {
+          const subscriptionsResponse = await RevenueCatService.getAllSubscriptions();
+          if (subscriptionsResponse.success && subscriptionsResponse.subscriptions) {
+            const planName = title.toLowerCase().replace(' plan', '');
+            const planPeriod = isYearly ? 'yearly' : 'monthly';
+            
+            // Sadece bu plan ve periyot için aktif abonelik var mı kontrol et
+            const currentPlan = subscriptionsResponse.subscriptions.find(
+              (sub: any) => 
+                sub.plan === planName && 
+                sub.period === planPeriod && 
+                sub.status === 'active'
+            );
+            
+            if (currentPlan) {
+              setCurrentSubscription(currentPlan);
+              setHasActiveSubscription(true);
+              console.log(`✅ Aktif abonelik bulundu: ${planName} ${planPeriod}`);
+            } else {
+              setHasActiveSubscription(false);
+              setCurrentSubscription(null);
+              console.log(`❌ Aktif abonelik bulunamadı: ${planName} ${planPeriod}`);
+            }
+          }
+        } catch (error) {
+          console.log('Error fetching subscriptions:', error);
+          setHasActiveSubscription(false);
+          setCurrentSubscription(null);
         }
 
         // Startup plan için ücretsiz deneme kontrolü
@@ -143,7 +176,7 @@ const PlanCard: React.FC<PlanProps> = ({
     };
 
     initializePlan();
-  }, [isStartupPlan]);
+  }, [isStartupPlan, title, isYearly]);
 
   const inputRange = [
     (index - 1) * ITEM_TOTAL_WIDTH,
@@ -175,6 +208,42 @@ const PlanCard: React.FC<PlanProps> = ({
     inputRange,
     outputRange: [-15, 0, 15],
   });
+
+  const handleCancelSubscription = async () => {
+    if (!currentSubscription) return;
+    
+    Alert.alert(
+      'Cancel Subscription',
+      `Are you sure you want to cancel your ${title} subscription? This action cannot be undone.`,
+      [
+        {
+          text: 'No, Keep It',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const response = await RevenueCatService.cancelSubscription(currentSubscription._id);
+              if (response.success) {
+                Alert.alert('Success', 'Your subscription has been cancelled successfully.');
+                setHasActiveSubscription(false);
+                setCurrentSubscription(null);
+              } else {
+                Alert.alert('Error', response.message || 'Failed to cancel subscription');
+              }
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Failed to cancel subscription');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleGetStarted = async () => {
     try {
@@ -294,41 +363,78 @@ const PlanCard: React.FC<PlanProps> = ({
       <View style={{ flex: 1, paddingBottom: 64 }}>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subscriptionType}>
-          {isYearly ? 'Annual Subscription' : 'Monthly Subscription'}
-        </Text>
-        <Text style={styles.price}>
-          {isStartupPlan && showFreeTrial ? (
-            <>
-              <Text style={styles.originalPrice}>$49</Text>{' '}
-              <Text style={styles.newPrice}>$0</Text>
-            </>
-          ) : (
-            `$${isYearly ? yearlyPrice : price}`
-          )}
-          <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
-          {isYearly && <Text style={styles.discount}> (10% off)</Text>}
-        </Text>
-        {isStartupPlan && showFreeTrial && (
-          <Text  style={styles.trial}>⭐️ 6 month free trial!</Text>
+        {hasActiveSubscription ? (
+          // Aktif abonelik durumu
+          <>
+            <Text style={styles.subscriptionType}>
+              Active Subscription
+            </Text>
+            <Text style={styles.price}>
+              ${currentSubscription?.amount || price}
+              <Text style={styles.period}>/{currentSubscription?.period || (isYearly ? 'year' : 'month')}</Text>
+            </Text>
+            <Text style={styles.activeStatus}>
+              ✅ Currently Active
+            </Text>
+            <Text style={styles.nextPayment}>
+              Next Payment: {currentSubscription?.nextPaymentDate ? 
+                new Date(currentSubscription.nextPaymentDate).toLocaleDateString('en-US') : 
+                'N/A'
+              }
+            </Text>
+            {features.map((feature, idx) => (
+              <Text key={idx} style={styles.feature}>
+                • {feature}
+              </Text>
+            ))}
+          </>
+        ) : (
+          // Yeni abonelik durumu
+          <>
+            <Text style={styles.subscriptionType}>
+              {isYearly ? 'Annual Subscription' : 'Monthly Subscription'}
+            </Text>
+            <Text style={styles.price}>
+              {isStartupPlan && showFreeTrial ? (
+                <>
+                  <Text style={styles.originalPrice}>$49</Text>{' '}
+                  <Text style={styles.newPrice}>$0</Text>
+                </>
+              ) : (
+                `$${isYearly ? yearlyPrice : price}`
+              )}
+              <Text style={styles.period}>/{isYearly ? 'year' : 'month'}</Text>
+              {isYearly && <Text style={styles.discount}> (10% off)</Text>}
+            </Text>
+            {isStartupPlan && showFreeTrial && (
+              <Text  style={styles.trial}>⭐️ 6 month free trial!</Text>
+            )}
+            {isYearly && title !== 'Startup Plan' && (
+              <Text style={styles.trial}>+3 months free with annual plan!</Text>
+            )}
+            {features.map((feature, idx) => (
+              <Text key={idx} style={styles.feature}>
+                • {feature}
+              </Text>
+            ))}
+          </>
         )}
-        {isYearly && title !== 'Startup Plan' && (
-          <Text style={styles.trial}>+3 months free with annual plan!</Text>
-        )}
-        {features.map((feature, idx) => (
-          <Text key={idx} style={styles.feature}>
-            • {feature}
-          </Text>
-        ))}
       </View>
       <TouchableOpacity
-        style={[styles.button, styles.absoluteButton, (loading || isStatusLoading) && styles.buttonDisabled]}
-        onPress={handleGetStarted}
+        style={[
+          styles.button, 
+          styles.absoluteButton, 
+          (loading || isStatusLoading) && styles.buttonDisabled,
+          hasActiveSubscription && styles.cancelButton
+        ]}
+        onPress={hasActiveSubscription ? handleCancelSubscription : handleGetStarted}
         disabled={loading || isStatusLoading}>
         {loading || isStatusLoading ? (
           <ActivityIndicator color={Colors.lightText} />
         ) : (
-          <Text style={styles.buttonText}>Get Started</Text>
+          <Text style={styles.buttonText}>
+            {hasActiveSubscription ? 'Cancel Subscription' : 'Get Started'}
+          </Text>
         )}
       </TouchableOpacity>
     </Animated.View>
@@ -655,6 +761,20 @@ const styles = StyleSheet.create({
   legalLink: {
     color: Colors.primary,
     textDecorationLine: 'underline',
+  },
+  activeStatus: {
+    fontSize: metrics.fontSize.sm,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginBottom: metrics.margin.sm,
+  },
+  nextPayment: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.inactive,
+    marginBottom: metrics.margin.sm,
+  },
+  cancelButton: {
+    backgroundColor: Colors.error,
   },
 });
 
