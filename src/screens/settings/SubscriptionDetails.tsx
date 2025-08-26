@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Switch,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
@@ -26,6 +28,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [togglingRenewal, setTogglingRenewal] = useState<string | null>(null);
 
   const getPlanName = (plan: string) => {
     const planMap = {
@@ -147,6 +150,29 @@ const SubscriptionDetails = ({navigation}: Props) => {
         },
       ],
     );
+  };
+
+  const handleToggleAutoRenewal = async (subscription: Subscription) => {
+    setTogglingRenewal(subscription._id);
+    try {
+      const response = await RevenueCatService.toggleAutoRenewal(subscription._id);
+      if (response.success) {
+        // Update local state immediately for better UX
+        setSubscriptions(prevSubscriptions => 
+          prevSubscriptions.map(sub => 
+            sub._id === subscription._id 
+              ? { ...sub, autoRenewal: !sub.autoRenewal }
+              : sub
+          )
+        );
+      } else {
+        Alert.alert('Error', response.message || 'Failed to toggle auto-renewal');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to toggle auto-renewal');
+    } finally {
+      setTogglingRenewal(null);
+    }
   };
 
   if (loading) {
@@ -310,17 +336,22 @@ const SubscriptionDetails = ({navigation}: Props) => {
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Auto Renewal:</Text>
-                <View style={styles.statusContainer}>
-                  <MaterialCommunityIcons
-                    name={
-                      subscription.autoRenewal ? 'check-circle' : 'close-circle'
-                    }
-                    size={16}
-                    color={subscription.autoRenewal ? '#4CAF50' : '#FF5722'}
-                  />
-                  <Text style={[styles.infoValue, {marginLeft: 4}]}>
+                <View style={styles.toggleContainer}>
+                  <Text style={[styles.infoValue, {marginRight: 8}]}>
                     {subscription.autoRenewal ? 'Enabled' : 'Disabled'}
                   </Text>
+                  <Switch
+                    trackColor={{false: Colors.inactive, true: '#4CAF50'}}
+                    thumbColor={Colors.lightText}
+                    ios_backgroundColor={Colors.inactive}
+                    onValueChange={() => handleToggleAutoRenewal(subscription)}
+                    value={subscription.autoRenewal}
+                    disabled={togglingRenewal === subscription._id || (subscription.status !== 'active' && subscription.status !== 'trial')}
+                    style={Platform.select({
+                      ios: {transform: [{scale: 0.8}]},
+                      android: {transform: [{scale: 0.9}]},
+                    })}
+                  />
                 </View>
               </View>
 
@@ -331,7 +362,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
                 </Text>
               </View>
 
-              {subscription.status === 'active' && (
+              {(subscription.status === 'active' || subscription.status === 'trial') && (
                 <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={() => handleCancelSubscription(subscription)}
@@ -406,6 +437,10 @@ const styles = StyleSheet.create({
     fontSize: metrics.fontSize.sm,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   infoRow: {
     flexDirection: 'row',

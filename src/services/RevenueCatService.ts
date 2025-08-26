@@ -441,6 +441,21 @@ class RevenueCatService {
     }
   }
 
+  // Auto-renewal toggle
+  async toggleAutoRenewal(subscriptionId: string): Promise<any> {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.patch(`${this.baseURL}/revenuecat/subscriptions/${subscriptionId}/renewal/toggle`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
   private handleError(error: any) {
     if (axios.isAxiosError(error)) {
       return {
