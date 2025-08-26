@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -11,20 +11,21 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
-  Linking
+  Linking,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import IoniconsIcon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { Colors } from '../../constants/colors';
+import {Colors} from '../../constants/colors';
 import metrics from '../../constants/aikuMetric';
 import AuthService from '../../services/AuthService';
 import notificationService from '../../services/notificationService';
-import { useAuth } from '../../contexts/AuthContext';
-import { updateNotificationSettings } from '../../services/push/oneSignal';
+import {useAuth} from '../../contexts/AuthContext';
+import {updateNotificationSettings} from '../../services/push/oneSignal';
 // import { testNotificationSettings, testPushTokenSaving } from '../../services/push/oneSignal';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../../App';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '../../../App';
 import BaseService from '../../api/BaseService'; // <= senin BaseService.ts
 
 type SettingsScreenNavigationProp = StackNavigationProp<
@@ -36,35 +37,41 @@ interface SettingsProps {
   navigation: SettingsScreenNavigationProp;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 const IS_TABLET = (metrics?.isTablet ?? false) || SCREEN_WIDTH >= 768;
-const MAX_CONTENT_WIDTH = IS_TABLET ? Math.min(SCREEN_WIDTH * 0.80, 720) : SCREEN_WIDTH;
+const MAX_CONTENT_WIDTH = IS_TABLET
+  ? Math.min(SCREEN_WIDTH * 0.8, 720)
+  : SCREEN_WIDTH;
 
 const TITLE_FS_T = metrics.fontSize.xl;
 const HEADER_PV_T = metrics.spacing.md;
 const ICON_BOX_T = Math.round(metrics.rem * 44);
 const ICON_SIZE_T = Math.round(metrics.rem * 26);
 
-const Settings: React.FC<SettingsProps> = ({ navigation }) => {
+const Settings: React.FC<SettingsProps> = ({navigation}) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   // const [chatNotificationsEnabled, setChatNotificationsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const { updateUser: setUserInContext } = useAuth();
+  const {updateUser: setUserInContext} = useAuth();
 
   const [loadingUser, setLoadingUser] = useState(true);
   const [currentEmail, setCurrentEmail] = useState('');
-  const [authProvider, setAuthProvider] = useState<'email' | 'google' | 'linkedin' | string>('email');
-  const [accountStatus, setAccountStatus] = useState<'active' | 'deactivated'>('active');
+  const [authProvider, setAuthProvider] = useState<
+    'email' | 'google' | 'linkedin' | string
+  >('email');
+  const [accountStatus, setAccountStatus] = useState<'active' | 'deactivated'>(
+    'active',
+  );
 
   // email değişim state
   const [newEmail, setNewEmail] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [emailBusy, setEmailBusy] = useState(false);
-  const [emailMsg, setEmailMsg] = useState<{ ok?: string; err?: string }>({});
+  const [emailMsg, setEmailMsg] = useState<{ok?: string; err?: string}>({});
 
   // şifre değişim state
   const [curPwd, setCurPwd] = useState('');
@@ -119,21 +126,21 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const handleNotificationToggle = async (value: boolean) => {
     try {
       setIsLoading(true);
-      
+
       // Database'de push notification ayarlarını güncelle
       await notificationService.updatePushSettings(value);
       setNotificationsEnabled(value);
-      
+
       // OneSignal ayarlarını da güncelle
       await updateNotificationSettings(value);
-      
+
       // Eski API ile de uyumluluk için güncelle
       try {
-        await BaseService.updateUser({ acceptChatNotification: value });
+        await BaseService.updateUser({acceptChatNotification: value});
       } catch (e) {
         console.log('Eski API güncelleme hatası (önemli değil):', e);
       }
-      
+
       console.log('✅ Notification ayarları başarıyla güncellendi:', value);
     } catch (error) {
       console.error('Notification ayarı güncellenirken hata:', error);
@@ -168,14 +175,31 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
+      {text: 'Cancel', style: 'cancel'},
       {
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
           try {
+            // console.log('🧹 Storage temizleme başlatılıyor...');
+
+            // AsyncStorage temizleme (onboarding hariç)
+            const keys = await AsyncStorage.getAllKeys();
+            const keysToRemove = keys.filter(
+              key => !key.includes('onboarding'),
+            );
+            if (keysToRemove.length > 0) {
+              await AsyncStorage.multiRemove(keysToRemove);
+            }
+
+            // MMKV storage temizleme
+            const {storage} = await import('../../storage/mmkv');
+            storage.clearAll();
+
+            // Navigation için AuthService logout
             await AuthService.logout(navigation);
-            setUserInContext?.({} as any);
+
+            console.log('✅ Logout tamamlandı');
           } catch (error) {
             Alert.alert('Error', 'An error occurred while logging out.');
           }
@@ -197,26 +221,30 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   // Email change
   const sendCode = async () => {
-    setEmailBusy(true); setEmailMsg({});
+    setEmailBusy(true);
+    setEmailMsg({});
     try {
       await BaseService.requestEmailChange(newEmail);
       setCodeSent(true);
-      setEmailMsg({ ok: 'Verification code sent to your new email.' });
+      setEmailMsg({ok: 'Verification code sent to your new email.'});
     } catch (e: any) {
-      setEmailMsg({ err: e.message || 'Failed to send verification code.' });
+      setEmailMsg({err: e.message || 'Failed to send verification code.'});
     } finally {
       setEmailBusy(false);
     }
   };
 
   const confirmCode = async () => {
-    setEmailBusy(true); setEmailMsg({});
+    setEmailBusy(true);
+    setEmailMsg({});
     try {
       await BaseService.confirmEmailChange(verificationCode);
-      setEmailMsg({ ok: 'Email updated successfully.' });
-      setNewEmail(''); setVerificationCode(''); setCodeSent(false);
+      setEmailMsg({ok: 'Email updated successfully.'});
+      setNewEmail('');
+      setVerificationCode('');
+      setCodeSent(false);
     } catch (e: any) {
-      setEmailMsg({ err: e.message || 'Invalid or expired code.' });
+      setEmailMsg({err: e.message || 'Invalid or expired code.'});
     } finally {
       setEmailBusy(false);
     }
@@ -225,17 +253,21 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   // Password change
   const changePassword = async () => {
     if (!curPwd) return Alert.alert('Missing', 'Current password is required.');
-    if (newPwd.length < 8) return Alert.alert('Weak password', 'Use at least 8 characters.');
-    if (newPwd !== cnfPwd) return Alert.alert('Mismatch', 'Passwords do not match.');
+    if (newPwd.length < 8)
+      return Alert.alert('Weak password', 'Use at least 8 characters.');
+    if (newPwd !== cnfPwd)
+      return Alert.alert('Mismatch', 'Passwords do not match.');
 
     setPwdBusy(true);
     try {
       const res = await BaseService.changePassword(curPwd, newPwd, cnfPwd);
       if (res?.success) {
         Alert.alert('Success', 'Password updated. Please sign in again.', [
-          { text: 'OK', onPress: () => handleLogout() },
+          {text: 'OK', onPress: () => handleLogout()},
         ]);
-        setCurPwd(''); setNewPwd(''); setCnfPwd('');
+        setCurPwd('');
+        setNewPwd('');
+        setCnfPwd('');
       } else {
         Alert.alert('Error', res?.message || 'Failed to change password.');
       }
@@ -248,32 +280,42 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   // Deactivate / Reactivate
   const deactivate = async () => {
-    Alert.alert('Deactivate', 'Are you sure you want to deactivate your account?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Yes', style: 'destructive', onPress: async () => {
-          setBusy(true);
-          try {
-            await BaseService.updateUser({ accountStatus: 'deactivated' });
-            setAccountStatus('deactivated');
-            Alert.alert('Done', 'Your account has been deactivated.');
-          } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to deactivate.');
-          } finally { setBusy(false); }
-        }
-      },
-    ]);
+    Alert.alert(
+      'Deactivate',
+      'Are you sure you want to deactivate your account?',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await BaseService.updateUser({accountStatus: 'deactivated'});
+              setAccountStatus('deactivated');
+              Alert.alert('Done', 'Your account has been deactivated.');
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Failed to deactivate.');
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const reactivate = async () => {
     setBusy(true);
     try {
-      await BaseService.updateUser({ accountStatus: 'active' });
+      await BaseService.updateUser({accountStatus: 'active'});
       setAccountStatus('active');
       Alert.alert('Done', 'Your account has been reactivated.');
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to reactivate.');
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   // Delete account
@@ -282,18 +324,24 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       'Delete Account',
       'This action is irreversible. Do you want to continue?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {text: 'Cancel', style: 'cancel'},
         {
-          text: 'Delete', style: 'destructive', onPress: async () => {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
             setBusy(true);
             try {
-              await BaseService.deleteAccount(authProvider === 'email' ? deletePwd : undefined);
+              await BaseService.deleteAccount(
+                authProvider === 'email' ? deletePwd : undefined,
+              );
               Alert.alert('Deleted', 'Your account has been deleted.');
               await AuthService.logout(navigation);
             } catch (e: any) {
               Alert.alert('Error', e.message || 'Failed to delete account.');
-            } finally { setBusy(false); }
-          }
+            } finally {
+              setBusy(false);
+            }
+          },
         },
       ],
     );
@@ -334,7 +382,11 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 
   if (loadingUser) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
         <ActivityIndicator />
       </View>
     );
@@ -351,7 +403,7 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
         <Switch
           value={notificationsEnabled}
           onValueChange={handleNotificationToggle}
-          trackColor={{ false: Colors.border, true: Colors.primary }}
+          trackColor={{false: Colors.border, true: Colors.primary}}
           ios_backgroundColor={Colors.border}
           disabled={isLoading || isInitialLoading}
         />
@@ -396,7 +448,9 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     {
       icon: 'email-edit-outline',
       title: 'Change Email',
-      subtitle: currentEmail ? `Current: ${currentEmail}` : 'Update your email address',
+      subtitle: currentEmail
+        ? `Current: ${currentEmail}`
+        : 'Update your email address',
       gradient: ['#06B6D4', '#0EA5E9'],
     },
     {
@@ -406,11 +460,18 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       gradient: ['#10B981', '#059669'],
     },
     {
-      icon: accountStatus === 'active' ? 'account-off-outline' : 'account-check-outline',
-      title: accountStatus === 'active' ? 'Deactivate Account' : 'Reactivate Account',
-      subtitle: accountStatus === 'active'
-        ? 'Temporarily disable your account'
-        : 'Bring your account back',
+      icon:
+        accountStatus === 'active'
+          ? 'account-off-outline'
+          : 'account-check-outline',
+      title:
+        accountStatus === 'active'
+          ? 'Deactivate Account'
+          : 'Reactivate Account',
+      subtitle:
+        accountStatus === 'active'
+          ? 'Temporarily disable your account'
+          : 'Bring your account back',
       gradient: ['#F59E0B', '#F97316'],
     },
     {
@@ -432,25 +493,41 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
     <LinearGradient
       colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
       locations={[0, 0.3, 0.6, 0.9]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 2, y: 1 }}
+      start={{x: 0, y: 0}}
+      end={{x: 2, y: 1}}
       style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <IoniconsIcon name="chevron-back" size={24} color={Colors.lightText} />
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <IoniconsIcon
+              name="chevron-back"
+              size={24}
+              color={Colors.lightText}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
           <View style={styles.addButton} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}>
           <View style={styles.menuContainer}>
             {/* Kartlar */}
             {settingsItems.map((item, index) => (
               <View key={index} style={styles.menuItem}>
-                <LinearGradient colors={item.gradient} style={styles.menuItemIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                  <MaterialCommunityIcons name={item.icon as any} size={IS_TABLET ? ICON_SIZE_T : 24} color="#FFF" />
+                <LinearGradient
+                  colors={item.gradient}
+                  style={styles.menuItemIcon}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 1}}>
+                  <MaterialCommunityIcons
+                    name={item.icon as any}
+                    size={IS_TABLET ? ICON_SIZE_T : 24}
+                    color="#FFF"
+                  />
                 </LinearGradient>
 
                 <View style={styles.menuItemContent}>
@@ -458,105 +535,131 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                   <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
 
                   {/* --- Change Email formu (inline) --- */}
-                  {item.title === 'Change Email' && authProvider === 'email' && (
-                    <View style={{ marginTop: metrics.margin.md }}>
-                      <TextInput
-                        placeholder="New email"
-                        placeholderTextColor="#aaa"
-                        value={newEmail}
-                        onChangeText={setNewEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        style={styles.input}
-                      />
-                      <View style={{ gap: 10 }}>
-                        <TouchableOpacity
-                          style={styles.smallBtn}
-                          onPress={sendCode}
-                          disabled={emailBusy || !newEmail}>
-                          <Text style={styles.smallBtnText}>
-                            {emailBusy && !codeSent ? 'Sending…' : 'Send Code'}
-                          </Text>
-                        </TouchableOpacity>
+                  {item.title === 'Change Email' &&
+                    authProvider === 'email' && (
+                      <View style={{marginTop: metrics.margin.md}}>
+                        <TextInput
+                          placeholder="New email"
+                          placeholderTextColor="#aaa"
+                          value={newEmail}
+                          onChangeText={setNewEmail}
+                          autoCapitalize="none"
+                          keyboardType="email-address"
+                          style={styles.input}
+                        />
+                        <View style={{gap: 10}}>
+                          <TouchableOpacity
+                            style={styles.smallBtn}
+                            onPress={sendCode}
+                            disabled={emailBusy || !newEmail}>
+                            <Text style={styles.smallBtnText}>
+                              {emailBusy && !codeSent
+                                ? 'Sending…'
+                                : 'Send Code'}
+                            </Text>
+                          </TouchableOpacity>
 
-                        {codeSent && (
-                          <View style={styles.verifyBlock}>
-                            <TextInput
-                              placeholder="6-digit code"
-                              placeholderTextColor="#aaa"
-                              value={verificationCode}
-                              onChangeText={setVerificationCode}
-                              keyboardType="number-pad"
-                              maxLength={6}
-                              style={styles.input}
-                            />
-                            <TouchableOpacity
-                              style={[styles.smallBtn, { alignSelf: 'flex-start' }]}
-                              onPress={confirmCode}
-                              disabled={emailBusy || verificationCode.length !== 6}>
-                              <Text style={styles.smallBtnText}>
-                                {emailBusy ? 'Verifying…' : 'Verify'}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
+                          {codeSent && (
+                            <View style={styles.verifyBlock}>
+                              <TextInput
+                                placeholder="6-digit code"
+                                placeholderTextColor="#aaa"
+                                value={verificationCode}
+                                onChangeText={setVerificationCode}
+                                keyboardType="number-pad"
+                                maxLength={6}
+                                style={styles.input}
+                              />
+                              <TouchableOpacity
+                                style={[
+                                  styles.smallBtn,
+                                  {alignSelf: 'flex-start'},
+                                ]}
+                                onPress={confirmCode}
+                                disabled={
+                                  emailBusy || verificationCode.length !== 6
+                                }>
+                                <Text style={styles.smallBtnText}>
+                                  {emailBusy ? 'Verifying…' : 'Verify'}
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
+
+                        {!!emailMsg.ok && (
+                          <Text style={{color: '#22c55e', marginTop: 6}}>
+                            {emailMsg.ok}
+                          </Text>
+                        )}
+                        {!!emailMsg.err && (
+                          <Text style={{color: '#ef4444', marginTop: 6}}>
+                            {emailMsg.err}
+                          </Text>
                         )}
                       </View>
-
-                      {!!emailMsg.ok && <Text style={{ color: '#22c55e', marginTop: 6 }}>{emailMsg.ok}</Text>}
-                      {!!emailMsg.err && <Text style={{ color: '#ef4444', marginTop: 6 }}>{emailMsg.err}</Text>}
-                    </View>
-                  )}
+                    )}
 
                   {/* --- Change Password formu (inline) --- */}
-                  {item.title === 'Change Password' && authProvider === 'email' && (
-                    <View style={{ marginTop: metrics.margin.md }}>
-                      <TextInput
-                        placeholder="Current password"
-                        placeholderTextColor="#aaa"
-                        value={curPwd}
-                        onChangeText={setCurPwd}
-                        secureTextEntry
-                        style={styles.input}
-                      />
-                      <TextInput
-                        placeholder="New password"
-                        placeholderTextColor="#aaa"
-                        value={newPwd}
-                        onChangeText={setNewPwd}
-                        secureTextEntry
-                        style={styles.input}
-                      />
-                      <TextInput
-                        placeholder="Confirm new password"
-                        placeholderTextColor="#aaa"
-                        value={cnfPwd}
-                        onChangeText={setCnfPwd}
-                        secureTextEntry
-                        style={styles.input}
-                      />
-                      <TouchableOpacity style={styles.smallBtn} onPress={changePassword} disabled={pwdBusy || !curPwd || !newPwd || !cnfPwd}>
-                        <Text style={styles.smallBtnText}>{pwdBusy ? 'Changing…' : 'Change Password'}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                  {item.title === 'Change Password' &&
+                    authProvider === 'email' && (
+                      <View style={{marginTop: metrics.margin.md}}>
+                        <TextInput
+                          placeholder="Current password"
+                          placeholderTextColor="#aaa"
+                          value={curPwd}
+                          onChangeText={setCurPwd}
+                          secureTextEntry
+                          style={styles.input}
+                        />
+                        <TextInput
+                          placeholder="New password"
+                          placeholderTextColor="#aaa"
+                          value={newPwd}
+                          onChangeText={setNewPwd}
+                          secureTextEntry
+                          style={styles.input}
+                        />
+                        <TextInput
+                          placeholder="Confirm new password"
+                          placeholderTextColor="#aaa"
+                          value={cnfPwd}
+                          onChangeText={setCnfPwd}
+                          secureTextEntry
+                          style={styles.input}
+                        />
+                        <TouchableOpacity
+                          style={styles.smallBtn}
+                          onPress={changePassword}
+                          disabled={pwdBusy || !curPwd || !newPwd || !cnfPwd}>
+                          <Text style={styles.smallBtnText}>
+                            {pwdBusy ? 'Changing…' : 'Change Password'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
 
                   {/* --- Deactivate/Reactivate butonu --- */}
-                  {(item.title === 'Deactivate Account' || item.title === 'Reactivate Account') && (
+                  {(item.title === 'Deactivate Account' ||
+                    item.title === 'Reactivate Account') && (
                     <TouchableOpacity
-                      style={[styles.actionBtn, { marginTop: metrics.margin.md }]}
-                      onPress={accountStatus === 'active' ? deactivate : reactivate}
+                      style={[styles.actionBtn, {marginTop: metrics.margin.md}]}
+                      onPress={
+                        accountStatus === 'active' ? deactivate : reactivate
+                      }
                       disabled={busy}
-                      activeOpacity={0.8}
-                    >
+                      activeOpacity={0.8}>
                       <Text style={styles.actionBtnText}>
-                        {accountStatus === 'active' ? 'Deactivate Account' : 'Reactivate Account'}
+                        {accountStatus === 'active'
+                          ? 'Deactivate Account'
+                          : 'Reactivate Account'}
                       </Text>
                     </TouchableOpacity>
                   )}
 
                   {/* --- Delete Account için password + buton --- */}
                   {item.title === 'Delete My Account' && (
-                    <View style={{ marginTop: metrics.margin.md }}>
+                    <View style={{marginTop: metrics.margin.md}}>
                       {authProvider === 'email' && (
                         <TextInput
                           placeholder="Type your password to confirm"
@@ -568,39 +671,56 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
                         />
                       )}
                       <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
+                        style={[styles.actionBtn, {backgroundColor: '#ef4444'}]}
                         onPress={deleteAccount}
-                        disabled={busy || (authProvider === 'email' && !deletePwd)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.actionBtnText}>Delete My Account</Text>
+                        disabled={
+                          busy || (authProvider === 'email' && !deletePwd)
+                        }
+                        activeOpacity={0.8}>
+                        <Text style={styles.actionBtnText}>
+                          Delete My Account
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   )}
                 </View>
 
-                {item.rightElement
-                  ? item.rightElement
-                  : item.onPress
-                    ? (
-                      <TouchableOpacity
-                        style={styles.menuItemArrow}
-                        onPress={item.onPress}
-                        activeOpacity={0.7}>
-                        <MaterialCommunityIcons name="chevron-right" size={24} color={Colors.primary} />
-                      </TouchableOpacity>
-                    )
-                    : null}
-
+                {item.rightElement ? (
+                  item.rightElement
+                ) : item.onPress ? (
+                  <TouchableOpacity
+                    style={styles.menuItemArrow}
+                    onPress={item.onPress}
+                    activeOpacity={0.7}>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={24}
+                      color={Colors.primary}
+                    />
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ))}
           </View>
 
           <View style={styles.logoutContainer}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8} disabled={busy}>
-              <LinearGradient colors={['#FF4B4B', '#FF0000']} style={styles.logoutGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+              disabled={busy}>
+              <LinearGradient
+                colors={['#FF4B4B', '#FF0000']}
+                style={styles.logoutGradient}
+                start={{x: 0, y: 0}}
+                end={{x: 1, y: 1}}>
                 <View style={styles.logoutContent}>
-                  <MaterialCommunityIcons name="logout" size={22} color={Colors.lightText} style={styles.logoutIcon} />
+                  <MaterialCommunityIcons
+                    name="logout"
+                    size={22}
+                    color={Colors.lightText}
+                    style={styles.logoutIcon}
+                  />
                   <Text style={styles.logoutText}>Logout</Text>
                 </View>
               </LinearGradient>
@@ -613,13 +733,19 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               By using our services, you agree to our{' '}
               <Text
                 style={styles.legalLink}
-                onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                onPress={() =>
+                  Linking.openURL(
+                    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                  )
+                }>
                 Terms of Use
               </Text>{' '}
               and{' '}
               <Text
                 style={styles.legalLink}
-                onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
+                onPress={() =>
+                  Linking.openURL('https://aikuaiplatform.com/privacy-policy')
+                }>
                 Privacy Policy
               </Text>
               . Subscriptions auto-renew unless cancelled.
@@ -632,8 +758,8 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1 },
+  container: {flex: 1},
+  safeArea: {flex: 1},
 
   // HEADER
   header: {
@@ -745,7 +871,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     fontSize: IS_TABLET ? metrics.fontSize.sm : metrics.fontSize.sm,
   },
-  verifyBlock: { gap: 8 },
+  verifyBlock: {gap: 8},
 
   actionBtn: {
     backgroundColor: Colors.primary,
@@ -770,15 +896,15 @@ const styles = StyleSheet.create({
     width: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
-  logoutButton: { width: '100%' },
-  logoutGradient: { borderRadius: metrics.borderRadius.lg, overflow: 'hidden' },
+  logoutButton: {width: '100%'},
+  logoutGradient: {borderRadius: metrics.borderRadius.lg, overflow: 'hidden'},
   logoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: IS_TABLET ? metrics.padding.md : metrics.padding.md,
   },
-  logoutIcon: { marginRight: metrics.margin.sm },
+  logoutIcon: {marginRight: metrics.margin.sm},
   logoutText: {
     fontSize: IS_TABLET ? metrics.fontSize.lg : metrics.fontSize.lg,
     fontWeight: '600',
@@ -802,6 +928,5 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
-
 
 export default Settings;
