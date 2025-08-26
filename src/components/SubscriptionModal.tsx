@@ -132,6 +132,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
                   Privacy Policy
                 </Text>
+                {' '}
+                and{' '}
+                <Text
+                  style={styles.legalLink}
+                  onPress={() => Linking.openURL('https://support.apple.com/en-us/HT202039')}>
+                  Subscription Terms
+                </Text>
                 . Subscriptions auto-renew unless cancelled.
               </Text>
             </View>
