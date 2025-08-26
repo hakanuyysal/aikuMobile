@@ -9,6 +9,7 @@ import {
   Alert,
   Switch,
   Platform,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../../constants/colors';
@@ -377,6 +378,24 @@ const SubscriptionDetails = ({navigation}: Props) => {
             </View>
           ))}
         </ScrollView>
+
+        {/* Legal Links */}
+        <View style={styles.legalContainer}>
+                      <Text style={styles.legalText}>
+              By using our services, you agree to our{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
+                Terms of Use
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
+                Privacy Policy
+              </Text>
+            </Text>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -470,6 +489,22 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontSize: metrics.fontSize.md,
     fontWeight: '600',
+  },
+  legalContainer: {
+    paddingHorizontal: metrics.padding.lg,
+    paddingBottom: metrics.padding.sm,
+    marginTop: metrics.margin.md,
+    alignItems: 'center',
+  },
+  legalText: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  legalLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
 });
 

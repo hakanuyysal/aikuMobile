@@ -10,7 +10,8 @@ import {
   SafeAreaView,
   TextInput,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  Linking
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import IoniconsIcon from 'react-native-vector-icons/Ionicons';
@@ -605,6 +606,24 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
               </LinearGradient>
             </TouchableOpacity>
           </View>
+
+          {/* Legal Links */}
+          <View style={styles.legalContainer}>
+            <Text style={styles.legalText}>
+              By using our services, you agree to our{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
+                Privacy Policy
+              </Text>
+            </Text>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -764,6 +783,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.lightText,
     letterSpacing: 0.5,
+  },
+  legalContainer: {
+    paddingHorizontal: IS_TABLET ? metrics.padding.lg : metrics.padding.lg,
+    paddingBottom: metrics.padding.sm,
+    alignItems: 'center',
+    marginTop: metrics.margin.md,
+  },
+  legalText: {
+    fontSize: IS_TABLET ? metrics.fontSize.sm : metrics.fontSize.sm,
+    color: Colors.lightText,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  legalLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
 });
 

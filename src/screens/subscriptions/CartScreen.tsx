@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
+  Linking,
 } from 'react-native';
 import { Colors } from '../../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -411,6 +412,25 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
               })}
             </Animated.ScrollView>
           </View>
+
+        </View>
+
+        {/* Legal Links */}
+        <View style={styles.legalContainer}>
+          <Text style={styles.legalText}>
+            By subscribing, you agree to our{' '}
+            <Text
+              style={styles.legalLink}
+              onPress={() => Linking.openURL('https://aikuaiplatform.com/terms')}>
+              Terms of Use
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.legalLink}
+              onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
+              Privacy Policy
+            </Text>
+          </Text>
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -522,7 +542,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: metrics.scale(20),
     elevation: 15,
-    height: metrics.getHeightPercentage(52),
+    height: metrics.getHeightPercentage(45),
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     borderWidth: 1,
@@ -609,6 +629,22 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
+  },
+  legalContainer: {
+    paddingHorizontal: metrics.padding.xl,
+    paddingBottom: metrics.padding.xxl *2,
+    marginTop: metrics.margin.md,
+    alignItems: 'center',
+  },
+  legalText: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  legalLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
 });
 
