@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  SafeAreaView,
+  Linking,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import metrics from '../constants/aikuMetric';
@@ -84,7 +84,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </View>
                   </View>
                 </View>
-                
+
                 <View style={styles.detailRow}>
                   <View style={styles.detailItem}>
                     <View style={styles.detailBackground}>
@@ -99,7 +99,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </View>
                   </View>
                 </View>
-                
+
                 <View style={styles.detailRow}>
                   <View style={styles.detailItem}>
                     <View style={styles.detailBackground}>
@@ -117,6 +117,25 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </View>
             )}
 
+            {/* Legal Links */}
+            <View style={styles.legalContainer}>
+              <Text style={styles.legalText}>
+                By subscribing, you agree to our{' '}
+                <Text
+                  style={styles.legalLink}
+                  onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                  Terms of Use
+                </Text>{' '}
+                and{' '}
+                <Text
+                  style={styles.legalLink}
+                  onPress={() => Linking.openURL('https://aikuaiplatform.com/privacy-policy')}>
+                  Privacy Policy
+                </Text>
+                . Subscriptions auto-renew unless cancelled.
+              </Text>
+            </View>
+
             {/* Buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -124,7 +143,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 onPress={onClose}>
                 <Text style={styles.cancelButtonText}>{cancelText}</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.button, styles.confirmButton]}
                 onPress={onConfirm}>
@@ -148,18 +167,26 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: metrics.getWidthPercentage(85),
     maxWidth: 350,
-    maxHeight: '70%',
+    maxHeight: '85%',
   },
   modalContent: {
     backgroundColor: Colors.cardBackground,
     borderRadius: metrics.borderRadius.xl,
-    padding: metrics.padding.lg,
+    padding: metrics.padding.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
+    elevation: 8,
   },
   header: {
     alignItems: 'center',
-    marginBottom: metrics.margin.md,
+    marginBottom: metrics.margin.sm,
   },
   iconContainer: {
     width: 50,
@@ -180,6 +207,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: metrics.margin.md,
+    marginTop: metrics.margin.md,
   },
   button: {
     flex: 1,
@@ -206,11 +234,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   detailsContainer: {
-    marginBottom: metrics.margin.lg,
+    marginBottom: metrics.margin.md,
   },
   detailRow: {
     flexDirection: 'row',
-    marginBottom: metrics.margin.sm,
+    marginBottom: metrics.margin.xs,
     gap: metrics.margin.sm,
   },
   detailItem: {
@@ -218,10 +246,10 @@ const styles = StyleSheet.create({
   },
   detailBackground: {
     backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    borderRadius: metrics.borderRadius.sm,
+    padding: metrics.padding.sm,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   detailLabel: {
     fontSize: metrics.fontSize.sm,
@@ -236,9 +264,9 @@ const styles = StyleSheet.create({
   },
   importantInfoContainer: {
     backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    borderRadius: metrics.borderRadius.md,
-    padding: metrics.padding.md,
-    marginBottom: metrics.margin.lg,
+    borderRadius: metrics.borderRadius.sm,
+    padding: metrics.padding.sm,
+    marginBottom: metrics.margin.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 193, 7, 0.3)',
   },
@@ -248,6 +276,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
     fontWeight: '500',
+  },
+  legalContainer: {
+    marginTop: metrics.margin.sm,
+    marginBottom: metrics.margin.xs,
+    padding: metrics.padding.xs,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: metrics.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  legalText: {
+    fontSize: metrics.fontSize.xs,
+    color: Colors.lightText,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  legalLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
 });
 
