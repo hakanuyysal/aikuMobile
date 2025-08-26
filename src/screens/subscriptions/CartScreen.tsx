@@ -384,25 +384,14 @@ const PlanCard: React.FC<PlanProps> = ({
               }
             </Text>
             
-            {/* Subscription Details Link - Sadece aktif abonelik gösterilirken */}
-            {hasActiveSubscription && (
-              <TouchableOpacity
-                style={styles.subscriptionDetailsLink}
-                onPress={() => navigation.navigate('SubscriptionDetails')}>
-                <Text style={styles.subscriptionDetailsText}>
-                  Manage Subscription
-                </Text>
-              </TouchableOpacity>
-            )}
+
             
-            {/* Aktif abonelik için 2x2 grid */}
-            <View style={styles.featuresGrid}>
+            {/* Aktif abonelik için alt alta liste */}
+            <View style={styles.activeFeaturesList}>
               {features.map((feature, idx) => (
-                <View key={idx} style={styles.featureGridItem}>
-                  <Text style={styles.featureGridText}>
-                    • {feature}
-                  </Text>
-                </View>
+                <Text key={idx} style={styles.activeFeatureText}>
+                  • {feature}
+                </Text>
               ))}
             </View>
           </>
@@ -443,15 +432,15 @@ const PlanCard: React.FC<PlanProps> = ({
                 styles.button, 
                 styles.absoluteButton, 
                 (loading || isStatusLoading) && styles.buttonDisabled,
-                hasActiveSubscription && styles.cancelButton
+
               ]}
-              onPress={hasActiveSubscription ? handleCancelSubscription : handleGetStarted}
+              onPress={hasActiveSubscription ? () => navigation.navigate('SubscriptionDetails') : handleGetStarted}
               disabled={loading || isStatusLoading}>
               {loading || isStatusLoading ? (
                 <ActivityIndicator color={Colors.lightText} />
               ) : (
                 <Text style={styles.buttonText}>
-                  {hasActiveSubscription ? 'Cancel Subscription' : 'Get Started'}
+                  {hasActiveSubscription ? 'Manage Subscription' : 'Get Started'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -827,8 +816,17 @@ const styles = StyleSheet.create({
     marginBottom: metrics.margin.sm,
   },
   featureGridText: {
+    fontSize: metrics.fontSize.xs *0,
+    color: Colors.lightText,
+    lineHeight: 16,
+  },
+  activeFeaturesList: {
+    marginTop: metrics.margin.md,
+  },
+  activeFeatureText: {
     fontSize: metrics.fontSize.sm,
     color: Colors.lightText,
+    marginBottom: metrics.margin.xs,
     lineHeight: 18,
   },
 });
