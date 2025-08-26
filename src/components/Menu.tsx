@@ -21,6 +21,7 @@ import metrics from '../constants/aikuMetric';
 import { useProfileStore } from '../store/profileStore';
 import AuthService from '../services/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RevenueCatService from '../services/RevenueCatService';
 
 interface MenuProps {
   onClose: () => void;
@@ -60,38 +61,52 @@ const Menu: React.FC<MenuProps> = ({ onClose }) => {
         }
       }
 
-      // Fetch subscription
+      // Fetch subscription using RevenueCatService
       try {
-        const token = await AsyncStorage.getItem('token');
-        console.log('SUBSCRIPTION TOKEN:', token ? 'Token exists' : 'No token found');
-        if (!token) {
-          throw new Error('No auth token found');
-        }
-
-        const response = await fetch('https://api.aikuaiplatform.com/api/subscriptions/my-subscription', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('SUBSCRIPTION RESPONSE:', JSON.stringify(data, null, 2));
+        const subscriptionsResponse = await RevenueCatService.getAllSubscriptions();
+        console.log('REVENUECAT SUBSCRIPTIONS RESPONSE:', JSON.stringify(subscriptionsResponse, null, 2));
+        
         if (isMounted) {
-          if (
-            data?.success &&
-            data.data?.isSubscriptionActive &&
-            data.data?.planDetails?.name &&
-            typeof data.data.planDetails.name === 'string'
-          ) {
-            console.log('Setting planName to:', data.data.planDetails.name);
-            setPlanName(data.data.planDetails.name);
+          if (subscriptionsResponse.success && subscriptionsResponse.data?.subscriptions) {
+            const subscriptions = subscriptionsResponse.data.subscriptions || subscriptionsResponse.subscriptions || [];
+            
+            // Find the most recent active subscription
+            const activeSubscriptions = subscriptions.filter((sub: any) => {
+              // Consider subscription active if:
+              // 1. status is 'active' OR
+              // 2. isActive is true and end date hasn't passed
+              if (sub.status === 'active') return true;
+              
+              if (sub.isActive) {
+                const endDate = new Date(sub.nextPaymentDate || sub.startDate);
+                const now = new Date();
+                return endDate > now;
+              }
+              
+              return false;
+            });
+            
+            if (activeSubscriptions.length > 0) {
+              // Get the most recent active subscription
+              const currentSubscription = activeSubscriptions[activeSubscriptions.length - 1];
+              
+              // Convert plan name to display format
+              const planMap = {
+                startup: 'Startup Plan',
+                business: 'Business Plan',
+                investor: 'Investor Plan',
+              };
+              
+              const displayPlanName = planMap[currentSubscription.plan as keyof typeof planMap] || currentSubscription.plan;
+              console.log('Setting planName to:', displayPlanName);
+              setPlanName(displayPlanName);
+            } else {
+              console.warn('No active subscription found');
+              setPlanName('No Subscription');
+              setErrorMessage('No Subscription');
+            }
           } else {
-            console.warn('No active subscription or invalid response:', data);
+            console.warn('No subscriptions or invalid response:', subscriptionsResponse);
             setPlanName('No Subscription');
             setErrorMessage('No Subscription');
           }
