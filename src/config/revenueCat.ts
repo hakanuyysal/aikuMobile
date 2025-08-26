@@ -81,13 +81,13 @@ export const planFeatures = {
     'AI discovery',
     'API integrations',
     'Exclusive tools',
-    'Chat with all companies',
+    'Chat with companies',
   ],
   investor: [
     'AI startup deal flow',
     'Analytics',
     'AI-powered investment insights',
-    'Chat with all companies',
+    'Chat with companies',
   ],
 };
 

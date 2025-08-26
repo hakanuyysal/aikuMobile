@@ -345,21 +345,22 @@ const PlanCard: React.FC<PlanProps> = ({
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.planCard,
-        {
-          width: CARD_WIDTH,
-          transform: [
-            { scale },
-            { rotateY },
-            { translateY },
-            { translateX },
-            { perspective: 1500 },
-          ],
-          opacity,
-        },
-      ]}>
+          <Animated.View
+        style={[
+          styles.planCard,
+          hasActiveSubscription && styles.activePlanCard,
+          {
+            width: CARD_WIDTH,
+            transform: [
+              { scale },
+              { rotateY },
+              { translateY },
+              { translateX },
+              { perspective: 1500 },
+            ],
+            opacity,
+          },
+        ]}>
       <View style={{ flex: 1, paddingBottom: 64 }}>
         <Text style={styles.subtitle}>{subtitle}</Text>
         <Text style={styles.title}>{title}</Text>
@@ -382,11 +383,28 @@ const PlanCard: React.FC<PlanProps> = ({
                 'N/A'
               }
             </Text>
-            {features.map((feature, idx) => (
-              <Text key={idx} style={styles.feature}>
-                • {feature}
-              </Text>
-            ))}
+            
+            {/* Subscription Details Link - Sadece aktif abonelik gösterilirken */}
+            {hasActiveSubscription && (
+              <TouchableOpacity
+                style={styles.subscriptionDetailsLink}
+                onPress={() => navigation.navigate('SubscriptionDetails')}>
+                <Text style={styles.subscriptionDetailsText}>
+                  Manage Subscription
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            {/* Aktif abonelik için 2x2 grid */}
+            <View style={styles.featuresGrid}>
+              {features.map((feature, idx) => (
+                <View key={idx} style={styles.featureGridItem}>
+                  <Text style={styles.featureGridText}>
+                    • {feature}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </>
         ) : (
           // Yeni abonelik durumu
@@ -420,23 +438,23 @@ const PlanCard: React.FC<PlanProps> = ({
           </>
         )}
       </View>
-      <TouchableOpacity
-        style={[
-          styles.button, 
-          styles.absoluteButton, 
-          (loading || isStatusLoading) && styles.buttonDisabled,
-          hasActiveSubscription && styles.cancelButton
-        ]}
-        onPress={hasActiveSubscription ? handleCancelSubscription : handleGetStarted}
-        disabled={loading || isStatusLoading}>
-        {loading || isStatusLoading ? (
-          <ActivityIndicator color={Colors.lightText} />
-        ) : (
-          <Text style={styles.buttonText}>
-            {hasActiveSubscription ? 'Cancel Subscription' : 'Get Started'}
-          </Text>
-        )}
-      </TouchableOpacity>
+                  <TouchableOpacity
+              style={[
+                styles.button, 
+                styles.absoluteButton, 
+                (loading || isStatusLoading) && styles.buttonDisabled,
+                hasActiveSubscription && styles.cancelButton
+              ]}
+              onPress={hasActiveSubscription ? handleCancelSubscription : handleGetStarted}
+              disabled={loading || isStatusLoading}>
+              {loading || isStatusLoading ? (
+                <ActivityIndicator color={Colors.lightText} />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {hasActiveSubscription ? 'Cancel Subscription' : 'Get Started'}
+                </Text>
+              )}
+            </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -660,6 +678,18 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.cardBackground}dd`,
     paddingBottom: 64,
   },
+  activePlanCard: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: metrics.scale(20),
+    elevation: 25,
+  },
   subtitle: {
     color: Colors.inactive,
     fontSize: metrics.fontSize.sm,
@@ -775,6 +805,31 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: Colors.error,
+  },
+  subscriptionDetailsLink: {
+    alignItems: 'center',
+    paddingVertical: metrics.padding.sm,
+  },
+  subscriptionDetailsText: {
+    color: Colors.primary,
+    fontSize: metrics.fontSize.sm,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: metrics.margin.sm,
+  },
+  featureGridItem: {
+    width: '48%',
+    marginBottom: metrics.margin.sm,
+  },
+  featureGridText: {
+    fontSize: metrics.fontSize.sm,
+    color: Colors.lightText,
+    lineHeight: 18,
   },
 });
 
