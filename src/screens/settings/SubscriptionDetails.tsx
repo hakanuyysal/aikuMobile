@@ -6,8 +6,6 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
-  Switch,
-  Platform,
   Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -16,59 +14,60 @@ import metrics from '../../constants/aikuMetric';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../App';
-import BaseService from '../../services/BaseService';
-import { useFocusEffect } from '@react-navigation/native';
+import RevenueCatService, {
+  Subscription,
+} from '../../services/RevenueCatService';
+import {useFocusEffect} from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionDetails'>;
 
 const SubscriptionDetails = ({navigation}: Props) => {
-  const [isAutoRenewalEnabled, setIsAutoRenewalEnabled] = useState(true);
-  const [planInfo, setPlanInfo] = useState<any>(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingAutoRenewal, setUpdatingAutoRenewal] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
-  const getPlanFeatures = (plan: string) => {
-    switch (plan) {
-      case 'startup':
-        return [
-          'List AI solutions',
-          'Get investor access',
-          'Use premium AI tools',
-          'Chat with businesses and investors',
-        ];
-      case 'business':
-        return [
-          'AI discovery',
-          'API integrations',
-          'Exclusive tools',
-          'Chat with all companies',
-        ];
-      case 'investor':
-        return [
-          'AI startup deal flow',
-          'Analytics',
-          'AI-powered investment insights',
-          'Chat with all companies',
-        ];
-      default:
-        return [
-          'List AI solutions',
-          'Get investor access',
-          'Use premium AI tools',
-        ];
-    }
-  };
-
-  const getPlanName = (plan) => {
-    if (!plan) return 'No Subscription';
+  const getPlanName = (plan: string) => {
     const planMap = {
       startup: 'Startup Plan',
       business: 'Business Plan',
       investor: 'Investor Plan',
     };
-    return planMap[plan] || plan;
+    return planMap[plan as keyof typeof planMap] || plan;
+  };
+
+  const getPeriodName = (period: string) => {
+    const periodMap = {
+      monthly: 'Monthly',
+      yearly: 'Yearly',
+    };
+    return periodMap[period as keyof typeof periodMap] || period;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return '#4CAF50';
+      case 'cancelled':
+        return '#FF5722';
+      case 'expired':
+        return '#FF9800';
+      default:
+        return Colors.lightText;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'cancelled':
+        return 'Cancelled';
+      case 'expired':
+        return 'Expired';
+      default:
+        return status;
+    }
   };
 
   React.useLayoutEffect(() => {
@@ -78,54 +77,38 @@ const SubscriptionDetails = ({navigation}: Props) => {
   }, [navigation]);
 
   React.useEffect(() => {
-    fetchData();
+    fetchSubscriptions();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchData();
-    }, [])
+      fetchSubscriptions();
+    }, []),
   );
 
-  const fetchData = async () => {
+  const fetchSubscriptions = async () => {
     setLoading(true);
     setError(null);
     try {
-      const user = await BaseService.getCurrentUser();
-      console.log('Kullanıcı verisi:', user);
-      if (user.user) {
-        setPlanInfo(user.user);
-        setIsAutoRenewalEnabled(!!user.user.autoRenewal);
-      } else if (user.subscription) {
-        setPlanInfo(user.subscription);
-        setIsAutoRenewalEnabled(!!user.subscription.autoRenewal);
+      const response = await RevenueCatService.getAllSubscriptions();
+      if (response.success) {
+        setSubscriptions(response.subscriptions);
       } else {
-        setPlanInfo(user);
-        setIsAutoRenewalEnabled(!!user.autoRenewal);
+        setError(response.message || 'Failed to fetch subscriptions');
       }
     } catch (err: any) {
-      setError(err?.message || 'Bir hata oluştu');
+      setError(err?.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAutoRenewalToggle = async (value: boolean) => {
-    setUpdatingAutoRenewal(true);
-    try {
-      await BaseService.toggleAutoRenewal(value);
-      setIsAutoRenewalEnabled(value);
-    } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Auto-renewal could not be updated');
-    } finally {
-      setUpdatingAutoRenewal(false);
-    }
-  };
-
-  const handleCancelSubscription = () => {
+  const handleCancelSubscription = (subscription: Subscription) => {
     Alert.alert(
       'Cancel Subscription',
-      'Are you sure you want to cancel your subscription? This action cannot be undone.',
+      `Are you sure you want to cancel your ${getPlanName(
+        subscription.plan,
+      )} subscription? This action cannot be undone.`,
       [
         {
           text: 'No, Keep It',
@@ -135,15 +118,30 @@ const SubscriptionDetails = ({navigation}: Props) => {
           text: 'Yes, Cancel',
           style: 'destructive',
           onPress: async () => {
-            setCancelling(true);
+            setCancelling(subscription._id);
             try {
-              await BaseService.cancelSubscription();
-              Alert.alert('Success', 'Your subscription has been cancelled.');
-              fetchData();
+              const response = await RevenueCatService.cancelSubscription(
+                subscription._id,
+              );
+              if (response.success) {
+                Alert.alert(
+                  'Success',
+                  'Your subscription has been cancelled successfully.',
+                );
+                fetchSubscriptions();
+              } else {
+                Alert.alert(
+                  'Error',
+                  response.message || 'Failed to cancel subscription',
+                );
+              }
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Subscription could not be cancelled');
+              Alert.alert(
+                'Error',
+                err?.message || 'Failed to cancel subscription',
+              );
             } finally {
-              setCancelling(false);
+              setCancelling(null);
             }
           },
         },
@@ -153,34 +151,30 @@ const SubscriptionDetails = ({navigation}: Props) => {
 
   if (loading) {
     return (
-      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-        <Text style={{color:'#fff'}}>Yükleniyor...</Text>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: '#fff'}}>Loading...</Text>
       </View>
     );
   }
+
   if (error) {
     return (
-      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-        <Text style={{color:'red'}}>{error}</Text>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: 'red'}}>{error}</Text>
       </View>
     );
   }
 
   // Abonelik yoksa özel ekran
-  if (
-    !planInfo ||
-    !planInfo.subscriptionStatus ||
-    planInfo.subscriptionStatus === 'inactive' ||
-    planInfo.subscriptionStatus === 'canceled'
-  ) {
+  if (!subscriptions || subscriptions.length === 0) {
     return (
       <LinearGradient
         colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
         locations={[0, 0.3, 0.6, 0.9]}
         start={{x: 0, y: 0}}
         end={{x: 2, y: 1}}
-        style={{flex:1}}>
-        <SafeAreaView style={{flex:1}}>
+        style={{flex: 1}}>
+        <SafeAreaView style={{flex: 1}}>
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
@@ -193,21 +187,35 @@ const SubscriptionDetails = ({navigation}: Props) => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Subscription Details</Text>
           </View>
-          <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-            <Text style={{color:'#fff', fontSize:16, fontWeight:'500', marginBottom:16, textAlign:'center'}}>You do not have any subscription.</Text>
+          <View
+            style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: 16,
+                fontWeight: '500',
+                marginBottom: 16,
+                textAlign: 'center',
+              }}>
+              You don't have any subscriptions yet.
+            </Text>
             <TouchableOpacity
-              style={{backgroundColor: Colors.primary, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 32}}
-              onPress={() => navigation.navigate('Cart')}
-            >
-              <Text style={{color:'#fff', fontSize:18, fontWeight:'bold'}}>Subscribe Now</Text>
+              style={{
+                backgroundColor: Colors.primary,
+                borderRadius: 24,
+                paddingVertical: 14,
+                paddingHorizontal: 32,
+              }}
+              onPress={() => navigation.navigate('Cart')}>
+              <Text style={{color: '#fff', fontSize: 18, fontWeight: 'bold'}}>
+                Subscribe Now
+              </Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </LinearGradient>
     );
   }
-
-  const dynamicPlanFeatures = getPlanFeatures(planInfo?.subscriptionPlan);
 
   return (
     <LinearGradient
@@ -230,90 +238,113 @@ const SubscriptionDetails = ({navigation}: Props) => {
           <Text style={styles.headerTitle}>Subscription Details</Text>
         </View>
         <ScrollView style={styles.content}>
-          {/* Plan Information Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Plan Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Status:</Text>
-              <View style={styles.statusContainer}>
-                <MaterialCommunityIcons
-                  name={planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? 'check-circle' : 'close-circle'}
-                  size={20}
-                  color={planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? '#4CAF50' : 'red'}
-                />
-                <Text style={[styles.infoValue, planInfo?.subscriptionStatus === 'active' || planInfo?.subscriptionStatus === 'trial' ? styles.activeText : {color:'red'}]}>
-                  {planInfo?.subscriptionStatus === 'active' ? 'Active' : 
-                   planInfo?.subscriptionStatus === 'trial' ? 'Trial' :
-                   (planInfo?.subscriptionStatus ? planInfo.subscriptionStatus.charAt(0).toUpperCase() + planInfo.subscriptionStatus.slice(1) : 'Inactive')}
+          {subscriptions.map((subscription) => (
+            <View key={subscription._id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>
+                  {getPlanName(subscription.plan)}
+                </Text>
+                <View style={styles.statusContainer}>
+                  <MaterialCommunityIcons
+                    name={
+                      subscription.status === 'active'
+                        ? 'check-circle'
+                        : 'close-circle'
+                    }
+                    size={20}
+                    color={getStatusColor(subscription.status)}
+                  />
+                  <Text
+                    style={[
+                      styles.statusText,
+                      {color: getStatusColor(subscription.status)},
+                    ]}>
+                    {getStatusText(subscription.status)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Plan:</Text>
+                <Text style={styles.infoValue}>
+                  {getPlanName(subscription.plan)}
                 </Text>
               </View>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Start Date:</Text>
-              <Text style={styles.infoValue}>{planInfo?.subscriptionStartDate ? new Date(planInfo.subscriptionStartDate).toLocaleDateString() : '-'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Auto Renewal:</Text>
-              <View style={styles.toggleContainer}>
-                <Text style={[styles.infoValue, {marginRight: 8}]}>
-                  {isAutoRenewalEnabled ? 'Enabled' : 'Disabled'}
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Period:</Text>
+                <Text style={styles.infoValue}>
+                  {getPeriodName(subscription.period)}
                 </Text>
-                <Switch
-                  trackColor={{false: Colors.inactive, true: '#4CAF50'}}
-                  thumbColor={Colors.lightText}
-                  ios_backgroundColor={Colors.inactive}
-                  onValueChange={handleAutoRenewalToggle}
-                  value={isAutoRenewalEnabled}
-                  disabled={updatingAutoRenewal}
-                  style={Platform.select({
-                    ios: {transform: [{scale: 0.8}]},
-                    android: {transform: [{scale: 0.9}]},
-                  })}
-                />
               </View>
-            </View>
-          </View>
 
-          {/* Payment Information Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Payment Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Payment Method:</Text>
-              <Text style={styles.infoValue}>{planInfo?.paymentMethod || '-'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Last Payment Date:</Text>
-              <Text style={styles.infoValue}>{planInfo?.lastPaymentDate ? new Date(planInfo.lastPaymentDate).toLocaleDateString() : '-'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Subscription Plan:</Text>
-              <Text style={styles.infoValue}>{planInfo?.subscriptionPlan || '-'}</Text>
-            </View>
-          </View>
-
-          {/* Features Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Plan Features</Text>
-            {dynamicPlanFeatures.map((feature, index) => (
-              <View key={index} style={styles.featureRow}>
-                <MaterialCommunityIcons
-                  name="check"
-                  size={20}
-                  color={Colors.primary}
-                />
-                <Text style={styles.featureText}>{feature}</Text>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Amount:</Text>
+                <Text style={styles.infoValue}>${subscription.amount}</Text>
               </View>
-            ))}
-          </View>
 
-          {/* Cancel Button */}
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancelSubscription}
-            disabled={cancelling}
-          >
-            <Text style={styles.cancelButtonText}>{cancelling ? 'Cancelling...' : 'Cancel Subscription'}</Text>
-          </TouchableOpacity>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Start Date:</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(subscription.startDate).toLocaleDateString('en-US')}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Last Payment:</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(subscription.lastPaymentDate).toLocaleDateString(
+                    'en-US',
+                  )}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Next Payment:</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(subscription.nextPaymentDate).toLocaleDateString(
+                    'en-US',
+                  )}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Auto Renewal:</Text>
+                <View style={styles.statusContainer}>
+                  <MaterialCommunityIcons
+                    name={
+                      subscription.autoRenewal ? 'check-circle' : 'close-circle'
+                    }
+                    size={16}
+                    color={subscription.autoRenewal ? '#4CAF50' : '#FF5722'}
+                  />
+                  <Text style={[styles.infoValue, {marginLeft: 4}]}>
+                    {subscription.autoRenewal ? 'Enabled' : 'Disabled'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Payment Method:</Text>
+                <Text style={styles.infoValue}>
+                  {subscription.paymentMethod}
+                </Text>
+              </View>
+
+              {subscription.status === 'active' && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancelSubscription(subscription)}
+                  disabled={cancelling === subscription._id}>
+                  <Text style={styles.cancelButtonText}>
+                    {cancelling === subscription._id
+                      ? 'Cancelling...'
+                      : 'Cancel Subscription'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -356,11 +387,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: metrics.margin.md,
+  },
   cardTitle: {
     fontSize: metrics.fontSize.xl,
     fontWeight: 'bold',
     color: Colors.lightText,
-    marginBottom: metrics.margin.md,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: metrics.fontSize.sm,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   infoRow: {
     flexDirection: 'row',
@@ -378,35 +423,13 @@ const styles = StyleSheet.create({
     color: Colors.lightText,
     fontWeight: '500',
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  activeText: {
-    color: '#4CAF50',
-    marginLeft: 4,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: metrics.margin.sm,
-  },
-  featureText: {
-    fontSize: metrics.fontSize.md,
-    color: Colors.lightText,
-    marginLeft: metrics.margin.sm,
-  },
   cancelButton: {
     backgroundColor: Colors.error,
-    borderRadius: metrics.borderRadius.lg,
-    padding: metrics.padding.md,
+    borderRadius: metrics.borderRadius.md,
+    paddingVertical: metrics.padding.sm,
+    paddingHorizontal: metrics.padding.lg,
     alignItems: 'center',
-    marginTop: metrics.margin.sm,
-    marginBottom: metrics.margin.lg,
+    marginTop: metrics.margin.md,
   },
   cancelButtonText: {
     color: Colors.lightText,
