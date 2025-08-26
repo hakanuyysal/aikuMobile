@@ -177,7 +177,7 @@ const PlanCard: React.FC<PlanProps> = ({
           setCurrentSubscription(null);
         }
 
-        // Free trial check for Startup plan
+        // Free trial check for Startup plan (sadece görsel için)
         if (!isStartupPlan) {
           setIsStatusLoading(false);
           return;
@@ -281,23 +281,27 @@ const PlanCard: React.FC<PlanProps> = ({
     console.log('Looking for package:', planKey, 'Found:', packageToPurchase ? 'Yes' : 'No');
     console.log('Available packages:', revenueCatPackages.map(p => p.identifier));
 
-    // Free trial için modal
-    if (showFreeTrial) {
+    // RevenueCat ile satın alma için modal
+    if (packageToPurchase) {
+      const priceText = isYearly ? `$${yearlyPrice}/year` : `$${price}/month`;
+      
       setModalConfig({
-        title: 'Startup Plan Free Trial',
-        confirmText: 'Start Free Trial',
-        isFreeTrial: true,
+        title: 'Confirm Subscription',
+        confirmText: 'Subscribe',
+        isFreeTrial: false,
         planDetails: {
           plan: title,
-          price: 'FREE',
+          price: priceText,
           billing: isYearly ? 'Yearly' : 'Monthly',
-          autoRenewal: 'Disabled during trial',
+          autoRenewal: 'Enabled',
           cancelAnytime: 'Yes',
-          nextBilling: '6 months',
+          nextBilling: isYearly ? '1 year' : '1 month',
         },
       });
       setShowModal(true);
-      return;
+    } else {
+      console.error('❌ RevenueCat paketi bulunamadı:', planKey);
+      console.log('Error', 'Selected plan not found. Please try again.');
     }
 
     // RevenueCat ile satın alma için modal
@@ -347,52 +351,21 @@ const PlanCard: React.FC<PlanProps> = ({
         planKey
       );
 
-      if (modalConfig.isFreeTrial) {
-        // Free trial işlemi
-        const payload = {
-          amount: 0,
-          description: 'Startup Plan 6 month free trial',
-          planName: title,
-          billingCycle: isYearly ? 'yearly' : 'monthly',
-          originalPrice: price,
-          isFirstPayment: true,
-          paymentDate: new Date().toISOString(),
-        };
-        console.log('🆓 Free trial payload:', payload);
-        const token = await AsyncStorage.getItem('token');
-        console.log('Token being sent:', token);
-        await axios.post(
-          'https://api.aikuaiplatform.com/api/payments/record-free-payment',
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        console.log('✅ Free trial saved successfully!');
-        navigation.navigate('PaymentSuccess', {
-          message: `${title} free trial activated successfully!`,
-        });
-      } else {
-        // RevenueCat satın alma işlemi
-        if (packageToPurchase) {
-          console.log('🛒 Starting RevenueCat purchase:', packageToPurchase.identifier);
-          const result = await RevenueCatService.purchasePackage(packageToPurchase);
-          
-          if (result.success) {
-            console.log('✅ RevenueCat purchase successful:', result.customerInfo);
-            navigation.navigate('PaymentSuccess', {
-              message: `${title} activated successfully!`,
-            });
-          } else {
-            throw new Error('Purchase failed');
-          }
+      // RevenueCat satın alma işlemi
+      if (packageToPurchase) {
+        console.log('🛒 Starting RevenueCat purchase:', packageToPurchase.identifier);
+        const result = await RevenueCatService.purchasePackage(packageToPurchase);
+        
+        if (result.success) {
+          console.log('✅ RevenueCat purchase successful:', result.customerInfo);
+          navigation.navigate('PaymentSuccess', {
+            message: `${title} activated successfully!`,
+          });
         } else {
-          throw new Error('Package not found');
+          throw new Error('Purchase failed');
         }
+      } else {
+        throw new Error('Package not found');
       }
     } catch (error: any) {
       console.error('❌ Purchase error:', error);
