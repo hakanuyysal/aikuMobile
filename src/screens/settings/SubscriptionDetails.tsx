@@ -48,29 +48,31 @@ const SubscriptionDetails = ({navigation}: Props) => {
     return periodMap[period as keyof typeof periodMap] || period;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '#4CAF50';
-      case 'cancelled':
-        return '#FF5722';
-      case 'expired':
-        return '#FF9800';
-      default:
-        return Colors.lightText;
+  const getStatusColor = (subscription: Subscription) => {
+    if (subscription.status === 'active') {
+      return '#4CAF50';
+    } else if (subscription.status === 'cancelled' && subscription.isActive) {
+      return '#FFC107'; // Sarı renk
+    } else if (subscription.status === 'cancelled') {
+      return '#FF5722';
+    } else if (subscription.status === 'expired') {
+      return '#FF9800';
+    } else {
+      return Colors.lightText;
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Active';
-      case 'cancelled':
-        return 'Cancelled';
-      case 'expired':
-        return 'Expired';
-      default:
-        return status;
+  const getStatusText = (subscription: Subscription) => {
+    if (subscription.status === 'active') {
+      return 'Active';
+    } else if (subscription.status === 'cancelled' && subscription.isActive) {
+      return 'Cancelled but Active Until Expiry';
+    } else if (subscription.status === 'cancelled') {
+      return 'Cancelled';
+    } else if (subscription.status === 'expired') {
+      return 'Expired';
+    } else {
+      return subscription.status;
     }
   };
 
@@ -96,7 +98,7 @@ const SubscriptionDetails = ({navigation}: Props) => {
     try {
       const response = await RevenueCatService.getAllSubscriptions();
       if (response.success) {
-        setSubscriptions(response.subscriptions);
+        setSubscriptions(response.data?.subscriptions || response.subscriptions || []);
       } else {
         setError(response.message || 'Failed to fetch subscriptions');
       }
@@ -271,25 +273,22 @@ const SubscriptionDetails = ({navigation}: Props) => {
                 <Text style={styles.cardTitle}>
                   {getPlanName(subscription.plan)}
                 </Text>
-                <View style={styles.statusContainer}>
+              </View>
+              
+              {/* İptal edilmiş ama aktif abonelikler için uyarı mesajı */}
+              {subscription.status === 'cancelled' && subscription.isActive && (
+                <View style={styles.warningContainer}>
                   <MaterialCommunityIcons
-                    name={
-                      subscription.status === 'active'
-                        ? 'check-circle'
-                        : 'close-circle'
-                    }
-                    size={20}
-                    color={getStatusColor(subscription.status)}
+                    name="alert-circle"
+                    size={16}
+                    color="#FFC107"
+                    style={{marginRight: 8}}
                   />
-                  <Text
-                    style={[
-                      styles.statusText,
-                      {color: getStatusColor(subscription.status)},
-                    ]}>
-                    {getStatusText(subscription.status)}
+                  <Text style={styles.warningText}>
+                    Cancelled but Active Until Expiry
                   </Text>
                 </View>
-              </View>
+              )}
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Plan:</Text>
@@ -327,7 +326,9 @@ const SubscriptionDetails = ({navigation}: Props) => {
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Next Payment:</Text>
+                <Text style={styles.infoLabel}>
+                  {subscription.status === 'active' ? 'Next Payment:' : 'Expires:'}
+                </Text>
                 <Text style={styles.infoValue}>
                   {new Date(subscription.nextPaymentDate).toLocaleDateString(
                     'en-US',
@@ -506,6 +507,21 @@ const styles = StyleSheet.create({
   legalLink: {
     color: Colors.primary,
     textDecorationLine: 'underline',
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    borderRadius: metrics.borderRadius.sm,
+    padding: metrics.padding.sm,
+    marginBottom: metrics.margin.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+  },
+  warningText: {
+    fontSize: metrics.fontSize.sm,
+    color: '#FFC107',
+    fontWeight: '600',
   },
 });
 

@@ -104,26 +104,63 @@ const PlanCard: React.FC<PlanProps> = ({
         // Check user's current subscriptions
         try {
           const subscriptionsResponse = await RevenueCatService.getAllSubscriptions();
-          if (subscriptionsResponse.success && subscriptionsResponse.subscriptions) {
+          if (subscriptionsResponse.success && subscriptionsResponse.data?.subscriptions) {
             const planName = title.toLowerCase().replace(' plan', '');
             const planPeriod = isYearly ? 'yearly' : 'monthly';
             
-            // Check if there's an active subscription for this plan and period only
-            const currentPlan = subscriptionsResponse.subscriptions.find(
-              (sub: any) => 
-                sub.plan === planName && 
-                sub.period === planPeriod && 
-                sub.status === 'active'
-            );
+            // Check if there's an active subscription for this plan and period
+            // Consider subscription active if:
+            // 1. status is 'active' OR
+            // 2. isActive is true and end date hasn't passed
+            const allSubscriptions = subscriptionsResponse.data?.subscriptions || subscriptionsResponse.subscriptions || [];
+            console.log(`🔍 Looking for: ${planName} ${planPeriod}`);
+            console.log(`📋 All subscriptions:`, allSubscriptions.map(s => `${s.plan} ${s.period} (${s.status})`));
+            
+            // Önce active olanları bul, sonra cancelled ama active olanları
+            const activeSubscriptions = allSubscriptions.filter((sub: any) => {
+              const planMatches = sub.plan === planName && sub.period === planPeriod;
+              if (!planMatches) return false;
+              
+              console.log(`🔍 Checking subscription: ${sub.plan} ${sub.period}`);
+              console.log(`   Status: ${sub.status}`);
+              console.log(`   isActive: ${sub.isActive}`);
+              
+              // Case 1: Status is active
+              if (sub.status === 'active') {
+                console.log(`   ✅ Found active subscription`);
+                return true;
+              }
+              
+              // Case 2: isActive is true and end date hasn't passed
+              if (sub.isActive) {
+                const endDate = new Date(sub.nextPaymentDate || sub.startDate);
+                const now = new Date();
+                const isNotExpired = endDate > now;
+                console.log(`   📅 End date: ${endDate}, Now: ${now}, Not expired: ${isNotExpired}`);
+                if (isNotExpired) {
+                  console.log(`   ✅ Found cancelled but active subscription`);
+                  return true;
+                }
+              }
+              
+              console.log(`   ❌ Subscription not active`);
+              return false;
+            });
+            
+            // En son active olanı seç (en güncel olanı)
+            const currentPlan = activeSubscriptions[activeSubscriptions.length - 1];
             
             if (currentPlan) {
               setCurrentSubscription(currentPlan);
               setHasActiveSubscription(true);
               console.log(`✅ Active subscription found: ${planName} ${planPeriod}`);
+              console.log(`   Final status: ${currentPlan.status}, isActive: ${currentPlan.isActive}`);
+              console.log(`   Selected plan:`, currentPlan);
             } else {
               setHasActiveSubscription(false);
               setCurrentSubscription(null);
               console.log(`❌ No active subscription found: ${planName} ${planPeriod}`);
+              console.log(`   Available subscriptions for this plan:`, activeSubscriptions);
             }
           }
         } catch (error) {
@@ -209,43 +246,7 @@ const PlanCard: React.FC<PlanProps> = ({
     outputRange: [-15, 0, 15],
   });
 
-  const handleCancelSubscription = async () => {
-    if (!currentSubscription) return;
-    
-    Alert.alert(
-      'Cancel Subscription',
-      `Are you sure you want to cancel your ${title} subscription? This action cannot be undone.`,
-      [
-        {
-          text: 'No, Keep It',
-          style: 'cancel',
-        },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const response = await RevenueCatService.cancelSubscription(currentSubscription._id);
-              if (response.success) {
-                Alert.alert('Success', 'Your subscription has been cancelled successfully.');
-                setHasActiveSubscription(false);
-                setCurrentSubscription(null);
-              } else {
-               // Alert.alert('Error', response.message || 'Failed to cancel subscription');
-               console.log('Error', response.message || 'Failed to cancel subscription');
-              }
-            } catch (err: any) {
-              //Alert.alert('Error', err?.message || 'Failed to cancel subscription');
-              console.log('Error', err?.message || 'Failed to cancel subscription');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ],
-    );
-  };
+
 
   const handleGetStarted = async () => {
     try {
@@ -379,10 +380,11 @@ const PlanCard: React.FC<PlanProps> = ({
               <Text style={styles.period}>/{currentSubscription?.period || (isYearly ? 'year' : 'month')}</Text>
             </Text>
             <Text style={styles.activeStatus}>
-              ✅ Currently Active
+              {currentSubscription?.status === 'active' ? '✅ Currently Active' : '⚠️ Cancelled but Active Until Expiry'}
             </Text>
             <Text style={styles.nextPayment}>
-              Next Payment: {currentSubscription?.nextPaymentDate ? 
+              {currentSubscription?.status === 'active' ? 'Next Payment: ' : 'Expires: '}
+              {currentSubscription?.nextPaymentDate ? 
                 new Date(currentSubscription.nextPaymentDate).toLocaleDateString('en-US') : 
                 'N/A'
               }
@@ -438,7 +440,10 @@ const PlanCard: React.FC<PlanProps> = ({
                 (loading || isStatusLoading) && styles.buttonDisabled,
 
               ]}
-              onPress={hasActiveSubscription ? () => navigation.navigate('SubscriptionDetails') : handleGetStarted}
+              onPress={hasActiveSubscription ? 
+                () => navigation.navigate('SubscriptionDetails') : 
+                handleGetStarted
+              }
               disabled={loading || isStatusLoading}>
               {loading || isStatusLoading ? (
                 <ActivityIndicator color={Colors.lightText} />

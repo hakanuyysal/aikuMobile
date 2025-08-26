@@ -37,9 +37,14 @@ export interface Subscription {
 
 export interface SubscriptionsResponse {
   success: boolean;
-  subscriptions: Subscription[];
-  subscriptionCount: number;
-  activeSubscriptionCount: number;
+  data?: {
+    subscriptions: Subscription[];
+    activeSubscription?: Subscription;
+    totalActiveCount: number;
+  };
+  subscriptions?: Subscription[];
+  subscriptionCount?: number;
+  activeSubscriptionCount?: number;
   message?: string;
 }
 
@@ -415,7 +420,7 @@ class RevenueCatService {
   async getAllSubscriptions(): Promise<SubscriptionsResponse> {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await axios.get(`${this.baseURL}/revenuecat/subscriptions`, {
+      const response = await axios.get(`${this.baseURL}/subscriptions/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
