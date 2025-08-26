@@ -90,25 +90,25 @@ const PlanCard: React.FC<PlanProps> = ({
     const initializePlan = async () => {
       try {
         // RevenueCat paketlerini getir
-        console.log('🔄 RevenueCat paketleri yükleniyor...');
-        const packages = await RevenueCatService.getRevenueCatPackages();
-        setRevenueCatPackages(packages);
-        console.log('📦 RevenueCat packages loaded:', packages.length);
-        
-        if (packages.length === 0) {
-          console.error('❌ RevenueCat offerings boş! Dashboard\'da offerings kontrol edin.');
-        } else {
-          console.log('✅ RevenueCat offerings başarıyla yüklendi');
-        }
+                  console.log('🔄 Loading RevenueCat packages...');
+          const packages = await RevenueCatService.getRevenueCatPackages();
+          setRevenueCatPackages(packages);
+          console.log('📦 RevenueCat packages loaded:', packages.length);
+          
+          if (packages.length === 0) {
+            console.error('❌ RevenueCat offerings empty! Check offerings in dashboard.');
+          } else {
+            console.log('✅ RevenueCat offerings loaded successfully');
+          }
 
-        // Kullanıcının mevcut aboneliklerini kontrol et
+        // Check user's current subscriptions
         try {
           const subscriptionsResponse = await RevenueCatService.getAllSubscriptions();
           if (subscriptionsResponse.success && subscriptionsResponse.subscriptions) {
             const planName = title.toLowerCase().replace(' plan', '');
             const planPeriod = isYearly ? 'yearly' : 'monthly';
             
-            // Sadece bu plan ve periyot için aktif abonelik var mı kontrol et
+            // Check if there's an active subscription for this plan and period only
             const currentPlan = subscriptionsResponse.subscriptions.find(
               (sub: any) => 
                 sub.plan === planName && 
@@ -119,11 +119,11 @@ const PlanCard: React.FC<PlanProps> = ({
             if (currentPlan) {
               setCurrentSubscription(currentPlan);
               setHasActiveSubscription(true);
-              console.log(`✅ Aktif abonelik bulundu: ${planName} ${planPeriod}`);
+              console.log(`✅ Active subscription found: ${planName} ${planPeriod}`);
             } else {
               setHasActiveSubscription(false);
               setCurrentSubscription(null);
-              console.log(`❌ Aktif abonelik bulunamadı: ${planName} ${planPeriod}`);
+              console.log(`❌ No active subscription found: ${planName} ${planPeriod}`);
             }
           }
         } catch (error) {
@@ -132,7 +132,7 @@ const PlanCard: React.FC<PlanProps> = ({
           setCurrentSubscription(null);
         }
 
-        // Startup plan için ücretsiz deneme kontrolü
+        // Free trial check for Startup plan
         if (!isStartupPlan) {
           setIsStatusLoading(false);
           return;
@@ -232,10 +232,12 @@ const PlanCard: React.FC<PlanProps> = ({
                 setHasActiveSubscription(false);
                 setCurrentSubscription(null);
               } else {
-                Alert.alert('Error', response.message || 'Failed to cancel subscription');
+               // Alert.alert('Error', response.message || 'Failed to cancel subscription');
+               console.log('Error', response.message || 'Failed to cancel subscription');
               }
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to cancel subscription');
+              //Alert.alert('Error', err?.message || 'Failed to cancel subscription');
+              console.log('Error', err?.message || 'Failed to cancel subscription');
             } finally {
               setLoading(false);
             }
@@ -249,7 +251,7 @@ const PlanCard: React.FC<PlanProps> = ({
     try {
       setLoading(true);
 
-      // Plan key'ini oluştur
+      // Create plan key
       let planName = '';
       if (title === 'Startup Plan') planName = 'startup';
       else if (title === 'Business Plan') planName = 'business';
@@ -263,7 +265,7 @@ const PlanCard: React.FC<PlanProps> = ({
       console.log('Created plan key:', planKey);
       console.log('Available product mappings:', Object.keys(productMapping));
 
-      // RevenueCat paketini bul (her zaman)
+      // Find RevenueCat package (always)
       let packageToPurchase = null;
       packageToPurchase = RevenueCatService.findPackageByPlanKey(
         revenueCatPackages,
@@ -284,7 +286,7 @@ const PlanCard: React.FC<PlanProps> = ({
             isFirstPayment: true,
             paymentDate: new Date().toISOString(),
           };
-          console.log('🆓 Ücretsiz deneme payload:', payload);
+          console.log('🆓 Free trial payload:', payload);
           const token = await AsyncStorage.getItem('token');
           console.log('Token being sent:', token);
           const response = await axios.post(
@@ -298,12 +300,12 @@ const PlanCard: React.FC<PlanProps> = ({
             },
           );
 
-          console.log('✅ Ücretsiz deneme başarıyla kaydedildi!');
+          console.log('✅ Free trial saved successfully!');
           navigation.navigate('PaymentSuccess', {
-            message: `${title} ücretsiz deneme başarıyla aktifleştirildi!`,
+            message: `${title} free trial activated successfully!`,
           });
         } catch (error) {
-          console.error('❌ Ücretsiz deneme hatası:', error);
+          console.error('❌ Free trial error:', error);
           Alert.alert('Error', 'Free trial could not be activated. Please try again.');
         }
         return;
@@ -312,19 +314,19 @@ const PlanCard: React.FC<PlanProps> = ({
       // RevenueCat ile satın alma
       if (packageToPurchase) {
         try {
-          console.log('🛒 RevenueCat satın alma başlatılıyor:', packageToPurchase.identifier);
+          console.log('🛒 Starting RevenueCat purchase:', packageToPurchase.identifier);
           const result = await RevenueCatService.purchasePackage(packageToPurchase);
           
           if (result.success) {
-            console.log('✅ RevenueCat satın alma başarılı:', result.customerInfo);
+            console.log('✅ RevenueCat purchase successful:', result.customerInfo);
             navigation.navigate('PaymentSuccess', {
-              message: `${title} başarıyla aktifleştirildi!`,
+              message: `${title} activated successfully!`,
             });
           } else {
             throw new Error('Purchase failed');
           }
         } catch (error: any) {
-          console.error('❌ RevenueCat satın alma hatası:', error);
+          console.error('❌ RevenueCat purchase error:', error);
           
           if (error.userCancelled) {
             Alert.alert('Cancelled', 'Purchase cancelled');
@@ -334,11 +336,13 @@ const PlanCard: React.FC<PlanProps> = ({
         }
       } else {
         console.error('❌ RevenueCat paketi bulunamadı:', planKey);
-        Alert.alert('Error', 'Selected plan not found. Please try again.');
+       // Alert.alert('Error', 'Selected plan not found. Please try again.');
+       console.log('Error', 'Selected plan not found. Please try again.');
       }
     } catch (error) {
       console.error('❌ Plan seçimi sırasında hata:', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      //Alert.alert('Error', 'An error occurred. Please try again.');
+      console.log('Error', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
