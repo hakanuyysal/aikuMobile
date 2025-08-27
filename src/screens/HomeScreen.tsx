@@ -161,9 +161,9 @@ const HomeScreen = (props: HomeScreenProps) => {
       desc: 'Startups: Girişimcilere özel alan',
     },
     {
-      key: 'Investor',
+      key: 'Investors',
       icon: 'account-group',
-      label: 'Investor',
+      label: 'Investors',
       nav: 'InvestorDetails',
       desc: 'Investor: Yatırımcılar için fırsatlar',
     },

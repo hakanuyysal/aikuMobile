@@ -74,25 +74,22 @@ const Investor = () => {
     try {
       setLoading(true);
       const data = await companyService.getInvestors();
-      // Startups’taki gibi _id doğrula
+
       const processed = (data || []).map((item: any) => {
-        if (!item._id && item.id) return { ...item, _id: item.id };
-        if (!item._id) {
-          return {
-            ...item,
-            _id: `${item.companyName}-${item.companyWebsite || 'no-website'}`,
-          };
-        }
-        return item;
+        const _id =
+          item._id || item.id || `${item.companyName}-${item.companyWebsite || 'no-website'}`;
+        return { ...item, _id };
       });
+
       setInvestors(processed);
-    } catch (error) {
+    } catch (e) {
       Alert.alert('Error', 'Failed to load investors.');
       setInvestors([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   const fetchInvestorDetails = async (company: Company) => {
     const companyId = company._id;
@@ -289,6 +286,7 @@ const Investor = () => {
                 }}
                 style={styles.companyLogo}
                 resizeMode="contain"
+                onError={(e) => console.log(`Investor logo error for ${item.companyName}:`, e.nativeEvent.error)}
               />
             ) : (
               <View style={styles.placeholderLogo}>

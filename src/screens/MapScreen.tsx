@@ -239,18 +239,23 @@ const MapScreen = () => {
         <View style={styles.cardContent}>
           <View style={styles.companyHeader}>
             {item.companyLogo ? (
-              <Image
-                source={{ uri: item.companyLogo }}
-                style={styles.companyLogo}
-                defaultSource={require('../assets/images/defaultCompanyLogo.png')}
-              />
+              <View style={styles.logoBox}>
+                <Image
+                  source={{ uri: item.companyLogo }}
+                  style={styles.logoImg}
+                  resizeMode="contain"
+                />
+              </View>
             ) : (
-              <View style={styles.placeholderLogo}>
-                <Icon name="business" size={24} color="#666" />
+              <View style={styles.logoBox}>
+                <Icon name="business" size={22} color="#666" />
               </View>
             )}
-            <Text style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">{item.companyName}</Text>
+            <Text style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
+              {item.companyName}
+            </Text>
           </View>
+
           <View style={styles.detailsContainer}>
             <View style={styles.detail}>
               <Text style={styles.detailLabel}>Location</Text>
@@ -640,12 +645,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: IS_TABLET ? 12 : 14,
   },
-  companyLogo: {
-    width: IS_TABLET ? 40 : 40,          // <- Logo biraz daha büyük
+  logoWrapper: {
+    width: IS_TABLET ? 40 : 40,
     height: IS_TABLET ? 40 : 40,
     marginRight: IS_TABLET ? 12 : 12,
     borderRadius: 8,
     backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  companyLogo: {
+    width: '100%',
+    height: '100%',
+  },
+  logoBox: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    // ister padding ver:
+    // padding: 4,
+  },
+  logoImg: {
+    width: '100%',
+    height: '100%',
+    // width: '90%',
+    // height: '90%',
   },
   placeholderLogo: {
     width: IS_TABLET ? 40 : 40,
