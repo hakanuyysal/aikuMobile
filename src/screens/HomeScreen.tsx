@@ -30,6 +30,7 @@ import { getActiveMobileModalMessage } from '../api/modalMessagesApi';
 import PushPermissionPrompt from '../components/PushPermissionPrompt';
 import { storage } from '../storage/mmkv';
 import notificationService from '../services/notificationService';
+import analytics from '@react-native-firebase/analytics';
 
 // Define navigation stack param list
 type RootStackParamList = {
@@ -82,6 +83,12 @@ const HomeScreen = (props: HomeScreenProps) => {
 
   // Push notification permission prompt state
   const [pushPromptVisible, setPushPromptVisible] = useState(false);
+
+  React.useEffect(() => {
+    analytics().setAnalyticsCollectionEnabled(true);       // rıza kapalıysa aç
+    analytics().logAppOpen();                              // app_open
+    analytics().logEvent('debug_ping', { ts: Date.now() }); // test event
+  }, []);
 
   // Modal state'ini debug için logla
   React.useEffect(() => {
@@ -182,6 +189,14 @@ const HomeScreen = (props: HomeScreenProps) => {
       desc: 'Marketplace: Ürün ve hizmetler',
     },
   ];
+
+  const trackCommunityTap = (item: { key: string; label: string }) => {
+    analytics().logEvent('community_tap', {
+      section: 'our_community',
+      item_key: item.key,          // startups / investors / business / marketplace
+      item_label: item.label,      // görünen metin
+    }).catch(() => { });            // analytics call'u bekleme, UI'yı bloklama
+  };
 
   // Ortadaki kartlara tıklama ile animasyon
   const handleCenterCardPress = async () => {
@@ -503,7 +518,10 @@ const HomeScreen = (props: HomeScreenProps) => {
                 ? { width: COMMUNITY_ITEM_W }   // tablette dar ve ortalı
                 : { width: '100%' },            // telefonda tam genişlik
             ]}
-            onPress={() => navigation.navigate(item.nav as any)}>
+            onPress={() => {
+              trackCommunityTap(item);
+              navigation.navigate(item.nav as any);
+            }}>
             <MaterialCommunityIcons
               name={item.icon}
               size={metrics.isTablet ? metrics.tabBar.iconSize : 24}

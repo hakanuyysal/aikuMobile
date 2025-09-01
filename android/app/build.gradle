@@ -99,8 +99,8 @@ dependencies {
         implementation jscFlavor
     }
 
-    implementation platform('com.google.firebase:firebase-bom:32.9.0')
-    implementation 'com.google.firebase:firebase-analytics'
+    // implementation platform('com.google.firebase:firebase-bom:32.9.0')
+    // implementation 'com.google.firebase:firebase-analytics'
 }
 
 project.ext.vectoricons = [

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "940825068315-1ucc6gnegfrou0k1b9thj628j4qlo98n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aikumobile",
+            "certificate_hash": "2a5b91a564e88b3b314a9f457a048ad0ade139ee"
+          }
+        },
+        {
           "client_id": "940825068315-5548sta6336d9tqo5cg28qmhtt27lfl1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
