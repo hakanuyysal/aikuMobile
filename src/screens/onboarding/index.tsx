@@ -32,21 +32,22 @@ type OnboardingNavigationProp = NativeStackNavigationProp<
 const slides = [
   {
     key: '1',
-    title: 'Unleash the potential of your AI startup.',
+    title: 'UNLEASH THE POTENTIAL OF YOUR AI STARTUP.',
     description: '',
   },
   {
     key: '2',
-    title: 'Provides access to key tools, mentorship, and collaboration opportunities to support innovation and growth.',
+    title: 'PROVIDES ACCESS TO KEY TOOLS, MENTORSHIP, AND COLLABORATION OPPORTUNITIES TO SUPPORT INNOVATION AND GROWTH.',
     description: '',
   },
   {
     key: '3',
-    title: "Elevate Your AI Startup's Visibility and Growth Potential",
+    title: "ELEVATE YOUR AI STARTUP'S VISIBILITY AND GROWTH POTENTIAL",
     description: '',
-    button: 'Get Started' // Son karta button özelliği ekle
+    button: 'GET STARTED'
   },
 ];
+
 
 interface OnboardingScreenProps {
   onComplete: () => void;
