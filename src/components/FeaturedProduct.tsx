@@ -46,6 +46,8 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
   const listRef = useRef<FlatList>(null);
   const scrollOffset = useRef(0);
   const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
+  const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const dragTimeout = useRef<NodeJS.Timeout | null>(null);
   const scrollSpeed = 1.2;
 
   const fetchNews = async () => {
@@ -112,15 +114,60 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
     };
   }, [articles, isScrolling]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollAnimation.current) {
+        clearTimeout(scrollAnimation.current);
+      }
+      if (touchTimeout.current) {
+        clearTimeout(touchTimeout.current);
+      }
+      if (dragTimeout.current) {
+        clearTimeout(dragTimeout.current);
+      }
+    };
+  }, []);
+
   const handleTouchStart = () => {
     setIsScrolling(false);
     if (scrollAnimation.current) {
       clearTimeout(scrollAnimation.current);
     }
+    if (touchTimeout.current) {
+      clearTimeout(touchTimeout.current);
+    }
   };
 
   const handleTouchEnd = () => {
-    setIsScrolling(true);
+    // Kullanıcı dokunma bittikten 3 saniye sonra otomatik kaydırmayı tekrar başlat
+    touchTimeout.current = setTimeout(() => {
+      setIsScrolling(true);
+    }, 3000);
+  };
+
+  const handleScrollBeginDrag = () => {
+    setIsScrolling(false);
+    if (scrollAnimation.current) {
+      clearTimeout(scrollAnimation.current);
+    }
+    if (dragTimeout.current) {
+      clearTimeout(dragTimeout.current);
+    }
+  };
+
+  const handleScrollEndDrag = () => {
+    // Kullanıcı kaydırma bittikten 3 saniye sonra otomatik kaydırmayı tekrar başlat
+    dragTimeout.current = setTimeout(() => {
+      setIsScrolling(true);
+    }, 3000);
+  };
+
+  const handleScroll = (event: any) => {
+    // Kullanıcı manuel scroll yaparken offset'i güncelle
+    if (!isScrolling) {
+      scrollOffset.current = event.nativeEvent.contentOffset.x;
+    }
   };
 
   const cleanContent = (content: string | undefined) => {
@@ -175,6 +222,10 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
                   showsHorizontalScrollIndicator={false}
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
+                  onScrollBeginDrag={handleScrollBeginDrag}
+                  onScrollEndDrag={handleScrollEndDrag}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       style={[styles.newsCard, { width: itemWidth }]}

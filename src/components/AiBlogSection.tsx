@@ -64,6 +64,8 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
   const listRef = useRef<FlatList>(null);
   const scrollOffset = useRef(0);
   const scrollAnimation = useRef<NodeJS.Timeout | null>(null);
+  const touchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const dragTimeout = useRef<NodeJS.Timeout | null>(null);
   const itemWidth = width - 90;
   const scrollSpeed = 0.8;
 
@@ -120,18 +122,36 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
     };
   }, [blogs, isScrolling, itemWidth]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollAnimation.current) {
+        clearTimeout(scrollAnimation.current);
+      }
+      if (touchTimeout.current) {
+        clearTimeout(touchTimeout.current);
+      }
+      if (dragTimeout.current) {
+        clearTimeout(dragTimeout.current);
+      }
+    };
+  }, []);
+
   const handleTouchStart = () => {
     setIsScrolling(false);
     if (scrollAnimation.current) {
       clearTimeout(scrollAnimation.current);
     }
+    if (touchTimeout.current) {
+      clearTimeout(touchTimeout.current);
+    }
   };
 
   const handleTouchEnd = () => {
-    // Kullanıcı dokunma bittikten 2 saniye sonra otomatik kaydırmayı tekrar başlat
-    setTimeout(() => {
+    // Kullanıcı dokunma bittikten 3 saniye sonra otomatik kaydırmayı tekrar başlat
+    touchTimeout.current = setTimeout(() => {
       setIsScrolling(true);
-    }, 2000);
+    }, 3000);
   };
 
   const handleScrollBeginDrag = () => {
@@ -139,13 +159,23 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
     if (scrollAnimation.current) {
       clearTimeout(scrollAnimation.current);
     }
+    if (dragTimeout.current) {
+      clearTimeout(dragTimeout.current);
+    }
   };
 
   const handleScrollEndDrag = () => {
     // Kullanıcı kaydırma bittikten 3 saniye sonra otomatik kaydırmayı tekrar başlat
-    setTimeout(() => {
+    dragTimeout.current = setTimeout(() => {
       setIsScrolling(true);
     }, 3000);
+  };
+
+  const handleScroll = (event: any) => {
+    // Kullanıcı manuel scroll yaparken offset'i güncelle
+    if (!isScrolling) {
+      scrollOffset.current = event.nativeEvent.contentOffset.x;
+    }
   };
 
   return (
@@ -200,6 +230,8 @@ const AIBlogSection: React.FC<AIBlogSectionProps> = ({ title, navigation, height
                   onTouchEnd={handleTouchEnd}
                   onScrollBeginDrag={handleScrollBeginDrag}
                   onScrollEndDrag={handleScrollEndDrag}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
                   renderItem={({ item }) => {
                     console.log('Blog item:', item);
                     return (
