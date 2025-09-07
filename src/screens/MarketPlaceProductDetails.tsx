@@ -12,39 +12,36 @@ import { useFavoritesStore } from '../store/favoritesStore';
 type RootStackParamList = {
   HomeScreen: undefined;
   MarketplaceScreen: undefined;
-  ProductDetailsScreen: { product: Product };
+  MarketPlaceProductDetails: { product: Product };
   HowItWorksScreen: undefined;
   InvestmentDetails: undefined;
   TalentPool: undefined;
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetailsScreen'>;
-type RoutePropType = RouteProp<RootStackParamList, 'ProductDetailsScreen'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'MarketPlaceProductDetails'>;
+type RoutePropType = RouteProp<RootStackParamList, 'MarketPlaceProductDetails'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Product {
-  id: string;
-  company: string;
-  name: string;
-  category: string;
-  price: string;
-  description: string;
-  tags: string;
-  releaseDate: string;
-  address: string;
-  phone: string;
-  email: string;
-  logo?: string;
-  website?: string;
-  productLogo?: string;
+  _id: string;
   productName: string;
+  productCategory: string;
+  pricingModel: string;
   productDescription: string;
-  productWebsite: string;
-  isHighlighted: boolean;
-  companyId?: {
+  tags: string[];
+  releaseDate?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  productLogo?: string;
+  productWebsite?: string;
+  companyId: {
+    companyName: string;
+    _id: string;
     companyLogo?: string;
   };
+  isHighlighted?: boolean;
 }
 
 const ProductDetailsScreen: React.FC = () => {
@@ -59,17 +56,17 @@ const ProductDetailsScreen: React.FC = () => {
 
   // Favori kontrolü (id veya _id)
   const isFavorite = favorites.some(
-    (fav) => fav.id === product.id
+    (fav) => fav.id === product._id
   );
 
   const handleToggleFavorite = () => {
     if (isFavorite) {
-      removeFromFavorites(product.id);
+      removeFromFavorites(product._id);
     } else {
       // Favoriye eklerken gerekli alanları doldur
       console.log('Favoriye eklenen ürün:', product);
       addToFavorites({
-        id: product.id,
+        id: product._id,
         name: product.productName,
         description: product.productDescription,
         logo: product.productLogo || (product.companyId?.companyLogo ? product.companyId.companyLogo : ''),
@@ -108,7 +105,7 @@ const ProductDetailsScreen: React.FC = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Icon name="chevron-back" size={24} color="#3B82F7" />
           </TouchableOpacity>
-          <PaperText style={styles.header}>{product.name}</PaperText>
+          <PaperText style={styles.header}>{product.productName}</PaperText>
         </View>
 
         {/* Navigation Indicators */}
@@ -161,37 +158,37 @@ const ProductDetailsScreen: React.FC = () => {
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Company</PaperText>
-                <PaperText style={styles.text}>{product.company}</PaperText>
+                <PaperText style={styles.text}>{product.companyId.companyName}</PaperText>
               </View>
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Category</PaperText>
-                <PaperText style={styles.text}>{product.category}</PaperText>
+                <PaperText style={styles.text}>{product.productCategory}</PaperText>
               </View>
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Tags</PaperText>
-                <PaperText style={styles.text}>{product.tags}</PaperText>
+                <PaperText style={styles.text}>{product.tags ? product.tags.join(', ') : 'No tags available'}</PaperText>
               </View>
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Price</PaperText>
-                <PaperText style={styles.text}>{product.price}</PaperText>
+                <PaperText style={styles.text}>{product.pricingModel}</PaperText>
               </View>
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Release Date</PaperText>
-                <PaperText style={styles.text}>{product.releaseDate}</PaperText>
+                <PaperText style={styles.text}>{product.releaseDate || 'Not specified'}</PaperText>
               </View>
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Contact Information</PaperText>
                 <PaperText style={styles.subSubTitle}>Address</PaperText>
-                <PaperText style={styles.text}>{product.address}</PaperText>
+                <PaperText style={styles.text}>{product.address || 'Not specified'}</PaperText>
                 <PaperText style={styles.subSubTitle}>Phone</PaperText>
-                <PaperText style={styles.text}>{product.phone}</PaperText>
+                <PaperText style={styles.text}>{product.phone || 'Not specified'}</PaperText>
                 <PaperText style={styles.subSubTitle}>Email</PaperText>
-                <PaperText style={styles.text}>{product.email}</PaperText>
+                <PaperText style={styles.text}>{product.email || 'Not specified'}</PaperText>
               </View>
             </ScrollView>
           </View>
@@ -203,10 +200,10 @@ const ProductDetailsScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.card}>
-                <PaperText style={styles.subTitle}>{product.name}</PaperText>
-                <PaperText style={styles.subSubTitle}>{product.company}</PaperText>
+                <PaperText style={styles.subTitle}>{product.productName}</PaperText>
+                <PaperText style={styles.subSubTitle}>{product.companyId.companyName}</PaperText>
                 <PaperText style={styles.subSubTitle}>Summary</PaperText>
-                <PaperText style={styles.text}>{product.description}</PaperText>
+                <PaperText style={styles.text}>{product.productDescription}</PaperText>
                 <PaperText style={styles.subSubTitle}>Description</PaperText>
                 <PaperText style={styles.text}>
                   PDI AI is an innovative AI solution engineered to optimize document processes for
