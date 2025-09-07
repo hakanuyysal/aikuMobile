@@ -42,24 +42,44 @@ const TabBar: React.FC<TabBarProps> = ({ state, descriptors, navigation }) => {
     Message: 'Chat',
   };
 
-  const trackTabTap = (tab: string, from: string, result: 'navigated' | 'stayed') =>
-    analytics().logEvent('tab_tap', {
-      tab_name: tab.toLowerCase(),
-      from_tab: from.toLowerCase(),
-      result,                      // navigated | stayed
-    }).catch(() => { });
+  const trackTabTap = (tab: string, from: string, result: 'navigated' | 'stayed') => {
+    try {
+      analytics().logEvent('tab_tap', {
+        tab_name: tab.toLowerCase(),
+        from_tab: from.toLowerCase(),
+        result,                      // navigated | stayed
+      }).catch((error) => {
+        console.log('⚠️ Analytics hatası (normal olabilir):', error.message);
+      });
+    } catch (error) {
+      console.log('⚠️ Analytics başlatma hatası (normal olabilir):', error.message);
+    }
+  };
 
-  const trackTabBlocked = (tab: string, reason: string) =>
-    analytics().logEvent('tab_tap_blocked', {
-      tab_name: tab.toLowerCase(),
-      reason,                      // e.g. not_subscriber
-    }).catch(() => { });
+  const trackTabBlocked = (tab: string, reason: string) => {
+    try {
+      analytics().logEvent('tab_tap_blocked', {
+        tab_name: tab.toLowerCase(),
+        reason,                      // e.g. not_subscriber
+      }).catch((error) => {
+        console.log('⚠️ Analytics hatası (normal olabilir):', error.message);
+      });
+    } catch (error) {
+      console.log('⚠️ Analytics başlatma hatası (normal olabilir):', error.message);
+    }
+  };
 
   const prevIndexRef = React.useRef(state.index);
   useEffect(() => {
     if (prevIndexRef.current !== state.index) {
       const to = state.routes[state.index].name;
-      analytics().logEvent('tab_view', { tab_name: to.toLowerCase() }).catch(() => { });
+      try {
+        analytics().logEvent('tab_view', { tab_name: to.toLowerCase() }).catch((error) => {
+          console.log('⚠️ Analytics hatası (normal olabilir):', error.message);
+        });
+      } catch (error) {
+        console.log('⚠️ Analytics başlatma hatası (normal olabilir):', error.message);
+      }
       prevIndexRef.current = state.index;
     }
   }, [state.index, state.routes]);

@@ -4,6 +4,7 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'react-native';
 import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import firebase from '@react-native-firebase/app';
 import TabNavigator from './src/navigation/TabNavigator';
 import { Colors } from './src/constants/colors';
 import UpdateProfileScreen from './src/screens/UpdateProfileScreen';
@@ -416,6 +417,24 @@ function AppContent(): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
+  // Firebase'i App seviyesinde de başlat
+  useEffect(() => {
+    const initializeFirebase = async () => {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp();
+          console.log('✅ Firebase App.tsx\'te başlatıldı');
+        } else {
+          console.log('✅ Firebase App.tsx\'te zaten başlatılmış');
+        }
+      } catch (error) {
+        console.log('⚠️ Firebase App.tsx başlatma hatası (normal olabilir):', error.message);
+      }
+    };
+    
+    initializeFirebase();
+  }, []);
+
   return (
     <AuthProvider>
       <PaperProvider theme={materialTheme}>

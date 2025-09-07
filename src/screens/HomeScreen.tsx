@@ -85,9 +85,20 @@ const HomeScreen = (props: HomeScreenProps) => {
   const [pushPromptVisible, setPushPromptVisible] = useState(false);
 
   React.useEffect(() => {
-    analytics().setAnalyticsCollectionEnabled(true);       // rıza kapalıysa aç
-    analytics().logAppOpen();                              // app_open
-    analytics().logEvent('debug_ping', { ts: Date.now() }); // test event
+    const initializeAnalytics = async () => {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        analytics().setAnalyticsCollectionEnabled(true);       // rıza kapalıysa aç
+        analytics().logAppOpen();                              // app_open
+        analytics().logEvent('debug_ping', { ts: Date.now() }); // test event
+        console.log('✅ Firebase Analytics başarıyla başlatıldı');
+      } catch (error) {
+        console.error('❌ Firebase Analytics başlatma hatası:', error);
+      }
+    };
+    
+    initializeAnalytics();
   }, []);
 
   // Modal state'ini debug için logla
@@ -191,11 +202,17 @@ const HomeScreen = (props: HomeScreenProps) => {
   ];
 
   const trackCommunityTap = (item: { key: string; label: string }) => {
-    analytics().logEvent('community_tap', {
-      section: 'our_community',
-      item_key: item.key,          // startups / investors / business / marketplace
-      item_label: item.label,      // görünen metin
-    }).catch(() => { });            // analytics call'u bekleme, UI'yı bloklama
+    try {
+      analytics().logEvent('community_tap', {
+        section: 'our_community',
+        item_key: item.key,          // startups / investors / business / marketplace
+        item_label: item.label,      // görünen metin
+      }).catch((error) => {
+        console.log('⚠️ Analytics hatası (normal olabilir):', error.message);
+      });
+    } catch (error) {
+      console.log('⚠️ Analytics başlatma hatası (normal olabilir):', error.message);
+    }
   };
 
   // Ortadaki kartlara tıklama ile animasyon
