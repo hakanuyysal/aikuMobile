@@ -16,6 +16,15 @@ target 'aikuMobile' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # --- Firebase pods (EKLEME) ---
+  # IDFA toplamak istemiyorsan aşağıdaki satırı yorum satırındaki alternatifle değiştir.
+  pod 'Firebase/Analytics'
+  # pod 'Firebase/AnalyticsWithoutAdIdSupport'
+  # --------------------------------
+
+  # Ensure GoogleUtilities generates module maps to satisfy FirebaseCoreInternal Swift integration
+  pod 'GoogleUtilities', :modular_headers => true
+
   post_install do |installer|
     react_native_post_install(installer)
 
