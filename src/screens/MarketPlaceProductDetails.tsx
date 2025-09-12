@@ -59,6 +59,16 @@ const ProductDetailsScreen: React.FC = () => {
     (fav) => fav.id === product._id
   );
 
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'Not specified';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
+
   const handleToggleFavorite = () => {
     if (isFavorite) {
       removeFromFavorites(product._id);
@@ -94,10 +104,10 @@ const ProductDetailsScreen: React.FC = () => {
 
   return (
     <LinearGradient
-    colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
-    locations={[0, 0.3, 0.6, 0.9]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 2, y: 1 }}
+      colors={['#1A1E29', '#1A1E29', '#3B82F780', '#3B82F740']}
+      locations={[0, 0.3, 0.6, 0.9]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 2, y: 1 }}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -110,24 +120,24 @@ const ProductDetailsScreen: React.FC = () => {
 
         {/* Navigation Indicators */}
         <View style={styles.navigationContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => scrollToPage(0)}
             style={styles.navButton}
           >
-            <Icon 
-              name="chevron-back" 
-              size={20} 
-              color={currentPage === 0 ? '#3B82F7' : 'rgba(255,255,255,0.3)'} 
+            <Icon
+              name="chevron-back"
+              size={20}
+              color={currentPage === 0 ? '#3B82F7' : 'rgba(255,255,255,0.3)'}
             />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => scrollToPage(1)}
             style={styles.navButton}
           >
-            <Icon 
-              name="chevron-forward" 
-              size={20} 
-              color={currentPage === 1 ? '#3B82F7' : 'rgba(255,255,255,0.3)'} 
+            <Icon
+              name="chevron-forward"
+              size={20}
+              color={currentPage === 1 ? '#3B82F7' : 'rgba(255,255,255,0.3)'}
             />
           </TouchableOpacity>
         </View>
@@ -144,7 +154,7 @@ const ProductDetailsScreen: React.FC = () => {
         >
           {/* First Section: Basic Information */}
           <View style={[styles.sectionContainer, { marginRight: 16 }]}>
-            <ScrollView 
+            <ScrollView
               style={styles.verticalScroll}
               showsVerticalScrollIndicator={false}
             >
@@ -178,7 +188,9 @@ const ProductDetailsScreen: React.FC = () => {
 
               <View style={styles.card}>
                 <PaperText style={styles.subTitle}>Release Date</PaperText>
-                <PaperText style={styles.text}>{product.releaseDate || 'Not specified'}</PaperText>
+                <PaperText style={styles.text}>
+                  {formatDate(product.releaseDate)}
+                </PaperText>
               </View>
 
               <View style={styles.card}>
@@ -195,7 +207,7 @@ const ProductDetailsScreen: React.FC = () => {
 
           {/* Second Section: Additional Details */}
           <View style={styles.sectionContainer}>
-            <ScrollView 
+            <ScrollView
               style={styles.verticalScroll}
               showsVerticalScrollIndicator={false}
             >

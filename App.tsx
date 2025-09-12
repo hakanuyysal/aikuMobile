@@ -36,6 +36,7 @@ import ProductDetailsScreen from 'screens/MarketPlaceProductDetails';
 import Startups from 'screens/ourcommunity/Startups';
 import Investor from 'screens/ourcommunity/Investor';
 import Business from 'screens/ourcommunity/Business';
+import AllNewsScreen from './src/screens/AllNewsScreen';
 import InvestorDetails from 'screens/Investor/InvestorDetailsScreen';
 import AddProduct from './src/screens/AddProduct';
 import { ChatProvider } from './src/contexts/ChatContext';
@@ -81,6 +82,7 @@ export type RootStackParamList = {
   Chat: undefined;
   HowItWorks: undefined;
   Cart: undefined;
+  AllNews: undefined;
   CompanyProfile: { company: Company };
   BillingInfo: {
     planDetails: {
@@ -155,10 +157,10 @@ function AppContent(): React.JSX.Element {
       try {
         console.log('🚀 RevenueCat başlatılıyor...');
         const result = await RevenueCatService.initializeRevenueCat();
-        
+
         if (result) {
           console.log('✅ RevenueCat başarıyla başlatıldı');
-          
+
           // RevenueCat durumunu kontrol et
           setTimeout(async () => {
             console.log('🔍 RevenueCat durumu kontrol ediliyor...');
@@ -403,6 +405,11 @@ function AppContent(): React.JSX.Element {
               headerShown: false,
             }}
           />
+          <RootStack.Screen
+            name="AllNews"
+            component={AllNewsScreen}
+            options={{ headerShown: false }}
+          />
         </RootStack.Navigator>
       </View>
       {isMenuOpen && (
@@ -431,7 +438,7 @@ function App(): React.JSX.Element {
         console.log('⚠️ Firebase App.tsx başlatma hatası (normal olabilir):', error.message);
       }
     };
-    
+
     initializeFirebase();
   }, []);
 

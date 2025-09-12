@@ -15,6 +15,9 @@ import { Colors } from '../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import BaseService from '../api/BaseService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../types';
 
 const { width } = Dimensions.get('window');
 const itemWidth = width - 90;
@@ -33,9 +36,12 @@ interface Article {
   author?: string;
 }
 
-type FeaturedProps = { height?: number };
+type FeaturedProps = {
+  height?: number;
+  onExploreAll?: () => void;
+};
 
-const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
+const FeaturedProduct: React.FC<FeaturedProps> = ({ height, onExploreAll }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +55,8 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
   const touchTimeout = useRef<NodeJS.Timeout | null>(null);
   const dragTimeout = useRef<NodeJS.Timeout | null>(null);
   const scrollSpeed = 1.2;
+
+  // const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const fetchNews = async () => {
     try {
@@ -197,6 +205,10 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
           <View style={styles.gradientContainer}>
             <View style={styles.headerContainer}>
               <Icon name="newspaper-variant" size={24} color={Colors.lightText} />
+              <TouchableOpacity onPress={() => onExploreAll?.()} style={styles.exploreBtn}>
+                <Text style={styles.exploreBtnText}>Explore All News</Text>
+                <Icon name="chevron-right" size={18} color={Colors.lightText} />
+              </TouchableOpacity>
             </View>
             <View style={styles.newsSection}>
               {loading ? (
@@ -327,7 +339,7 @@ const FeaturedProduct: React.FC<FeaturedProps> = ({ height }) => {
           </LinearGradient>
         </View>
       </Modal>
-    </View>
+    </View >
   );
 };
 
@@ -335,7 +347,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     // height: '30%',
-    minHeight: 250,  
+    minHeight: 250,
     marginVertical: 10,
     position: 'relative',
     alignSelf: 'center',
@@ -362,6 +374,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -549,6 +562,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginBottom: 15,
     lineHeight: 20,
+  },
+  exploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  exploreBtnText: {
+    color: Colors.lightText,
+    fontSize: 13,
+    fontWeight: '600',
+    marginRight: 4,
   },
 });
 

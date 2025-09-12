@@ -10,6 +10,7 @@ import ThreeDSecure from '../screens/subscriptions/ThreeDSecure';
 import TabNavigator from './TabNavigator';
 import {RootStackParamList} from '../types';
 import SubscriptionDetails from '../screens/settings/SubscriptionDetails';
+import AllNewsScreen from '../screens/AllNewsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -24,6 +25,7 @@ export const AppNavigator = () => {
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
       <Stack.Screen name="PaymentError" component={PaymentError} />
+      <Stack.Screen name="AllNews" component={AllNewsScreen} />
       <Stack.Screen 
         name="ThreeDSecure" 
         component={ThreeDSecure}

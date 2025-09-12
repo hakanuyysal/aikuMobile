@@ -135,6 +135,7 @@ export type RootStackParamList = {
   AddProduct: undefined;
   Message: { state?: NavigationState };
   TabNavigator: undefined;
+  AllNews: undefined; 
 };
 
 export type BillingInfoScreenProps = NativeStackScreenProps<

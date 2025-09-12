@@ -43,6 +43,7 @@ type RootStackParamList = {
   InvestorDetails: undefined; // Added for Investor
   BusinessDetails: undefined; // Added for Business
   AddBlogPost: undefined; // Added for AddBlogPostScreen
+  AllNews: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -88,7 +89,7 @@ const HomeScreen = (props: HomeScreenProps) => {
     const initializeAnalytics = async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         analytics().setAnalyticsCollectionEnabled(true);       // rıza kapalıysa aç
         analytics().logAppOpen();                              // app_open
         analytics().logEvent('debug_ping', { ts: Date.now() }); // test event
@@ -97,7 +98,7 @@ const HomeScreen = (props: HomeScreenProps) => {
         console.error('❌ Firebase Analytics başlatma hatası:', error);
       }
     };
-    
+
     initializeAnalytics();
   }, []);
 
@@ -596,17 +597,6 @@ const HomeScreen = (props: HomeScreenProps) => {
             <TouchableOpacity
               style={[
                 styles.tabPill,
-                activeTab === 'blog' ? styles.tabPillActive : styles.tabPillInactive,
-              ]}
-              onPress={() => setActiveTab('blog')}>
-              <Text
-                style={styles.tabText}>
-                AI Blog
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
                 activeTab === 'pulse' ? styles.tabPillActive : styles.tabPillInactive,
               ]}
               onPress={() => setActiveTab('pulse')}>
@@ -615,13 +605,32 @@ const HomeScreen = (props: HomeScreenProps) => {
                 AI Pulse
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabPill,
+                activeTab === 'blog' ? styles.tabPillActive : styles.tabPillInactive,
+              ]}
+              onPress={() => setActiveTab('blog')}>
+              <Text
+                style={styles.tabText}>
+                AI Blog
+              </Text>
+            </TouchableOpacity>
           </View>
 
 
-          {activeTab === 'pulse' ? (
+          {activeTab === 'blog' ? (
             <AIBlogSection title="" navigation={navigation} height={HERO_HEIGHT} />
           ) : (
-            <FeaturedProduct height={HERO_HEIGHT} />
+            <FeaturedProduct
+              height={HERO_HEIGHT}
+              onExploreAll={() => {
+                const p1 = navigation.getParent?.();               // HomeScreen'in ebeveyni
+                const p2 = p1?.getParent?.();                      // Ebeveynin ebeveyni (root stack olmalı)
+
+                (p2 ?? p1 ?? navigation).navigate('AllNews' as never);
+              }}
+            />
           )}
 
 
